@@ -1,0 +1,6 @@
+#!/usr/bin/python
+
+
+CANT_CANALES=32
+FS=20000
+PAQ_USB=10000
