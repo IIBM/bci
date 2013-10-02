@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>236</width>
+    <height>217</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QComboBox" name="s_filtro">
+       <item>
+        <property name="text">
+         <string>Sin Filtro</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Pasa bajos (200Hz)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Pasa Altos (200Hz)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>FFT</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="cb_c1">
+       <property name="text">
+        <string>Canal 1</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="cb_c2">
+       <property name="text">
+        <string>Canal 2</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="cb_c3">
+       <property name="text">
+        <string>Canal 3</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="cb_c4">
+       <property name="text">
+        <string>Canal 4</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
