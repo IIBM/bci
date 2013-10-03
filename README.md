@@ -19,11 +19,13 @@ Nota:
 
 Dependencia:
 
-  Python 2.7
+  Python 2.7 <br/>
   PyQt 4.8+
   numpy
   scipy
   pyqtgraph-0.9.7
   PyUSB
+
+
 
 
