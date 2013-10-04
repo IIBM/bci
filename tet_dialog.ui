@@ -137,7 +137,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QSlider" name="ofsetcc">
+      <widget class="QSlider" name="offsetcc">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
          <horstretch>0</horstretch>
