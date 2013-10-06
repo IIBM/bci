@@ -32,10 +32,10 @@ class  tets_display():
         layout_graficos = pg.GraphicsLayout() #para ordenar los graficos(items) asi como el simil con los widgets
         espacio_pg.setCentralItem(layout_graficos)
         
-        self.set_canales=list()
-        self.s_modes=list()
-        self.curv_canal=list()
-        self.graficos=list()
+        self.set_canales=list() #canales seleccionados para ser mostrados
+        self.s_modes=list() #estado del boton con el tipo de curva(fft, etc)
+        self.curv_canal=list() #curvas para dsp actualizar los datos
+        self.graficos=list() #graficos, para dsp poder modificar su autorange
               
         #graficos principales    
 
@@ -101,6 +101,29 @@ class  tets_display():
         for grafico in self.graficos:
             grafico.enableAutoRange('xy', state)  
                 
+
+
+class  rates_display():
+    def __init__(self,ecualizer_grid,dialogo):
+        layout_ecualizer= pg.GraphicsLayout() #para ordenar los graficos(items) asi como el simil con los widgets            
+        ecualizer_grid.setCentralItem(layout_ecualizer)
+        
+        self.tasa_bars=list()
+        
+        for i in range((CANT_CANALES)/4):
+            graf=bar_graf(i,self.tasa_bars,dialogo)
+            layout_ecualizer.addItem(graf,row=None, col=None, rowspan=1, colspan=1)
+                
+    def update(self,tasas):
+            for i in range(len(self.tasa_bars)):
+                self.tasa_bars[i].setData(x=[i-0.3,i+0.3],y=[tasas[i],tasas[i]], _callSync='off')
+
+
+
+
+
+
+
 
 class  bar_graf(pg.PlotItem):
     def __init__(self,i,tasa_bars,dialogo):

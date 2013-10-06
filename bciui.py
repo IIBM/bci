@@ -10,7 +10,7 @@ from PyQt4  import uic #leer archivo con user interface
 import os #ayuda a lo anterior y renombra archivo para largo
 
 from capture import capture_init
-from libgraf import bar_graf,Dialog_Tet,tets_display
+from libgraf import Dialog_Tet,tets_display,rates_display
 from config import *
 
 
@@ -31,22 +31,16 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
         uic.loadUi(uifile, self)
         
+        self.dialogo=Dialog_Tet()
         #matriz de graficos general
         self.matriz_tetrodos=tets_display(self.espacio_pg)
-               
+        self.matriz_tasas=rates_display(self.ecualizer_grid,self.dialogo)    
         #diagolo q da mas info del canal
-        self.dialogo=Dialog_Tet()
         
         
-        layout_ecualizer= pg.GraphicsLayout() #para ordenar los graficos(items) asi como el simil con los widgets
-        self.ecualizer_grid.setCentralItem(layout_ecualizer)
-        self.tasa_bars=list()
-        for i in range((CANT_CANALES)/4):
-            graf=bar_graf(i,self.tasa_bars,self.dialogo)
-            layout_ecualizer.addItem(graf,row=None, col=None, rowspan=1, colspan=1)
-                
-
         
+        
+ 
         #inicializo vector de muestras en cero
         self.data=np.int16(np.zeros([CANT_CANALES,CANT_DISPLAY]))        
         self.tasas_spikes=np.zeros(CANT_CANALES)
@@ -74,17 +68,15 @@ class MainWindow(QtGui.QMainWindow):
             if not self.pausa.isChecked():
                 data_new=self.datos_in.recv() 
                 self.data=np.concatenate((self.data[:,CANT_DISPLAY:], data_new),axis=1) 
-                self.tasas_spikes=calcular_tasas_spikes(self.data) 
+                self.tasas_disparo=calcular_tasas_disparo(self.data) 
             self.update_graficos()
             self.status.setText('update: '+str(int((time.time() - t1)*1000)))
           
     def update_graficos(self):    
 
         self.dialogo.update(self.data)
-        
-        for i in range(len(self.tasa_bars)):
-            self.tasa_bars[i].setData(x=[i-0.3,i+0.3],y=[self.tasas_spikes[i],self.tasas_spikes[i]], _callSync='off')
-        
+        self.matriz_tasas.update(self.tasas_disparo)
+ 
         self.matriz_tetrodos.update(self.data)
         
 
@@ -118,8 +110,12 @@ class MainWindow(QtGui.QMainWindow):
 
 
 
-def calcular_tasas_spikes(data):
+def calcular_tasas_disparo(data):
     umbrales=4*np.median(abs(signal.lfilter(b_spike,a_spike,data))/0.6745,1)
+    tasas=np.zeros(CANT_CANALES)
+    for i in range(CANT_CANALES):
+        tasas[i]=(np.sum(data[i,:]>umbrales[i]))
+        print tasas[i]
     return np.random.random(np.size(data,0))*100
 
 
