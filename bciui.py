@@ -114,7 +114,8 @@ def calcular_tasas_disparo(data):
     umbrales=4*np.median(x/0.6745,1)
     tasas=np.zeros(CANT_CANALES)
     for i in range(CANT_CANALES):
-        tasas[i]=np.sum(((x[i,:-1])>umbrales[i]) * ((x[i,1:])<umbrales[i]))
+        pasa_umbral=(x[i,:]>umbrales[i])
+        tasas[i]=np.sum(pasa_umbral[:-1] * ~ pasa_umbral[1:])
     return tasas,umbrales
 
 
