@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Tetrodo</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
@@ -22,6 +22,21 @@
    </item>
    <item row="0" column="1">
     <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QLabel" name="num_tet">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+         <underline>true</underline>
+        </font>
+       </property>
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;TextLabel&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
@@ -145,7 +160,10 @@
         </sizepolicy>
        </property>
        <property name="maximum">
-        <number>200</number>
+        <number>800</number>
+       </property>
+       <property name="singleStep">
+        <number>10</number>
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>

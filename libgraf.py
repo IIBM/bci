@@ -16,7 +16,6 @@ uifile_dialog = os.path.join(
         os.path.dirname(__file__)),'tet_dialog.ui')
 
 ch_colors=['r','y','g','c']
-CANT_DISPLAY= PAQ_USB #minimo
 
 
 pasa_bajos=signal.firwin(61, 0.01)
@@ -109,17 +108,18 @@ class  rates_display():
         ecualizer_grid.setCentralItem(layout_ecualizer)
         
         self.tasa_bars=list()
-        
+        self.tasa_graf=list()
         for i in range((CANT_CANALES)/4):
             graf=bar_graf(i,self.tasa_bars,dialogo)
             layout_ecualizer.addItem(graf,row=None, col=None, rowspan=1, colspan=1)
-                
+            self.tasa_graf.append(graf)
     def update(self,tasas):
             for i in range(len(self.tasa_bars)):
-                self.tasa_bars[i].setData(x=[i-0.3,i+0.3],y=[tasas[i],tasas[i]], _callSync='off')
-
-
-
+                self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas[i],tasas[i]], _callSync='off')
+    
+    def change_scale(self,scale):
+        for bar in self.tasa_graf:
+            bar.setYRange(0, scale)
 
 
 
@@ -133,7 +133,9 @@ class  bar_graf(pg.PlotItem):
         self.setMenuEnabled(enableMenu=False)
         self.showAxis('left', False)
         self.enableAutoRange('y', False)
-        self.setYRange(0, 100)
+        self.setXRange(-0.4,3+0.4)
+        self.enableAutoRange('x', False)
+        self.setYRange(0, 500)
         self.setMouseEnabled(x=False, y=False)
         self.hideButtons()
         tasa_bars.append(self.plot(pen='r', fillLevel=0,brush=pg.mkBrush(ch_colors[0])))
@@ -171,6 +173,7 @@ class Dialog_Tet(QtGui.QDialog):
     
     def update(self,data):
         if self.isVisible():
+            self.num_tet.setText('Tetrodo: '+str(1+self.tet_selec))
             tet=self.tet_selec
             canal=range(tet*4,tet*4+4)
             for i in range(len(self.set_canal)):
@@ -184,7 +187,7 @@ class Dialog_Tet(QtGui.QDialog):
                     self.curv_canal[i].setData(x=xtime_dialog,y=i*self.offsetcc.value()+signal.lfilter(pasa_altos, 1,data[canal[i],:]))
                 else:
                     aux=np.fft.fft(data[canal[i],:]) #/CANT_DISPLAY
-                    self.curv_canal[i].setData(x=fft_frec_dialog,y=i*self.offsetcc.value()+abs(aux[:np.size(aux)/2]))
+                    self.curv_canal[i].setData(x=fft_frec_dialog,y=i*self.offsetcc.value()*1000+abs(aux[:np.size(aux)/2]))
 
         
 

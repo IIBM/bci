@@ -36,8 +36,9 @@ def obtener_datos(com,buffer_in,dev_usb=None):
         if save_data:
             file_name = time.asctime( time.localtime(time.time())) 
             file=open(file_name,'wb')
-            l_file=0;       
-        while not com.poll():
+            file.write('FS= ' + str(FS) + ', CANT_CANALES= ' + str(CANT_CANALES) +'\n')
+            l_file=0;
+        while not com.poll(): #mientras no se recivan comandos leo
             #tomar muchas muestras concatenerlas verificarlas y luego enviar y guardar
             j=0
             while(j<PAQ_USB):
@@ -50,17 +51,24 @@ def obtener_datos(com,buffer_in,dev_usb=None):
             if save_data:
                 l_file+=1
                 data.tofile(file)
-        if save_data:   
+        if save_data:   #si se estaba guardando se cierra el archivo
             file.close()
             os.rename(file_name,file_name+'_m'+str(l_file))
             #agrega el largo del archivo
         comando=com.recv()
         save_data= comando=='nuevo'
 
+
         
         
 def capture_init(fake=False):
         #verifica usb, luego comienza captura si es correcto
+        if fake is 'file':
+            datos_mostrar, datos_entrada = Pipe(duplex = False)
+            control_usb, control_ui = Pipe(duplex = False)
+            p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,datos_entrada))
+            return p_ob_datos,control_ui,datos_mostrar 
+        
         
         if fake:
             datos_mostrar, datos_entrada = Pipe(duplex = False)
@@ -68,6 +76,7 @@ def capture_init(fake=False):
             p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,datos_entrada))
             return p_ob_datos,control_ui,datos_mostrar      
         
+   
                  
         dev_usb = connect(intanVendor,intanProduct)
         dev_usb.write(1,'\xAA',0,100)
@@ -108,5 +117,36 @@ def fake_obtener_datos(com,buffer_in,dev_usb=None):
             file.close()
             os.rename(file_name,file_name+'_m'+str(l_file))
             #agrega el largo del archivo
+        file.close()
         comando=com.recv()
         save_data= comando=='nuevo'
+
+def fake_file_obtener_datos(com,buffer_in,dev_usb=None):
+    #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
+    file_input=open('data_test','rb')
+    save_data=False
+    data=np.int16(np.zeros([CANT_CANALES,PAQ_USB]))
+    comando='normal'
+    while(comando != 'salir'):
+        if save_data:
+            file_name = time.asctime( time.localtime(time.time())) 
+            file=open(file_name,'wb')
+            l_file=0;       
+        while not com.poll():
+            j=0
+            while(j<PAQ_USB):
+                data[:,j]=np.fromfile(file_input,np.int16, CANT_CANALES)
+                basura=np.fromfile(file_input,np.int16,1)
+                j+=1
+            buffer_in.send(data) #leer file-leer usb
+            if save_data:
+                l_file+=1
+                data.tofile(file)
+        if save_data:   
+            file.close()
+            os.rename(file_name,file_name+'_m'+str(l_file))
+            #agrega el largo del archivo
+        comando=com.recv()
+        save_data= comando=='nuevo'
+    file_input.close()
+    print "termina proceso secundario"

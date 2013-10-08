@@ -31,14 +31,13 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
         uic.loadUi(uifile, self)
         
+        #diagolo q da mas info del canal
         self.dialogo=Dialog_Tet()
         #matriz de graficos general
         self.matriz_tetrodos=tets_display(self.espacio_pg)
         self.matriz_tasas=rates_display(self.ecualizer_grid,self.dialogo)    
-        #diagolo q da mas info del canal
         
-        
-        
+             
         
  
         #inicializo vector de muestras en cero
@@ -46,11 +45,11 @@ class MainWindow(QtGui.QMainWindow):
         self.tasas_spikes=np.zeros(CANT_CANALES)
         #quedo sin conectar xq no ser estandar de la interfaz
         QtCore.QObject.connect(self.autoRange, QtCore.SIGNAL("clicked()"), self.set_autoRange)
-        
+        QtCore.QObject.connect(self.bars_scale, QtCore.SIGNAL("valueChanged(int)"), self.matriz_tasas.change_scale)
         
         #preparo proceso de adquisicion de datos
         try:
-            self.p_ob_datos,self.control_sampler,self.datos_in=capture_init(fake=True)
+            self.p_ob_datos,self.control_sampler,self.datos_in=capture_init(fake='file')
         except:
             print(" ERROR EN INICIO USB")
             self.on_actionSalir()
@@ -64,11 +63,12 @@ class MainWindow(QtGui.QMainWindow):
     def update(self):
         if(self.datos_in.poll()):
             t1 = time.time()
-
+            data_new=self.datos_in.recv() 
             if not self.pausa.isChecked():
-                data_new=self.datos_in.recv() 
-                self.data=np.concatenate((self.data[:,CANT_DISPLAY:], data_new),axis=1) 
-                self.tasas_disparo=calcular_tasas_disparo(self.data) 
+                
+                #self.data=np.append(self.data[:,CANT_DISPLAY:],data_new,axis=1)
+                self.data=np.concatenate([self.data[:,PAQ_USB:], data_new],axis=1) #hace lo mismo q la de arriba... no encontre mejoras
+                self.tasas_disparo,umbrales=calcular_tasas_disparo(self.data) 
             self.update_graficos()
             self.status.setText('update: '+str(int((time.time() - t1)*1000)))
           
@@ -109,14 +109,13 @@ class MainWindow(QtGui.QMainWindow):
         #print str(self.s_canal1.value())
 
 
-
 def calcular_tasas_disparo(data):
-    umbrales=4*np.median(abs(signal.lfilter(b_spike,a_spike,data))/0.6745,1)
+    x=abs(signal.lfilter(b_spike,a_spike,data))
+    umbrales=4*np.median(x/0.6745,1)
     tasas=np.zeros(CANT_CANALES)
     for i in range(CANT_CANALES):
-        tasas[i]=(np.sum(data[i,:]>umbrales[i]))
-        print tasas[i]
-    return np.random.random(np.size(data,0))*100
+        tasas[i]=np.sum(((x[i,:-1])>umbrales[i]) * ((x[i,1:])<umbrales[i]))
+    return tasas,umbrales
 
 
         
