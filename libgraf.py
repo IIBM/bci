@@ -35,7 +35,7 @@ class  tets_display():
         self.s_modes=list() #estado del boton con el tipo de curva(fft, etc)
         self.curv_canal=list() #curvas para dsp actualizar los datos
         self.graficos=list() #graficos, para dsp poder modificar su autorange
-              
+        self.offset_cc=list()
         #graficos principales    
 
         for i in range((CANT_CANALES)/4):
@@ -49,7 +49,7 @@ class  tets_display():
             self.set_canales.append(graf.ctrlMenu.opciones.cb_c4)
             
             self.s_modes.append(graf.ctrlMenu.opciones.s_filtro)
-            
+            self.offset_cc.append(graf.ctrlMenu.opciones.offset_cc)
             self.curv_canal.append(graf.plot(pen=ch_colors[0]))  
             self.curv_canal.append(graf.plot(pen=ch_colors[1]))  
             self.curv_canal.append(graf.plot(pen=ch_colors[2]))  
@@ -77,17 +77,17 @@ class  tets_display():
                 canales_fft.append(i)
 
         for i in canales_mostrados_sf:
-            self.curv_canal[i].setData(x=xtime,y=data[i,::subm], _callSync='off')
+            self.curv_canal[i].setData(x=xtime,y=data[i,::subm]+self.offset_cc[i/4].value()*i, _callSync='off')
         
         if len(canales_pasa_bajos) !=0:
             aux=signal.lfilter(pasa_bajos, 1,data[canales_pasa_bajos,:]) 
             for i in range(len(canales_pasa_bajos)):
-                self.curv_canal[canales_pasa_bajos[i]].setData(x=xtime,y=aux[i,::subm], _callSync='off')
+                self.curv_canal[canales_pasa_bajos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*i, _callSync='off')
         
         if len(canales_pasa_altos) !=0:
             aux=signal.lfilter(pasa_altos, 1,data[canales_pasa_altos,:]) 
             for i in range(len(canales_pasa_altos)):
-                self.curv_canal[canales_pasa_altos[i]].setData(x=xtime,y=aux[i,::subm], _callSync='off')    
+                self.curv_canal[canales_pasa_altos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*i, _callSync='off')    
         
         if len(canales_fft) !=0:
             aux=np.fft.fft(data[canales_fft,:]) #/CANT_DISPLAY
