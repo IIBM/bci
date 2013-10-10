@@ -19,7 +19,7 @@ ch_colors=['r','y','g','c']
 
 pasa_bajos=signal.firwin(61, 0.01)
 pasa_altos=signal.firwin(61, 0.01, pass_zero=False)
-subm=25
+subm=10
 xtime=np.arange(0,float(config.CANT_DISPLAY)/float(config.FS),subm/float(config.FS))
 fft_frec= np.linspace(0, config.FS/2, config.CANT_DISPLAY/2/subm)
 xtime_dialog=np.linspace(0,float(config.CANT_DISPLAY)/float(config.FS),config.CANT_DISPLAY)
