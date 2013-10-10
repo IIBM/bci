@@ -68,7 +68,7 @@ def obtener_datos(com,buffer_in,dev_usb):
 
         
         
-def capture_init(fake=False):
+def capture_init():
         #verifica usb, luego comienza captura si es correcto
         if hasattr(config, 'FAKE_FILE'):
             datos_mostrar, datos_entrada = Pipe(duplex = False)
@@ -94,7 +94,7 @@ def capture_init(fake=False):
         
         return p_ob_datos,control_ui,datos_mostrar
 
-def fake_obtener_datos(com,buffer_in,dev_usb=None):
+def fake_obtener_datos(com,buffer_in):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     save_data=False
     data=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
@@ -127,7 +127,7 @@ def fake_obtener_datos(com,buffer_in,dev_usb=None):
         comando=com.recv()
         save_data= comando=='nuevo'
 
-def fake_file_obtener_datos(com,buffer_in,dev_usb=None):
+def fake_file_obtener_datos(com,buffer_in):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     file_input=open('data_test','rb')
     save_data=False

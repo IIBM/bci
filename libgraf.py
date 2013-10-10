@@ -74,25 +74,24 @@ class  tets_display():
                 canales_pasa_altos.append(i)
             else:
                 canales_fft.append(i)
-
-        for i in canales_mostrados_sf:
-            self.curv_canal[i].setData(x=xtime,y=data[i,::subm]+self.offset_cc[i/4].value()*i%4, _callSync='off')
         
+        for i in canales_mostrados_sf:            
+            self.curv_canal[i].setData(x=xtime,y=data[i,::subm]+self.offset_cc[i/4].value()*(i%4), _callSync='off')
         if len(canales_pasa_bajos) !=0:
             aux=signal.lfilter(pasa_bajos, 1,data[canales_pasa_bajos,:]) 
             for i in range(len(canales_pasa_bajos)):
-                self.curv_canal[canales_pasa_bajos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*i%4, _callSync='off')
+                self.curv_canal[canales_pasa_bajos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*(i%4), _callSync='off')
         
         if len(canales_pasa_altos) !=0:
             aux=signal.lfilter(pasa_altos, 1,data[canales_pasa_altos,:]) 
             for i in range(len(canales_pasa_altos)):
-                self.curv_canal[canales_pasa_altos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*i%4, _callSync='off')    
+                self.curv_canal[canales_pasa_altos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*(i%4), _callSync='off')    
         
         if len(canales_fft) !=0:
             aux=np.fft.fft(data[canales_fft,:]) #/config.CANT_DISPLAY
             aux = abs(aux[:,:np.size(aux,1)/2:subm])
             for i in range(len(canales_fft)):
-                self.curv_canal[canales_fft[i]].setData(x=fft_frec,y=aux[i,:]+self.offset_cc[i/4].value()*i%4, _callSync='off')  
+                self.curv_canal[canales_fft[i]].setData(x=fft_frec,y=aux[i,:]+self.offset_cc[i/4].value()*(i%4), _callSync='off')  
 
     
     def setAutoRange(self,state):

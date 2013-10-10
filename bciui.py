@@ -36,9 +36,6 @@ class MainWindow(QtGui.QMainWindow):
         #matriz de graficos general
         self.matriz_tetrodos=tets_display(self.espacio_pg)
         self.matriz_tasas=rates_display(self.ecualizer_grid,self.dialogo)    
-        
-             
-        
  
         #inicializo vector de muestras en cero
         self.data=np.int16(np.zeros([config.CANT_CANALES,config.CANT_DISPLAY]))        
