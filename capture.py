@@ -3,7 +3,7 @@ import numpy as np #vectores, operaciones matematicas
 import time #hora local 
 import usb.core
 import usb.util
-from config import *
+import config
 import os 
 
 
@@ -26,27 +26,34 @@ def connect(idV,idP):
 
     return dev
     
+def parser(data,tramas_leidas,lectura):
+    cadena=lectura.tostring() #consume mas memoria pero va ligeramente mas rapido asi
+    for i in range(tramas_leidas,len(data)/config.LARGO_TRAMA):
+        data[:,i]=struct.unpack('>'+str(config.CANT_CANALES)+'h',cadena) 
+        #con respecto al timestamp, puede tomarse como un dato mas, no deberia modificar nada
+        #valores[:,i]=struct.unpack('>32h',data[5+i*LARGO_TRAMA:69+i*LARGO_TRAMA].tostring())
+
+
     
-def obtener_datos(com,buffer_in,dev_usb=None):
+def obtener_datos(com,buffer_in,dev_usb):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     save_data=False
-    data=np.int16(np.zeros([CANT_CANALES,PAQ_USB]))
+    data=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
     comando='normal'
     while(comando != 'salir'):
         if save_data:
             file_name = time.asctime( time.localtime(time.time())) 
             file=open(file_name,'wb')
-            file.write('FS= ' + str(FS) + ', CANT_CANALES= ' + str(CANT_CANALES) +'\n')
+            file.write('config.FS= ' + str(config.FS) + ', config.CANT_CANALES= ' + str(config.CANT_CANALES) +'\n')
             l_file=0;
         while not com.poll(): #mientras no se recivan comandos leo
             #tomar muchas muestras concatenerlas verificarlas y luego enviar y guardar
-            j=0
-            while(j<PAQ_USB):
-                ret = dev.read(0x81,(70)*100,0,100)
-                #aca hay q parsear...
-                for i in range(100):
-                    data[i,:]=0 #una columna ya parseada
-                j+=100
+            tramas_leidas=0
+            while tramas_leidas != PAQ_USB:
+                lectura = dev_usb.read(0x81,LARGO_TRAMA*(PAQ_USB-tramas_leidas),0,100)                
+                parser(data,tramas_leidas,lectura) #castear todo junto es ligeramente mas rapido
+                tramas_leidas+=len(data)/LARGO_TRAMA
+
             buffer_in.send(data) #leer file-leer usb
             if save_data:
                 l_file+=1
@@ -63,14 +70,14 @@ def obtener_datos(com,buffer_in,dev_usb=None):
         
 def capture_init(fake=False):
         #verifica usb, luego comienza captura si es correcto
-        if fake is 'file':
+        if hasattr(config, 'FAKE_FILE'):
             datos_mostrar, datos_entrada = Pipe(duplex = False)
             control_usb, control_ui = Pipe(duplex = False)
             p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,datos_entrada))
             return p_ob_datos,control_ui,datos_mostrar 
         
         
-        if fake:
+        if hasattr(config, 'FAKE'):
             datos_mostrar, datos_entrada = Pipe(duplex = False)
             control_usb, control_ui = Pipe(duplex = False)
             p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,datos_entrada))
@@ -90,7 +97,7 @@ def capture_init(fake=False):
 def fake_obtener_datos(com,buffer_in,dev_usb=None):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     save_data=False
-    data=np.int16(np.zeros([CANT_CANALES,PAQ_USB]))
+    data=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
     comando='normal'
     while(comando != 'salir'):
         if save_data:
@@ -100,9 +107,9 @@ def fake_obtener_datos(com,buffer_in,dev_usb=None):
         while not com.poll():
             i=0
             j=0
-            while(j<PAQ_USB):
+            while(j<config.PAQ_USB):
                 i=0
-                while(i<CANT_CANALES):
+                while(i<config.CANT_CANALES):
                     new=(np.random.random()-0.5)*100
                     while(new is 0):
                         new=(np.random.random()-j*i)*100
@@ -117,7 +124,6 @@ def fake_obtener_datos(com,buffer_in,dev_usb=None):
             file.close()
             os.rename(file_name,file_name+'_m'+str(l_file))
             #agrega el largo del archivo
-        file.close()
         comando=com.recv()
         save_data= comando=='nuevo'
 
@@ -125,7 +131,7 @@ def fake_file_obtener_datos(com,buffer_in,dev_usb=None):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     file_input=open('data_test','rb')
     save_data=False
-    data=np.int16(np.zeros([CANT_CANALES,PAQ_USB]))
+    data=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
     comando='normal'
     while(comando != 'salir'):
         if save_data:
@@ -134,8 +140,8 @@ def fake_file_obtener_datos(com,buffer_in,dev_usb=None):
             l_file=0;       
         while not com.poll():
             j=0
-            while(j<PAQ_USB):
-                data[:,j]=np.fromfile(file_input,np.int16, CANT_CANALES)
+            while(j<config.PAQ_USB):
+                data[:,j]=np.fromfile(file_input,np.int16, config.CANT_CANALES)
                 basura=np.fromfile(file_input,np.int16,1)
                 j+=1
             buffer_in.send(data) #leer file-leer usb

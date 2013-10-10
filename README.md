@@ -16,7 +16,7 @@ bci
 
 **Nota:** 
 
-  al llamar a capture_init() si se agrega el argumento fake=True, se graficaran señales simuladas
+  al definir la variable FAKE o FAKE_FILE en config.py se simulan las entradas
 
 **Dependencias:**
 

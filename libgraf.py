@@ -4,8 +4,7 @@ import os
 from PyQt4  import uic
 from scipy import signal
 import numpy as np
-from config import *
-
+import config
 
 uifile_menu = os.path.join(
     os.path.abspath(
@@ -21,10 +20,10 @@ ch_colors=['r','y','g','c']
 pasa_bajos=signal.firwin(61, 0.01)
 pasa_altos=signal.firwin(61, 0.01, pass_zero=False)
 subm=25
-xtime=np.arange(0,float(CANT_DISPLAY)/float(FS),subm/float(FS))
-fft_frec= np.linspace(0, FS/2, CANT_DISPLAY/2/subm)
-xtime_dialog=np.linspace(0,float(CANT_DISPLAY)/float(FS),CANT_DISPLAY)
-fft_frec_dialog= np.linspace(0, FS/2, CANT_DISPLAY/2)
+xtime=np.arange(0,float(config.CANT_DISPLAY)/float(config.FS),subm/float(config.FS))
+fft_frec= np.linspace(0, config.FS/2, config.CANT_DISPLAY/2/subm)
+xtime_dialog=np.linspace(0,float(config.CANT_DISPLAY)/float(config.FS),config.CANT_DISPLAY)
+fft_frec_dialog= np.linspace(0, config.FS/2, config.CANT_DISPLAY/2)
 
 class  tets_display():
     def __init__(self,espacio_pg):
@@ -38,7 +37,7 @@ class  tets_display():
         self.offset_cc=list()
         #graficos principales    
 
-        for i in range((CANT_CANALES)/4):
+        for i in range((config.CANT_CANALES+3)/4):
             graf = layout_graficos.addPlot(row=None, col=None, rowspan=1, colspan=1)
             graf.setTitle('Tetrodo ' + str(i+1))
             graf.ctrlMenu = mymenu()
@@ -64,7 +63,7 @@ class  tets_display():
         canales_pasa_altos = list()
         canales_fft = list()
         
-        for i in range(CANT_CANALES):
+        for i in range(config.CANT_CANALES):
             if self.set_canales[i].isChecked() == 0:
                 self.curv_canal[i].clear()
             elif self.s_modes[i/4].currentIndex() ==0:
@@ -77,23 +76,23 @@ class  tets_display():
                 canales_fft.append(i)
 
         for i in canales_mostrados_sf:
-            self.curv_canal[i].setData(x=xtime,y=data[i,::subm]+self.offset_cc[i/4].value()*i, _callSync='off')
+            self.curv_canal[i].setData(x=xtime,y=data[i,::subm]+self.offset_cc[i/4].value()*i%4, _callSync='off')
         
         if len(canales_pasa_bajos) !=0:
             aux=signal.lfilter(pasa_bajos, 1,data[canales_pasa_bajos,:]) 
             for i in range(len(canales_pasa_bajos)):
-                self.curv_canal[canales_pasa_bajos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*i, _callSync='off')
+                self.curv_canal[canales_pasa_bajos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*i%4, _callSync='off')
         
         if len(canales_pasa_altos) !=0:
             aux=signal.lfilter(pasa_altos, 1,data[canales_pasa_altos,:]) 
             for i in range(len(canales_pasa_altos)):
-                self.curv_canal[canales_pasa_altos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*i, _callSync='off')    
+                self.curv_canal[canales_pasa_altos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*i%4, _callSync='off')    
         
         if len(canales_fft) !=0:
-            aux=np.fft.fft(data[canales_fft,:]) #/CANT_DISPLAY
+            aux=np.fft.fft(data[canales_fft,:]) #/config.CANT_DISPLAY
             aux = abs(aux[:,:np.size(aux,1)/2:subm])
             for i in range(len(canales_fft)):
-                self.curv_canal[canales_fft[i]].setData(x=fft_frec,y=aux[i,:], _callSync='off')  
+                self.curv_canal[canales_fft[i]].setData(x=fft_frec,y=aux[i,:]+self.offset_cc[i/4].value()*i%4, _callSync='off')  
 
     
     def setAutoRange(self,state):
@@ -109,7 +108,7 @@ class  rates_display():
         
         self.tasa_bars=list()
         self.tasa_graf=list()
-        for i in range((CANT_CANALES)/4):
+        for i in range((config.CANT_CANALES)/4):
             graf=bar_graf(i,self.tasa_bars,dialogo)
             layout_ecualizer.addItem(graf,row=None, col=None, rowspan=1, colspan=1)
             self.tasa_graf.append(graf)
@@ -186,7 +185,7 @@ class Dialog_Tet(QtGui.QDialog):
                 elif self.pasabajos.isChecked():
                     self.curv_canal[i].setData(x=xtime_dialog,y=i*self.offsetcc.value()+signal.lfilter(pasa_altos, 1,data[canal[i],:]))
                 else:
-                    aux=np.fft.fft(data[canal[i],:]) #/CANT_DISPLAY
+                    aux=np.fft.fft(data[canal[i],:]) #/config.CANT_DISPLAY
                     self.curv_canal[i].setData(x=fft_frec_dialog,y=i*self.offsetcc.value()*1000+abs(aux[:np.size(aux)/2]))
 
         
