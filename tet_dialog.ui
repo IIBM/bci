@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>914</width>
+    <width>913</width>
     <height>467</height>
    </rect>
   </property>
@@ -184,6 +184,13 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="maximizar">
+       <property name="text">
+        <string>Maximizar</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="cerrar">
        <property name="text">
         <string>Cerrar</string>
@@ -216,6 +223,22 @@
     <hint type="destinationlabel">
      <x>300</x>
      <y>213</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>maximizar</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>showMaximized()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>853</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>456</x>
+     <y>233</y>
     </hint>
    </hints>
   </connection>

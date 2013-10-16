@@ -16,20 +16,19 @@ def connect(idV,idP):
     # find our device
     dev = usb.core.find(idVendor=idV, idProduct=idP)
     msg = ('Device idVendor = ' + str(hex(idV)) + ' and idProduct = ' + str(hex(idP)) + ' not found')
-
     # was it found?
     if dev is None:
         raise ValueError(msg)
-
     # set the active configuration. With no arguments, the first
     # configuration will be the active one
     dev.set_configuration()
-
     return dev
-    
-def parser(data,tramas_leidas,lectura):
-    cadena=lectura.tostring() #consume mas memoria pero va ligeramente mas rapido asi
-    for i in range(tramas_leidas,len(lectura)/config.LARGO_TRAMA):
+   
+
+
+def parser(data,lectura):
+    cadena=lectura[:config.LARGO_TRAMA*config.PAQ_USB].tostring()
+    for i in range(0,config.PAQ_USB):
         data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
         if lectura[i*config.LARGO_TRAMA]!=255 or lectura[(i+1)*config.LARGO_TRAMA-1]!=70:
             print  "paquete roto"
@@ -40,23 +39,23 @@ def parser(data,tramas_leidas,lectura):
     
 def obtener_datos(com,buffer_in,dev_usb):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
+    paq_data=config.LARGO_TRAMA*config.PAQ_USB
     dev_usb.write(1,'\xAA',0,100)
-    time.sleep(0.05)
     save_data=False
     data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
     comando='normal'
 
     while(comando != 'salir'):
+        
+        lectura = dev_usb.read(0x81,paq_data,0,400)                
         while not com.poll(): #mientras no se recivan comandos leo
             #tomar muchas muestras concatenerlas verificarlas y luego enviar y guardar
-            tramas_leidas=0
-            while tramas_leidas != config.PAQ_USB:
+            while len(lectura) < paq_data:
                 #config.LARGO_TRAMA*2**(n.bit_length() - 1)
-                lectura = dev_usb.read(0x81,config.LARGO_TRAMA*(config.PAQ_USB-tramas_leidas),0,200)                
-                parser(data,tramas_leidas,lectura) #castear todo junto es ligeramente mas rapido
-                tramas_leidas+=len(lectura)/config.LARGO_TRAMA
-                print len(lectura)/config.LARGO_TRAMA
-            buffer_in.send(data) #leer file-leer usb
+                lectura.extend(dev_usb.read(0x81,paq_data,0,100))
+            parser(data,lectura) #castear todo junto es ligeramente mas rapido
+            lectura=lectura[paq_data:]
+            buffer_in.send(data)
             if save_data:
                 l_file+=1
                 data.tofile(file)
@@ -85,15 +84,12 @@ def capture_init():
             reg_files=file_handle()
             datos_mostrar, datos_entrada = Pipe(duplex = False)
             control_usb, control_ui = Pipe(duplex = False)
-            print "casa"
             p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,datos_entrada,reg_files))
             return p_ob_datos,control_ui,datos_mostrar      
         
    
                  
         dev_usb = connect(intanVendor,intanProduct)
-        
-        
         datos_mostrar, datos_entrada = Pipe(duplex = False)
         control_usb, control_ui = Pipe(duplex = False)
         p_ob_datos = Process(target=obtener_datos, args=(control_usb,datos_entrada,dev_usb))
@@ -112,10 +108,9 @@ def fake_obtener_datos(com,buffer_in,reg_files):
             while(j<config.PAQ_USB):
                 i=0
                 while(i<config.CANT_CANALES):
-                    new=(np.random.random()-0.5)*100
+                    new=(np.random.random())*100
                     while(new is 0):
                         new=(np.random.random()-j*i)*100
-
                     data[i,j]=new
                     i+=1
                 j+=1

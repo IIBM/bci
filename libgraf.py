@@ -107,12 +107,12 @@ class  rates_display():
         
         self.tasa_bars=list()
         self.tasa_graf=list()
-        for i in range((config.CANT_CANALES)/4):
+        for i in range((config.CANT_CANALES+3)/4):
             graf=bar_graf(i,self.tasa_bars,dialogo)
             layout_ecualizer.addItem(graf,row=None, col=None, rowspan=1, colspan=1)
             self.tasa_graf.append(graf)
     def update(self,tasas):
-            for i in range(len(self.tasa_bars)):
+            for i in range((config.CANT_CANALES)/4*4):
                 self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas[i],tasas[i]], _callSync='off')
     
     def change_scale(self,scale):

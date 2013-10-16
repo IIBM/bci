@@ -78,8 +78,6 @@ class MainWindow(QtGui.QMainWindow):
  
         self.matriz_tetrodos.update(self.data)
         
-
-
     
     def on_actionDetener(self):
         #detiene el guardado de datos
