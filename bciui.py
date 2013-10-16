@@ -38,18 +38,21 @@ class MainWindow(QtGui.QMainWindow):
         self.matriz_tasas=rates_display(self.ecualizer_grid,self.dialogo)    
  
         #inicializo vector de muestras en cero
-        self.data=np.int16(np.zeros([config.CANT_CANALES,config.CANT_DISPLAY]))        
+        self.data=np.uint16(np.zeros([config.CANT_CANALES,config.CANT_DISPLAY]))        
         self.tasas_spikes=np.zeros(config.CANT_CANALES)
         #quedo sin conectar xq no ser estandar de la interfaz
         QtCore.QObject.connect(self.autoRange, QtCore.SIGNAL("clicked()"), self.set_autoRange)
         QtCore.QObject.connect(self.bars_scale, QtCore.SIGNAL("valueChanged(int)"), self.matriz_tasas.change_scale)
+        self.run()
         
         #preparo proceso de adquisicion de datos
-        try:
-            self.p_ob_datos,self.control_sampler,self.datos_in=capture_init()
-        except:
-            print(" ERROR EN INICIO USB")
-            self.close()
+    def run(self):      
+        self.p_ob_datos,self.control_sampler,self.datos_in=capture_init()
+        #try:
+            
+        #except:
+            #print(" ERROR EN INICIO USB")
+            #self.close()
         
         self.p_ob_datos.start()
             
@@ -70,7 +73,6 @@ class MainWindow(QtGui.QMainWindow):
             self.status.setText('update: '+str(int((time.time() - t1)*1000)))
           
     def update_graficos(self):    
-
         self.dialogo.update(self.data)
         self.matriz_tasas.update(self.tasas_disparo)
  
@@ -82,18 +84,21 @@ class MainWindow(QtGui.QMainWindow):
     def on_actionDetener(self):
         #detiene el guardado de datos
         self.control_sampler.send('detener')
-    
-    def on_actionNuevo(self):
-        #Comienza el guardado de datos, abre el archivo etc
-        self.control_sampler.send('nuevo')
-       
 
+    def on_actionComenzar(self):
+        self.control_sampler.send('guardar')
+        
     def on_actionSalir(self):
         self.control_sampler.send('salir')
         self.p_ob_datos.join(1)
         self.dialogo.close()
         self.close()
     
+    def on_actionNuevo(self):
+        self.control_sampler.send('salir')
+        self.p_ob_datos.join(1)
+        self.run()
+        
     def set_autoRange(self):
         if self.autoRange.isChecked():
             self.matriz_tetrodos.setAutoRange(True)
@@ -107,7 +112,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
 def calcular_tasas_disparo(data):
-    x=abs(signal.lfilter(b_spike,a_spike,data))
+    x=abs(signal.lfilter(b_spike,a_spike,data-np.mean(data,0)))
     umbrales=4*np.median(x/0.6745,1)
     tasas=np.zeros(config.CANT_CANALES)
     for i in range(config.CANT_CANALES):

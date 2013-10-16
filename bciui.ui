@@ -15,15 +15,8 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="1" column="0">
-     <widget class="GraphicsView" name="ecualizer_grid">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>100</height>
-       </size>
-      </property>
-     </widget>
+    <item row="0" column="0" colspan="2">
+     <widget class="GraphicsView" name="espacio_pg"/>
     </item>
     <item row="1" column="1">
      <layout class="QGridLayout" name="gridLayout">
@@ -102,8 +95,15 @@
       </item>
      </layout>
     </item>
-    <item row="0" column="0" colspan="2">
-     <widget class="GraphicsView" name="espacio_pg"/>
+    <item row="1" column="0">
+     <widget class="GraphicsView" name="ecualizer_grid">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>100</height>
+       </size>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -120,13 +120,14 @@
     <property name="title">
      <string>Menu</string>
     </property>
+    <addaction name="actionNuevo"/>
     <addaction name="actionSalir"/>
    </widget>
    <widget class="QMenu" name="menuGrabar">
     <property name="title">
      <string>Grabar</string>
     </property>
-    <addaction name="actionNuevo"/>
+    <addaction name="actionComenzar"/>
     <addaction name="actionDetener"/>
    </widget>
    <addaction name="menuMenu"/>
@@ -143,14 +144,6 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <action name="actionNuevo">
-   <property name="text">
-    <string>Comenzar Nuevo</string>
-   </property>
-   <property name="shortcut">
-    <string>Alt+N</string>
-   </property>
-  </action>
   <action name="actionDetener">
    <property name="text">
     <string>Detener</string>
@@ -165,6 +158,19 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionNuevo">
+   <property name="text">
+    <string>Nuevo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionComenzar">
+   <property name="text">
+    <string>Comenzar</string>
    </property>
   </action>
  </widget>
@@ -225,10 +231,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionComenzar</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>on_actionComenzar()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>379</x>
+     <y>288</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>on_actionDetener()</slot>
   <slot>on_actionSalir()</slot>
   <slot>on_actionNuevo()</slot>
+  <slot>on_actionComenzar()</slot>
  </slots>
 </ui>
