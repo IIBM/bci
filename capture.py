@@ -5,8 +5,9 @@ import usb.core
 import usb.util
 import config
 import os 
-import struct
+import array
 from pyqtgraph.Qt import QtGui
+
 
 intanVendor = 0x1CBE
 intanProduct = 0x0003
@@ -46,23 +47,26 @@ def obtener_datos(com,buffer_in,dev_usb):
     comando='normal'
 
     while(comando != 'salir'):
-        
+        t1 = time.time()
         lectura = dev_usb.read(0x81,paq_data,0,400)                
         while not com.poll(): #mientras no se recivan comandos leo
             #tomar muchas muestras concatenerlas verificarlas y luego enviar y guardar
+            #lectura = dev_usb.read(0x81,paq_data,0,200)
+            
             while len(lectura) < paq_data:
                 #config.LARGO_TRAMA*2**(n.bit_length() - 1)
-                lectura.extend(dev_usb.read(0x81,paq_data,0,100))
-            parser(data,lectura) #castear todo junto es ligeramente mas rapido
+                lectura.extend(dev_usb.read(0x81,paq_data,0,10))
+             
+            
+            #parser(data,lectura) #castear todo junto es ligeramente mas rapido
+            t1 = time.time()
+            buffer_in.send(lectura[:paq_data])
+            print time.time()-t1 
             lectura=lectura[paq_data:]
-            buffer_in.send(data)
+            
+            
             if save_data:
-                l_file+=1
-                data.tofile(file)
-        if save_data:   #si se estaba guardando se cierra el archivo
-            file.close()
-            os.rename(file_name,file_name+'_m'+str(l_file))
-            #agrega el largo del archivo
+                pass
         comando=com.recv()
         save_data= comando=='guardar'
     dev_usb.write(1,'\xBB',0,100)
@@ -99,22 +103,17 @@ def capture_init():
 def fake_obtener_datos(com,buffer_in,reg_files):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     save_data=False
-    data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
     comando='normal'
     while(comando != 'salir'):    
-        while not com.poll():
-            i=0
-            j=0
-            while(j<config.PAQ_USB):
-                i=0
-                while(i<config.CANT_CANALES):
-                    new=(np.random.random())*100
-                    while(new is 0):
-                        new=(np.random.random()-j*i)*100
-                    data[i,j]=new
-                    i+=1
-                j+=1
-            buffer_in.send(data) #leer file-leer usb
+        while not com.poll():           
+            lectura=array.array('B')
+            while len(lectura) < (config.LARGO_TRAMA*config.PAQ_USB):
+                lectura.append(20)
+            
+            t1 = time.time()
+                
+            buffer_in.send(lectura) #leer file-leer usb
+            print time.time()-t1 
             if save_data:
                 reg_files.save(data) 
 
@@ -154,17 +153,19 @@ def fake_file_obtener_datos(com,buffer_in):
     print "termina proceso secundario"
 
 class file_handle():
-    def __init__(self):
-        self.generic_file_name = QtGui.QFileDialog.getSaveFileName()
-        #archivo cabecera
-        file_head=open(self.generic_file_name + '0','w')
-        file_head.write("FS,LARGO_TRAMA,FECHA,LARGO_ARCHIVO,ARCHIVOS\n")
-        self.paqxfile=config.MAX_SIZE_FILE/config.LARGO_TRAMA/config.PAQ_USB
-        self.part=1 #parte del registro todo corrido
-        self.file_part=open(self.generic_file_name + str(self.part),'wb')
-        self.paq_in_part=0
+    #def __init__(self):
+        #self.generic_file_name = QtGui.QFileDialog.getSaveFileName()
+        ##archivo cabecera
+        #file_head=open(self.generic_file_name + '0','w')
+        #file_head.write("FS,LARGO_TRAMA,FECHA,LARGO_ARCHIVO,ARCHIVOS\n")
+        #self.paqxfile=config.MAX_SIZE_FILE/config.LARGO_TRAMA/config.PAQ_USB
+        #self.part=1 #parte del registro todo corrido
+        #self.file_part=open(self.generic_file_name + str(self.part),'wb')
+        #self.paq_in_part=0
 
     def save(self,data):
+        
+        
         if(self.paq_in_part<self.paqxfile):
             data.tofile(self.file_part)
             self.paq_in_part+=1

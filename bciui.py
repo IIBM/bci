@@ -12,7 +12,7 @@ import os #ayuda a lo anterior y renombra archivo para largo
 from capture import capture_init
 from libgraf import Dialog_Tet,tets_display,rates_display
 import config
-
+import struct
 
 
 #Filtros: (revisar orden del filtro, tardan demasiado)
@@ -25,6 +25,12 @@ uifile = os.path.join(
     os.path.abspath(
         os.path.dirname(__file__)),'bciui.ui')
 
+def parser(data,lectura):
+    cadena=lectura.tostring()
+    for i in range(0,config.PAQ_USB):
+        data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
+        #if lectura[i*config.LARGO_TRAMA]!=255 or lectura[(i+1)*config.LARGO_TRAMA-1]!=70:
+        #    print  "paquete roto"        
         
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -38,7 +44,8 @@ class MainWindow(QtGui.QMainWindow):
         self.matriz_tasas=rates_display(self.ecualizer_grid,self.dialogo)    
  
         #inicializo vector de muestras en cero
-        self.data=np.uint16(np.zeros([config.CANT_CANALES,config.CANT_DISPLAY]))        
+        self.data=np.uint16(np.zeros([config.CANT_CANALES,config.CANT_DISPLAY]))
+        self.data_new=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))       
         self.tasas_spikes=np.zeros(config.CANT_CANALES)
         #quedo sin conectar xq no ser estandar de la interfaz
         QtCore.QObject.connect(self.autoRange, QtCore.SIGNAL("clicked()"), self.set_autoRange)
@@ -58,16 +65,19 @@ class MainWindow(QtGui.QMainWindow):
             
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(config.TIEMPO_DISPLAY) #esto deberia cambiarse con un boton, ojo q afecta largo de vectores
+        self.timer.start(0) #esto deberia cambiarse con un boton, ojo q afecta largo de vectores
 
     def update(self):
         if(self.datos_in.poll()):
             t1 = time.time()
-            data_new=self.datos_in.recv() 
+            lectura=self.datos_in.recv()
+            #t1 = time.time()
+            parser(self.data_new,lectura)
+            #print str(time.time()-t1) +'parser'
             if not self.pausa.isChecked():
                 
                 #self.data=np.append(self.data[:,config.CANT_DISPLAY:],data_new,axis=1)
-                self.data=np.concatenate([self.data[:,config.PAQ_USB:], data_new],axis=1) #hace lo mismo q la de arriba... no encontre mejoras
+                self.data=np.concatenate([self.data[:,config.PAQ_USB:], self.data_new],axis=1) #hace lo mismo q la de arriba... no encontre mejoras
                 self.tasas_disparo,umbrales=calcular_tasas_disparo(self.data) 
             self.update_graficos()
             self.status.setText('update: '+str(int((time.time() - t1)*1000)))

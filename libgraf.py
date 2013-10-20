@@ -1,7 +1,7 @@
-from pyqtgraph.Qt import QtGui, QtCore #interfaz en general
+from pyqtgraph.Qt import QtCore #interfaz en general
 import pyqtgraph as pg #graficos
 import os
-from PyQt4  import uic
+from PyQt4  import uic,QtGui
 from scipy import signal
 import numpy as np
 import config
@@ -19,7 +19,7 @@ ch_colors=['r','y','g','c']
 
 pasa_bajos=signal.firwin(61, 0.01)
 pasa_altos=signal.firwin(61, 0.01, pass_zero=False)
-subm=10
+subm=20
 xtime=np.arange(0,float(config.CANT_DISPLAY)/float(config.FS),subm/float(config.FS))
 fft_frec= np.linspace(0, config.FS/2, config.CANT_DISPLAY/2/subm)
 xtime_dialog=np.linspace(0,float(config.CANT_DISPLAY)/float(config.FS),config.CANT_DISPLAY)
@@ -156,6 +156,7 @@ class Dialog_Tet(QtGui.QDialog):
     def __init__(self):
         QtGui.QDialog.__init__(self)
         uic.loadUi(uifile_dialog,self)
+        self.setWindowFlags(QtCore.Qt.Window) 
         self.pg_widget.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
         self.curv_canal=list()
         self.curv_canal.append(self.pg_widget.plot(pen=ch_colors[0]))  
