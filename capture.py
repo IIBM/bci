@@ -1,4 +1,4 @@
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Pipe,Array
 import numpy as np #vectores, operaciones matematicas
 import time #hora local 
 import usb.core
@@ -38,7 +38,7 @@ def parser(data,lectura):
 
 
     
-def obtener_datos(com,buffer_in,dev_usb):
+def obtener_datos(com,buffer_in,dev_usb,shared_mem):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     paq_data=config.LARGO_TRAMA*config.PAQ_USB
     dev_usb.write(1,'\xAA',0,100)
@@ -60,7 +60,9 @@ def obtener_datos(com,buffer_in,dev_usb):
             
             #parser(data,lectura) #castear todo junto es ligeramente mas rapido
             t1 = time.time()
-            buffer_in.send(lectura[:paq_data])
+            
+            #buffer_in.send()
+            shared_mem=lectura[:paq_data]
             print time.time()-t1 
             lectura=lectura[paq_data:]
             
@@ -75,6 +77,8 @@ def obtener_datos(com,buffer_in,dev_usb):
         
         
 def capture_init():
+        lectura_nueva = Array('B',config.PAQ_USB*config.LARGO_TRAMA)
+
         #verifica usb, luego comienza captura si es correcto
         if hasattr(config, 'FAKE_FILE'):
             reg_files=file_handle()
@@ -88,19 +92,19 @@ def capture_init():
             reg_files=file_handle()
             datos_mostrar, datos_entrada = Pipe(duplex = False)
             control_usb, control_ui = Pipe(duplex = False)
-            p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,datos_entrada,reg_files))
-            return p_ob_datos,control_ui,datos_mostrar      
+            p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,datos_entrada,reg_files,lectura_nueva))
+            return p_ob_datos,control_ui,datos_mostrar,lectura_nueva      
         
    
                  
         dev_usb = connect(intanVendor,intanProduct)
         datos_mostrar, datos_entrada = Pipe(duplex = False)
         control_usb, control_ui = Pipe(duplex = False)
-        p_ob_datos = Process(target=obtener_datos, args=(control_usb,datos_entrada,dev_usb))
+        p_ob_datos = Process(target=obtener_datos, args=(control_usb,datos_entrada,dev_usb,lectura_nueva))
         
         return p_ob_datos,control_ui,datos_mostrar
 
-def fake_obtener_datos(com,buffer_in,reg_files):
+def fake_obtener_datos(com,buffer_in,reg_files,lectura_nueva):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     save_data=False
     comando='normal'
@@ -108,15 +112,14 @@ def fake_obtener_datos(com,buffer_in,reg_files):
         while not com.poll():           
             lectura=array.array('B')
             while len(lectura) < (config.LARGO_TRAMA*config.PAQ_USB):
-                lectura.append(20)
+                lectura.append(205)
             
-            t1 = time.time()
+            #t1 = time.time()
                 
-            buffer_in.send(lectura) #leer file-leer usb
-            print time.time()-t1 
+            lectura_nueva=lectura
+            #print time.time()-t1 
             if save_data:
                 reg_files.save(data) 
-
             #agrega el largo del archivo
         comando=com.recv()
         save_data= comando=='guardar'   

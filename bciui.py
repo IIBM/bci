@@ -13,7 +13,7 @@ from capture import capture_init
 from libgraf import Dialog_Tet,tets_display,rates_display
 import config
 import struct
-
+import array
 
 #Filtros: (revisar orden del filtro, tardan demasiado)
 
@@ -26,7 +26,9 @@ uifile = os.path.join(
         os.path.dirname(__file__)),'bciui.ui')
 
 def parser(data,lectura):
-    cadena=lectura.tostring()
+    aux=array.array('B')
+    aux.extend(lectura)
+    cadena=aux.tostring()
     for i in range(0,config.PAQ_USB):
         data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
         #if lectura[i*config.LARGO_TRAMA]!=255 or lectura[(i+1)*config.LARGO_TRAMA-1]!=70:
@@ -51,10 +53,9 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.autoRange, QtCore.SIGNAL("clicked()"), self.set_autoRange)
         QtCore.QObject.connect(self.bars_scale, QtCore.SIGNAL("valueChanged(int)"), self.matriz_tasas.change_scale)
         self.run()
-        
         #preparo proceso de adquisicion de datos
     def run(self):      
-        self.p_ob_datos,self.control_sampler,self.datos_in=capture_init()
+        self.p_ob_datos,self.control_sampler,self.datos_in,self.lectura_nueva=capture_init()
         #try:
             
         #except:
@@ -65,22 +66,23 @@ class MainWindow(QtGui.QMainWindow):
             
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(0) #esto deberia cambiarse con un boton, ojo q afecta largo de vectores
+        self.timer.start(config.TIEMPO_DISPLAY) #si va demasiado lento deberia bajarse el tiempo
 
     def update(self):
-        if(self.datos_in.poll()):
-            t1 = time.time()
-            lectura=self.datos_in.recv()
-            #t1 = time.time()
-            parser(self.data_new,lectura)
-            #print str(time.time()-t1) +'parser'
-            if not self.pausa.isChecked():
-                
-                #self.data=np.append(self.data[:,config.CANT_DISPLAY:],data_new,axis=1)
-                self.data=np.concatenate([self.data[:,config.PAQ_USB:], self.data_new],axis=1) #hace lo mismo q la de arriba... no encontre mejoras
-                self.tasas_disparo,umbrales=calcular_tasas_disparo(self.data) 
-            self.update_graficos()
-            self.status.setText('update: '+str(int((time.time() - t1)*1000)))
+        #if(self.datos_in.poll()):
+        #t1 = time.time()
+        #lectura=self.datos_in.recv()
+        t1 = time.time()
+        #parser(self.data_new,lectura)
+        parser(self.data_new,self.lectura_nueva)
+        #print str(time.time()-t1) +'parser'
+        if not self.pausa.isChecked():
+            
+            #self.data=np.append(self.data[:,config.CANT_DISPLAY:],data_new,axis=1)
+            self.data=np.concatenate([self.data[:,config.PAQ_USB:], self.data_new],axis=1) #hace lo mismo q la de arriba... no encontre mejoras
+            self.tasas_disparo,umbrales=calcular_tasas_disparo(self.data) 
+        self.update_graficos()
+        self.status.setText('update: '+str(int((time.time() - t1)*1000)))
           
     def update_graficos(self):    
         self.dialogo.update(self.data)
