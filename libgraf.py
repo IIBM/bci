@@ -16,7 +16,7 @@ uifile_dialog = os.path.join(
 
 ch_colors=['r','y','g','c']
 
-
+numero_filas_tet_display=4
 pasa_bajos=signal.firwin(61, 0.01)
 pasa_altos=signal.firwin(61, 0.01, pass_zero=False)
 subm=20
@@ -54,7 +54,7 @@ class  tets_display():
             self.curv_canal.append(graf.plot(pen=ch_colors[2]))  
             self.curv_canal.append(graf.plot(pen=ch_colors[3]))
             self.graficos.append(graf)
-            if not (i+1)%4:
+            if not (i+1)%numero_filas_tet_display:
                 layout_graficos.nextRow()
                 
     def update(self,data):    

@@ -30,7 +30,9 @@ def parser(data,lectura):
     aux.extend(lectura)
     cadena=aux.tostring()
     for i in range(0,config.PAQ_USB):
-        data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
+        #data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
+        data[:,i]=struct.unpack('>'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA:(i+1)*config.LARGO_TRAMA]) 
+		#OJO QUE ACA ES CON MAYOR PORQ ESTOY USANDO DATOS DE LOS GUARDADOS!!!!!!!!!!
         #if lectura[i*config.LARGO_TRAMA]!=255 or lectura[(i+1)*config.LARGO_TRAMA-1]!=70:
         #    print  "paquete roto"        
         
@@ -103,6 +105,7 @@ class MainWindow(QtGui.QMainWindow):
         self.p_ob_datos.join(1)
         self.dialogo.close()
         self.close()
+       
     
     def on_actionNuevo(self):
         self.control_sampler.send('salir')
