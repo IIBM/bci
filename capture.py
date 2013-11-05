@@ -1,4 +1,4 @@
-from multiprocessing import Process, Pipe,Array
+from multiprocessing import Process, Pipe,Array,Queue
 import numpy as np #vectores, operaciones matematicas
 import time #hora local 
 import usb.core
@@ -38,7 +38,7 @@ def parser(data,lectura):
 
 
     
-def obtener_datos(com,buffer_in,dev_usb,shared_mem):
+def obtener_datos(com,dev_usb,shared_mem):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     paq_data=config.LARGO_TRAMA*config.PAQ_USB
     dev_usb.write(1,'\xAA',0,100)
@@ -78,33 +78,31 @@ def obtener_datos(com,buffer_in,dev_usb,shared_mem):
         
 def capture_init():
         lectura_nueva = Array('B',config.PAQ_USB*config.LARGO_TRAMA)
-
+		#cola = Queue()
         #verifica usb, luego comienza captura si es correcto
         if hasattr(config, 'FAKE_FILE'):
             reg_files=file_handle()
-            datos_mostrar, datos_entrada = Pipe(duplex = False)
+            #datos_mostrar, datos_entrada = Pipe(duplex = False)
             control_usb, control_ui = Pipe(duplex = False)
-            p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,datos_entrada,reg_files,lectura_nueva))
-            return p_ob_datos,control_ui,datos_mostrar,lectura_nueva  
+            p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,reg_files,lectura_nueva))
+            return p_ob_datos,control_ui,lectura_nueva  
         
         #experim
         if hasattr(config, 'FAKE'):
             reg_files=file_handle()
-            datos_mostrar, datos_entrada = Pipe(duplex = False)
             control_usb, control_ui = Pipe(duplex = False)
-            p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,datos_entrada,reg_files,lectura_nueva))
-            return p_ob_datos,control_ui,datos_mostrar,lectura_nueva      
+            p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,reg_files,lectura_nueva))
+            return p_ob_datos,control_ui,lectura_nueva      
         
    
                  
         dev_usb = connect(intanVendor,intanProduct)
-        datos_mostrar, datos_entrada = Pipe(duplex = False)
         control_usb, control_ui = Pipe(duplex = False)
-        p_ob_datos = Process(target=obtener_datos, args=(control_usb,datos_entrada,dev_usb,lectura_nueva))
+        p_ob_datos = Process(target=obtener_datos, args=(control_usb,dev_usb,lectura_nueva))
         
-        return p_ob_datos,control_ui,datos_mostrar,lectura_nueva
+        return p_ob_datos,control_ui,lectura_nueva
 
-def fake_obtener_datos(com,buffer_in,reg_files,lectura_nueva):
+def fake_obtener_datos(com,reg_files,lectura_nueva):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     save_data=False
     comando='normal'
@@ -125,7 +123,7 @@ def fake_obtener_datos(com,buffer_in,reg_files,lectura_nueva):
         save_data= comando=='guardar'   
     filereg_files.close()   
 
-def fake_file_obtener_datos(com,buffer_in,reg_files,lectura_nueva):
+def fake_file_obtener_datos(com,reg_files,lectura_nueva):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     file_input=open('data_test','rb')
     save_data=False
@@ -137,10 +135,11 @@ def fake_file_obtener_datos(com,buffer_in,reg_files,lectura_nueva):
             #j=0
             #lectura=array.array('B')
             #lectura.append(file_input.read(config.PAQ_USB*config.LARGO_TRAMA))
-            lectura=file_input.read(config.PAQ_USB*config.LARGO_TRAMA)
-            for s in range(len(lectura)):
-				lectura_nueva[s]=ord(lectura[s])
+            #lectura=file_input.read(config.PAQ_USB*config.LARGO_TRAMA)
+            #for s in range(len(lectura)):
+			#	lectura_nueva[s]=ord(lectura[s])
             time.sleep(config.TIEMPO_DISPLAY)
+            lectura_nueva[:]=np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA)
             #while(j<config.PAQ_USB):
                 #data[:,j]=np.fromfile(file_input,np.int16, config.CANT_CANALES)
                 #basura=np.fromfile(file_input,np.int16,1)

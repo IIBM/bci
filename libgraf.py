@@ -5,6 +5,8 @@ from PyQt4  import uic,QtGui
 from scipy import signal
 import numpy as np
 import config
+from data_processing import calcular_umbral_disparo,calcular_tasa_disparo
+
 
 uifile_menu = os.path.join(
     os.path.abspath(
@@ -25,7 +27,7 @@ fft_frec= np.linspace(0, config.FS/2, config.CANT_DISPLAY/2/subm)
 xtime_dialog=np.linspace(0,float(config.CANT_DISPLAY)/float(config.FS),config.CANT_DISPLAY)
 fft_frec_dialog= np.linspace(0, config.FS/2, config.CANT_DISPLAY/2)
 
-class  tets_display():
+class tets_display():
     def __init__(self,espacio_pg):
         layout_graficos = pg.GraphicsLayout() #para ordenar los graficos(items) asi como el simil con los widgets
         espacio_pg.setCentralItem(layout_graficos)
@@ -35,7 +37,7 @@ class  tets_display():
         self.curv_canal=list() #curvas para dsp actualizar los datos
         self.graficos=list() #graficos, para dsp poder modificar su autorange
         self.offset_cc=list()
-        #graficos principales    
+        #graficos principales
 
         for i in range((config.CANT_CANALES+3)/4):
             graf = layout_graficos.addPlot(row=None, col=None, rowspan=1, colspan=1)
@@ -49,15 +51,15 @@ class  tets_display():
             
             self.s_modes.append(graf.ctrlMenu.opciones.s_filtro)
             self.offset_cc.append(graf.ctrlMenu.opciones.offset_cc)
-            self.curv_canal.append(graf.plot(pen=ch_colors[0]))  
-            self.curv_canal.append(graf.plot(pen=ch_colors[1]))  
-            self.curv_canal.append(graf.plot(pen=ch_colors[2]))  
+            self.curv_canal.append(graf.plot(pen=ch_colors[0]))
+            self.curv_canal.append(graf.plot(pen=ch_colors[1]))
+            self.curv_canal.append(graf.plot(pen=ch_colors[2]))
             self.curv_canal.append(graf.plot(pen=ch_colors[3]))
             self.graficos.append(graf)
             if not (i+1)%numero_filas_tet_display:
                 layout_graficos.nextRow()
                 
-    def update(self,data):    
+    def update(self,data):
         canales_mostrados_sf = list()
         canales_pasa_bajos = list()
         canales_pasa_altos = list()
@@ -75,118 +77,177 @@ class  tets_display():
             else:
                 canales_fft.append(i)
         
-        for i in canales_mostrados_sf:            
+        for i in canales_mostrados_sf:
             self.curv_canal[i].setData(x=xtime,y=data[i,::subm]+self.offset_cc[i/4].value()*(i%4), _callSync='off')
         if len(canales_pasa_bajos) !=0:
-            aux=signal.lfilter(pasa_bajos, 1,data[canales_pasa_bajos,:]) 
+            aux=signal.lfilter(pasa_bajos, 1,data[canales_pasa_bajos,:])
             for i in range(len(canales_pasa_bajos)):
                 self.curv_canal[canales_pasa_bajos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*(i%4), _callSync='off')
         
         if len(canales_pasa_altos) !=0:
-            aux=signal.lfilter(pasa_altos, 1,data[canales_pasa_altos,:]) 
+            aux=signal.lfilter(pasa_altos, 1,data[canales_pasa_altos,:])
             for i in range(len(canales_pasa_altos)):
-                self.curv_canal[canales_pasa_altos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*(i%4), _callSync='off')    
+                self.curv_canal[canales_pasa_altos[i]].setData(x=xtime,y=aux[i,::subm]+self.offset_cc[i/4].value()*(i%4), _callSync='off')
         
         if len(canales_fft) !=0:
             aux=np.fft.fft(data[canales_fft,:]) #/config.CANT_DISPLAY
             aux = abs(aux[:,:np.size(aux,1)/2:subm])
             for i in range(len(canales_fft)):
-                self.curv_canal[canales_fft[i]].setData(x=fft_frec,y=aux[i,:]+self.offset_cc[i/4].value()*(i%4), _callSync='off')  
+                self.curv_canal[canales_fft[i]].setData(x=fft_frec,y=aux[i,:]+self.offset_cc[i/4].value()*(i%4), _callSync='off')
 
     
     def setAutoRange(self,state):
         for grafico in self.graficos:
             grafico.enableAutoRange('xy', state)  
                 
-
-
-class  rates_display():
-    def __init__(self,ecualizer_grid,dialogo):
-        layout_ecualizer= pg.GraphicsLayout() #para ordenar los graficos(items) asi como el simil con los widgets            
-        ecualizer_grid.setCentralItem(layout_ecualizer)
+class  plus_display():
+    def __init__(self,espacio_pg,plus_grid_fr,c_auto_umbral,c_manual_umbral): 
+        #self.tmodes=np.ones(config.CANT_CANALES) #modos por defecto en 1, osea en auto
+        self.tmodes=list([2 for i in range(config.CANT_CANALES)]) #modos por defecto, en 2 es AUTO check
+        self.umbrales_manuales=np.zeros(config.CANT_CANALES)
+        self.mode=0
+        self.c_auto_umbral=c_auto_umbral
+        self.c_manual_umbral=c_manual_umbral
+        #layout_graficos = pg.GraphicsLayout() #para ordenar los graficos(items) asi como el simil con los widgets
         
-        self.tasa_bars=list()
-        self.tasa_graf=list()
-        for i in range((config.CANT_CANALES+3)/4):
-            graf=bar_graf(i,self.tasa_bars,dialogo)
-            layout_ecualizer.addItem(graf,row=None, col=None, rowspan=1, colspan=1)
-            self.tasa_graf.append(graf)
-    def update(self,tasas):
-            for i in range((config.CANT_CANALES)/4*4):
-                self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas[i],tasas[i]], _callSync='off')
-    
-    def change_scale(self,scale):
-        for bar in self.tasa_graf:
-            bar.setYRange(0, scale)
-
-
-
-
-
-class  bar_graf(pg.PlotItem):
-    def __init__(self,i,tasa_bars,dialogo):
-        vb=ViewBox_Bars(i,dialogo)
-        pg.PlotItem.__init__(self,viewBox=vb,title="Tet."+str(i+1))
-        self.showAxis('bottom', False)
-        self.setMenuEnabled(enableMenu=False)
-        self.showAxis('left', False)
-        self.enableAutoRange('y', False)
-        self.setXRange(-0.4,3+0.4)
-        self.enableAutoRange('x', False)
-        self.setYRange(0, 500)
-        self.setMouseEnabled(x=False, y=False)
-        self.hideButtons()
-        tasa_bars.append(self.plot(pen='r', fillLevel=0,brush=pg.mkBrush(ch_colors[0])))
-        tasa_bars.append(self.plot(pen='y', fillLevel=0,brush=pg.mkBrush(ch_colors[1])))
-        tasa_bars.append(self.plot(pen='g', fillLevel=0,brush=pg.mkBrush(ch_colors[2])))
-        tasa_bars.append(self.plot(pen='c', fillLevel=0,brush=pg.mkBrush(ch_colors[3])))     
+        self.selec_canal=0
+        self.selec_tet=0
+        self.tasas_bars=bar_graf()
+        #layout_graficos.addItem(self.tasas_bars,row=None, col=0, rowspan=1, colspan=1)
+        #graf=layout_graficos.addPlot(row=None, col=1, rowspan=1, colspan=3)
+        graf = pg.PlotItem()
+        graf.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
+        self.curve=graf.plot()
+        self.graf_umbral=pg.InfiniteLine(pen=ch_colors[1],angle=0,movable=True)
+        graf.addItem(self.graf_umbral)
+     
+        espacio_pg.setCentralItem(graf)
+        plus_grid_fr.setCentralItem(self.tasas_bars)
         
-class ViewBox_Bars(pg.ViewBox):
-    def __init__(self,i,dialogo):
-        pg.ViewBox.__init__(self)
-        self.canal=i
-        self.dialogo=dialogo
-    def mouseClickEvent(self, ev):
-        if ev.button() == QtCore.Qt.LeftButton:
-            self.dialogo.show()
-            self.dialogo.tet_selec=self.canal
-
-class Dialog_Tet(QtGui.QDialog):
-    #Ventana extra que se abre al clickear las barras        
-    def __init__(self):
-        QtGui.QDialog.__init__(self)
-        uic.loadUi(uifile_dialog,self)
-        self.setWindowFlags(QtCore.Qt.Window) 
-        self.pg_widget.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
-        self.curv_canal=list()
-        self.curv_canal.append(self.pg_widget.plot(pen=ch_colors[0]))  
-        self.curv_canal.append(self.pg_widget.plot(pen=ch_colors[1]))  
-        self.curv_canal.append(self.pg_widget.plot(pen=ch_colors[2]))  
-        self.curv_canal.append(self.pg_widget.plot(pen=ch_colors[3]))
-        self.set_canal=list()
-        self.set_canal.append(self.c_canal1)
-        self.set_canal.append(self.c_canal2)
-        self.set_canal.append(self.c_canal3)
-        self.set_canal.append(self.c_canal4)
-        self.tet_selec=1
-    
     def update(self,data):
-        if self.isVisible():
-            self.num_tet.setText('Tetrodo: '+str(1+self.tet_selec))
-            tet=self.tet_selec
-            canal=range(tet*4,tet*4+4)
-            for i in range(len(self.set_canal)):
-                if not self.set_canal[i].isChecked():
-                    self.curv_canal[i].clear()
-                elif self.normal.isChecked():
-                    self.curv_canal[i].setData(x=xtime_dialog,y=i*self.offsetcc.value()+data[canal[i],:])
-                elif self.pasaaltos.isChecked():
-                    self.curv_canal[i].setData(x=xtime_dialog,y=i*self.offsetcc.value()+signal.lfilter(pasa_bajos, 1,data[canal[i],:]))
-                elif self.pasabajos.isChecked():
-                    self.curv_canal[i].setData(x=xtime_dialog,y=i*self.offsetcc.value()+signal.lfilter(pasa_altos, 1,data[canal[i],:]))
-                else:
-                    aux=np.fft.fft(data[canal[i],:]) #/config.CANT_DISPLAY
-                    self.curv_canal[i].setData(x=fft_frec_dialog,y=i*self.offsetcc.value()*1000+abs(aux[:np.size(aux)/2]))
+        self.umbrales_manuales[self.selec_tet*4+self.selec_canal]=self.graf_umbral.value()
+        tasas=[0,0,0,0]
+        #reordenar esto, se calculan medianas q podrian no estarse usando.MEJORAR
+        x,umbral_calc=calcular_umbral_disparo(data,range(4*self.selec_tet,4*self.selec_tet+4))
+        self.curve.setPen(ch_colors[self.selec_canal])
+        for i in range(4):            
+            
+            if self.tmodes[4*self.selec_tet+i] is 1:
+                tasas[i]=calcular_tasa_disparo(x[i],umbral_calc[i])
+            else:                
+                tasas[i]=calcular_tasa_disparo(x[i],self.umbrales_manuales[4*self.selec_tet+i])
+        
+        self.tasas_bars.update(tasas)
+        if self.mode is 0:
+            self.curve.setData(x=xtime_dialog,y=data[self.selec_tet*4+self.selec_canal,:], _callSync='off')
+        elif self.mode is 1:   
+            self.curve.setData(x=xtime_dialog,y=x[self.selec_canal,:], _callSync='off')
+        else:
+            aux=np.fft.fft(data[self.selec_tet*4+self.selec_canal,:]) #/config.CANT_DISPLAY
+            self.curve.setData(x=fft_frec_dialog,y=abs(aux[:np.size(aux)/2]))
+            
+    def change_display_mode(self,new_mode):
+        self.mode=new_mode
+        
+    def change_channel(self,canal):
+        self.selec_canal=canal-1
+        self.c_auto_umbral.setCheckState(self.tmodes[self.selec_canal+4*self.selec_tet])
+        self.c_manual_umbral.setCheckState(2*(not self.tmodes[self.selec_canal+4*self.selec_tet]))
+        
+    def change_tet(self,tet):
+        self.selec_tet=tet
+        self.c_auto_umbral.setCheckState(self.tmodes[self.selec_canal+4*self.selec_tet])
+        self.c_manual_umbral.setCheckState(2*(not self.tmodes[self.selec_canal+4*self.selec_tet]))
+        
+    def change_tmode(self,new_mode):
+        self.tmodes[self.selec_canal+4*self.selec_tet]=new_mode
+        print new_mode
+        
+#class  rates_display():
+    #def __init__(self,ecualizer_grid,dialogo):
+        #layout_ecualizer= pg.GraphicsLayout() #para ordenar los graficos(items) asi como el simil con los widgets            
+        #ecualizer_grid.setCentralItem(layout_ecualizer)
+        
+        #self.tasa_bars=list()
+        #self.tasa_graf=list()
+        #for i in range((config.CANT_CANALES+3)/4):
+            #graf=bar_graf(i,self.tasa_bars,dialogo)
+            #layout_ecualizer.addItem(graf,row=None, col=None, rowspan=1, colspan=1)
+            #self.tasa_graf.append(graf)
+    #def update(self,tasas):
+            #for i in range((config.CANT_CANALES)/4*4):
+                #self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas[i],tasas[i]], _callSync='off')
+    
+    #def change_scale(self,scale):
+        #for bar in self.tasa_graf:
+            #bar.setYRange(0, scale)
+
+
+
+#class  bar_graf(pg.PlotItem):
+    #def __init__(self,i,tasa_bars,dialogo):
+        #vb=ViewBox_Bars(i,dialogo)
+        #pg.PlotItem.__init__(self,viewBox=vb,title="Tet."+str(i+1))
+        #self.showAxis('bottom', False)
+        #self.setMenuEnabled(enableMenu=False)
+        #self.showAxis('left', False)
+        #self.enableAutoRange('y', False)
+        #self.setXRange(-0.4,3+0.4)
+        #self.enableAutoRange('x', False)
+        #self.setYRange(0, 500)
+        #self.setMouseEnabled(x=False, y=False)
+        #self.hideButtons()
+        #tasa_bars.append(self.plot(pen='r', fillLevel=0,brush=pg.mkBrush(ch_colors[0])))
+        #tasa_bars.append(self.plot(pen='y', fillLevel=0,brush=pg.mkBrush(ch_colors[1])))
+        #tasa_bars.append(self.plot(pen='g', fillLevel=0,brush=pg.mkBrush(ch_colors[2])))
+        #tasa_bars.append(self.plot(pen='c', fillLevel=0,brush=pg.mkBrush(ch_colors[3])))     
+        
+#class ViewBox_Bars(pg.ViewBox):
+    #def __init__(self,i,dialogo):
+        #pg.ViewBox.__init__(self)
+        #self.canal=i
+        #self.dialogo=dialogo
+    #def mouseClickEvent(self, ev):
+        #if ev.button() == QtCore.Qt.LeftButton:
+            #self.dialogo.show()
+            #self.dialogo.tet_selec=self.canal
+
+#class Dialog_Tet(QtGui.QDialog):
+    ##Ventana extra que se abre al clickear las barras        
+    #def __init__(self):
+        #QtGui.QDialog.__init__(self)
+        #uic.loadUi(uifile_dialog,self)
+        #self.setWindowFlags(QtCore.Qt.Window) 
+        #self.pg_widget.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
+        #self.curv_canal=list()
+        #self.curv_canal.append(self.pg_widget.plot(pen=ch_colors[0]))  
+        #self.curv_canal.append(self.pg_widget.plot(pen=ch_colors[1]))  
+        #self.curv_canal.append(self.pg_widget.plot(pen=ch_colors[2]))  
+        #self.curv_canal.append(self.pg_widget.plot(pen=ch_colors[3]))
+        #self.set_canal=list()
+        #self.set_canal.append(self.c_canal1)
+        #self.set_canal.append(self.c_canal2)
+        #self.set_canal.append(self.c_canal3)
+        #self.set_canal.append(self.c_canal4)
+        #self.tet_selec=1
+    
+    #def update(self,data):
+        #if self.isVisible():
+            #self.num_tet.setText('Tetrodo: '+str(1+self.tet_selec))
+            #tet=self.tet_selec
+            #canal=range(tet*4,tet*4+4)
+            #for i in range(len(self.set_canal)):
+                #if not self.set_canal[i].isChecked():
+                    #self.curv_canal[i].clear()
+                #elif self.normal.isChecked():
+                    #self.curv_canal[i].setData(x=xtime_dialog,y=i*self.offsetcc.value()+data[canal[i],:])
+                #elif self.pasaaltos.isChecked():
+                    #self.curv_canal[i].setData(x=xtime_dialog,y=i*self.offsetcc.value()+signal.lfilter(pasa_bajos, 1,data[canal[i],:]))
+                #elif self.pasabajos.isChecked():
+                    #self.curv_canal[i].setData(x=xtime_dialog,y=i*self.offsetcc.value()+signal.lfilter(pasa_altos, 1,data[canal[i],:]))
+                #else:
+                    #aux=np.fft.fft(data[canal[i],:]) #/config.CANT_DISPLAY
+                    #self.curv_canal[i].setData(x=fft_frec_dialog,y=i*self.offsetcc.value()*1000+abs(aux[:np.size(aux)/2]))
 
         
 
@@ -200,3 +261,26 @@ class mymenu(QtGui.QMenu):
         aux= QtGui.QWidgetAction(self);
         aux.setDefaultWidget(self.opciones);
         self.addAction(aux)
+
+
+class  bar_graf(pg.PlotItem):
+    def __init__(self):
+        self.tasa_bars=list()
+        pg.PlotItem.__init__(self)
+        self.showAxis('bottom', False)
+        self.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
+        #self.showAxis('left', False)
+        #self.enableAutoRange('y', False)
+        self.setXRange(-0.4,3+0.4)
+        self.enableAutoRange('x', False)
+        #self.setYRange(0, 500)
+        self.setMouseEnabled(x=False, y=False)
+        #self.hideButtons()
+        self.tasa_bars.append(self.plot(pen='r', fillLevel=0,brush=pg.mkBrush(ch_colors[0])))
+        self.tasa_bars.append(self.plot(pen='y', fillLevel=0,brush=pg.mkBrush(ch_colors[1])))
+        self.tasa_bars.append(self.plot(pen='g', fillLevel=0,brush=pg.mkBrush(ch_colors[2])))
+        self.tasa_bars.append(self.plot(pen='c', fillLevel=0,brush=pg.mkBrush(ch_colors[3])))
+    
+    def update(self,tasas):
+            for i in range(4):
+                self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas[i],tasas[i]], _callSync='off')
