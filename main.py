@@ -31,7 +31,7 @@ class MainWindow(QtGui.QMainWindow):
         
         self.info_tetrodo=plus_display(self.plus_grid,self.plus_grid_fr,self.c_auto_umbral,self.c_manual_umbral)
         #self.matriz_tasas=rates_display(self.ecualizer_grid,self.dialogo)    
-        self.data_handler=bci_data_handler()
+        
         #quedo sin conectar xq no ser estandar de la interfaz
         
         
@@ -42,16 +42,21 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.tet_plus_mode, QtCore.SIGNAL("currentIndexChanged(int)"), self.info_tetrodo.change_display_mode) 
         QtCore.QObject.connect(self.c_auto_umbral, QtCore.SIGNAL("stateChanged(int)"), self.info_tetrodo.change_tmode) 
         
+        
+        
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(config.TIEMPO_DISPLAY) #si va demasiado lento deberia bajarse el tiempo
-
+        self.timer.start(0) #si va demasiado lento deberia bajarse el tiempo
+        self.data_handler=bci_data_handler()
+        self.t1 = time.time()
+    
     def update(self):
-        t1 = time.time()
+        
+        self.data_handler.update()
         if not self.pausa.isChecked():
-            self.data_handler.update()
-        self.update_graficos()
-        self.status.setText('update: '+str(int((time.time() - t1)*1000)))
+            self.update_graficos()
+        self.status.setText('update: '+str(int((time.time() - self.t1)*1000)))
+        self.t1 = time.time()
         
     def update_graficos(self):    
         #self.dialogo.update(self.data)
@@ -67,6 +72,7 @@ class MainWindow(QtGui.QMainWindow):
         self.data_handler.save2disc()
         
     def on_actionSalir(self):
+        self.timer.stop()
         self.data_handler.close()
         #self.dialogo.close()
         self.close()

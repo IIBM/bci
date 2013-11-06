@@ -77,30 +77,31 @@ def obtener_datos(com,dev_usb,shared_mem):
         
         
 def capture_init():
-        lectura_nueva = Array('B',config.PAQ_USB*config.LARGO_TRAMA)
-		#cola = Queue()
-        #verifica usb, luego comienza captura si es correcto
-        if hasattr(config, 'FAKE_FILE'):
-            reg_files=file_handle()
-            #datos_mostrar, datos_entrada = Pipe(duplex = False)
-            control_usb, control_ui = Pipe(duplex = False)
-            p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,reg_files,lectura_nueva))
-            return p_ob_datos,control_ui,lectura_nueva  
-        
-        #experim
-        if hasattr(config, 'FAKE'):
-            reg_files=file_handle()
-            control_usb, control_ui = Pipe(duplex = False)
-            p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,reg_files,lectura_nueva))
-            return p_ob_datos,control_ui,lectura_nueva      
-        
-   
-                 
-        dev_usb = connect(intanVendor,intanProduct)
-        control_usb, control_ui = Pipe(duplex = False)
-        p_ob_datos = Process(target=obtener_datos, args=(control_usb,dev_usb,lectura_nueva))
-        
-        return p_ob_datos,control_ui,lectura_nueva
+	#lectura_nueva = Array('B',config.PAQ_USB*config.LARGO_TRAMA)
+	cola = Queue(maxsize=20)
+	#verifica usb, luego comienza captura si es correcto
+	if hasattr(config, 'FAKE_FILE'):
+		reg_files=file_handle()
+		#datos_mostrar, datos_entrada = Pipe(duplex = False)
+		control_usb, control_ui = Pipe(duplex = False)
+		#p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,reg_files,lectura_nueva))
+		p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,reg_files,cola))
+		return p_ob_datos,control_ui,cola  
+	
+	#experim
+	if hasattr(config, 'FAKE'):
+		reg_files=file_handle()
+		control_usb, control_ui = Pipe(duplex = False)
+		p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,reg_files,lectura_nueva))
+		return p_ob_datos,control_ui,lectura_nueva      
+	
+
+			 
+	dev_usb = connect(intanVendor,intanProduct)
+	control_usb, control_ui = Pipe(duplex = False)
+	p_ob_datos = Process(target=obtener_datos, args=(control_usb,dev_usb,lectura_nueva))
+	
+	return p_ob_datos,control_ui,lectura_nueva
 
 def fake_obtener_datos(com,reg_files,lectura_nueva):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
@@ -123,7 +124,7 @@ def fake_obtener_datos(com,reg_files,lectura_nueva):
         save_data= comando=='guardar'   
     filereg_files.close()   
 
-def fake_file_obtener_datos(com,reg_files,lectura_nueva):
+def fake_file_obtener_datos(com,reg_files,cola):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     file_input=open('data_test','rb')
     save_data=False
@@ -139,7 +140,13 @@ def fake_file_obtener_datos(com,reg_files,lectura_nueva):
             #for s in range(len(lectura)):
 			#	lectura_nueva[s]=ord(lectura[s])
             time.sleep(config.TIEMPO_DISPLAY)
-            lectura_nueva[:]=np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA)
+            #lectura_nueva[:]=np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA)
+            try:
+				#cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA))
+				cola.put(np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA),timeout=config.TIEMPO_DISPLAY/10)
+            except:
+				#pass
+				print "graficar pierde datos :("
             #while(j<config.PAQ_USB):
                 #data[:,j]=np.fromfile(file_input,np.int16, config.CANT_CANALES)
                 #basura=np.fromfile(file_input,np.int16,1)
@@ -153,7 +160,6 @@ def fake_file_obtener_datos(com,reg_files,lectura_nueva):
         save_data= comando=='guardar'
     file_input.close()
     filereg_files.close()   
-
 
 class file_handle():
     #def __init__(self):

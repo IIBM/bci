@@ -103,7 +103,7 @@ class tets_display():
 class  plus_display():
     def __init__(self,espacio_pg,plus_grid_fr,c_auto_umbral,c_manual_umbral): 
         #self.tmodes=np.ones(config.CANT_CANALES) #modos por defecto en 1, osea en auto
-        self.tmodes=list([2 for i in range(config.CANT_CANALES)]) #modos por defecto, en 2 es AUTO check
+        self.tmode_auto=list([True for i in range(config.CANT_CANALES)]) #modos por defecto, en 2 es AUTO check
         self.umbrales_manuales=np.zeros(config.CANT_CANALES)
         self.mode=0
         self.c_auto_umbral=c_auto_umbral
@@ -115,54 +115,87 @@ class  plus_display():
         self.tasas_bars=bar_graf()
         #layout_graficos.addItem(self.tasas_bars,row=None, col=0, rowspan=1, colspan=1)
         #graf=layout_graficos.addPlot(row=None, col=1, rowspan=1, colspan=3)
-        graf = pg.PlotItem()
-        graf.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
-        self.curve=graf.plot()
-        self.graf_umbral=pg.InfiniteLine(pen=ch_colors[1],angle=0,movable=True)
-        graf.addItem(self.graf_umbral)
-     
-        espacio_pg.setCentralItem(graf)
+        self.graf = pg.PlotItem()
+        self.graf.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
+        self.curve=self.graf.plot()
+        self.graf_umbral=pg.InfiniteLine(pen='b',angle=0,movable=False)
+    
+        espacio_pg.setCentralItem(self.graf)
         plus_grid_fr.setCentralItem(self.tasas_bars)
         
     def update(self,data):
-        self.umbrales_manuales[self.selec_tet*4+self.selec_canal]=self.graf_umbral.value()
+        if self.tmode_auto[self.selec_canal+4*self.selec_tet] is False:
+            self.umbrales_manuales[self.selec_tet*4+self.selec_canal]=self.graf_umbral.value()
+        
         tasas=[0,0,0,0]
         #reordenar esto, se calculan medianas q podrian no estarse usando.MEJORAR
         x,umbral_calc=calcular_umbral_disparo(data,range(4*self.selec_tet,4*self.selec_tet+4))
         self.curve.setPen(ch_colors[self.selec_canal])
-        for i in range(4):            
-            
-            if self.tmodes[4*self.selec_tet+i] is 1:
-                tasas[i]=calcular_tasa_disparo(x[i],umbral_calc[i])
-            else:                
-                tasas[i]=calcular_tasa_disparo(x[i],self.umbrales_manuales[4*self.selec_tet+i])
-        
+
+        for i in range(4):
+            if self.tmode_auto[4*self.selec_tet+i] is True:
+                tasas[i]=calcular_tasa_disparo(x[i,:],umbral_calc[i])
+                
+            else:       
+                tasas[i]=calcular_tasa_disparo(x[i,:],self.umbrales_manuales[4*self.selec_tet+i])
         self.tasas_bars.update(tasas)
+        
         if self.mode is 0:
             self.curve.setData(x=xtime_dialog,y=data[self.selec_tet*4+self.selec_canal,:], _callSync='off')
-        elif self.mode is 1:   
+        elif self.mode is 1:  
             self.curve.setData(x=xtime_dialog,y=x[self.selec_canal,:], _callSync='off')
+            if self.tmode_auto[self.selec_canal+4*self.selec_tet] is True:
+                self.graf_umbral.setValue(umbral_calc[self.selec_tet])
+            if tasas[self.selec_canal] > 0:
+                print '\a' #con un archivo y qtsound MEJORAR
+
         else:
             aux=np.fft.fft(data[self.selec_tet*4+self.selec_canal,:]) #/config.CANT_DISPLAY
             self.curve.setData(x=fft_frec_dialog,y=abs(aux[:np.size(aux)/2]))
-            
+   
     def change_display_mode(self,new_mode):
+        
+        if new_mode is 0:
+            if(self.mode is 1):
+                self.graf.removeItem(self.graf_umbral)
+            
+        elif new_mode is 1:
+            self.graf.addItem(self.graf_umbral)
+            if self.tmode_auto[self.selec_canal+4*self.selec_tet] is False:
+                self.graf_umbral.setValue(self.umbrales_manuales[self.selec_tet*4+self.selec_canal])
+                self.graf_umbral.setMovable(True)
+
+        else: 
+            if(self.mode is 1):
+                self.graf.removeItem(self.graf_umbral)
         self.mode=new_mode
+        self.change_line_mode()
+        
         
     def change_channel(self,canal):
         self.selec_canal=canal-1
-        self.c_auto_umbral.setCheckState(self.tmodes[self.selec_canal+4*self.selec_tet])
-        self.c_manual_umbral.setCheckState(2*(not self.tmodes[self.selec_canal+4*self.selec_tet]))
+        self.c_auto_umbral.setCheckState(2* self.tmode_auto[self.selec_canal+4*self.selec_tet])
+        self.c_manual_umbral.setCheckState(2*(not self.tmode_auto[self.selec_canal+4*self.selec_tet]))
+        self.change_line_mode()
         
     def change_tet(self,tet):
         self.selec_tet=tet
-        self.c_auto_umbral.setCheckState(self.tmodes[self.selec_canal+4*self.selec_tet])
-        self.c_manual_umbral.setCheckState(2*(not self.tmodes[self.selec_canal+4*self.selec_tet]))
+        self.c_auto_umbral.setCheckState(2* self.tmode_auto[self.selec_canal+4*self.selec_tet])
+        self.c_manual_umbral.setCheckState(2*(not self.tmode_auto[self.selec_canal+4*self.selec_tet]))
+        self.change_line_mode()
         
     def change_tmode(self,new_mode):
-        self.tmodes[self.selec_canal+4*self.selec_tet]=new_mode
-        print new_mode
-        
+        self.tmode_auto[self.selec_canal+4*self.selec_tet]=(new_mode is 2)
+        self.change_line_mode()
+    
+    def change_line_mode(self):
+        if self.tmode_auto[self.selec_canal+4*self.selec_tet] is False:
+            self.graf_umbral.setMovable(True)
+            self.graf_umbral.setValue(self.umbrales_manuales[self.selec_tet*4+self.selec_canal])
+        else:
+            self.graf_umbral.setMovable(False)
+            
+            
 #class  rates_display():
     #def __init__(self,ecualizer_grid,dialogo):
         #layout_ecualizer= pg.GraphicsLayout() #para ordenar los graficos(items) asi como el simil con los widgets            
