@@ -98,6 +98,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="beepbox">
+        <property name="text">
+         <string>Beep</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLabel" name="status">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">

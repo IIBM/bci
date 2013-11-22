@@ -11,6 +11,8 @@ bci
   
   config: configuraciones generales
   
+  data_processing: manejo de datos y funciones accesorias
+  
   *.ui: diseño de menus, ventanas, etc
 
 
@@ -26,6 +28,7 @@ bci
   * scipy 
   * pyqtgraph-0.9.7
   * PyUSB
+  * Beep (linux)
 
 
 

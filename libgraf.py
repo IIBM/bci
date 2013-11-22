@@ -6,7 +6,8 @@ from scipy import signal
 import numpy as np
 import config
 from data_processing import calcular_umbral_disparo,calcular_tasa_disparo
-
+import pyaudio
+import wave
 
 uifile_menu = os.path.join(
     os.path.abspath(
@@ -15,6 +16,8 @@ uifile_menu = os.path.join(
 uifile_dialog = os.path.join(
     os.path.abspath(
         os.path.dirname(__file__)),'tet_dialog.ui')
+
+
 
 ch_colors=['r','y','g','c']
 
@@ -25,7 +28,7 @@ subm=20
 xtime=np.arange(0,float(config.CANT_DISPLAY)/float(config.FS),subm/float(config.FS))
 fft_frec= np.linspace(0, config.FS/2, config.CANT_DISPLAY/2/subm)
 xtime_dialog=np.linspace(0,float(config.CANT_DISPLAY)/float(config.FS),config.CANT_DISPLAY)
-fft_frec_dialog= np.linspace(0, config.FS/2, config.CANT_DISPLAY/2)
+fft_frec_dialog= np.linspace(0,00001, config.FS/2, config.CANT_DISPLAY/2)
 
 class tets_display():
     def __init__(self,espacio_pg):
@@ -101,7 +104,7 @@ class tets_display():
             grafico.enableAutoRange('xy', state)  
                 
 class  plus_display():
-    def __init__(self,espacio_pg,plus_grid_fr,c_auto_umbral,c_manual_umbral): 
+    def __init__(self,espacio_pg,plus_grid_fr,c_auto_umbral,c_manual_umbral,beepbox): 
         #self.tmodes=np.ones(config.CANT_CANALES) #modos por defecto en 1, osea en auto
         self.tmode_auto=list([True for i in range(config.CANT_CANALES)]) #modos por defecto, en 2 es AUTO check
         self.umbrales_manuales=np.zeros(config.CANT_CANALES)
@@ -109,7 +112,7 @@ class  plus_display():
         self.c_auto_umbral=c_auto_umbral
         self.c_manual_umbral=c_manual_umbral
         #layout_graficos = pg.GraphicsLayout() #para ordenar los graficos(items) asi como el simil con los widgets
-        
+        self.beepbox=beepbox
         self.selec_canal=0
         self.selec_tet=0
         self.tasas_bars=bar_graf()
@@ -145,10 +148,10 @@ class  plus_display():
         elif self.mode is 1:  
             self.curve.setData(x=xtime_dialog,y=x[self.selec_canal,:], _callSync='off')
             if self.tmode_auto[self.selec_canal+4*self.selec_tet] is True:
-                self.graf_umbral.setValue(umbral_calc[self.selec_tet])
-            if tasas[self.selec_canal] > 0:
-                print '\a' #con un archivo y qtsound MEJORAR
-
+                self.graf_umbral.setValue(umbral_calc[self.selec_canal])
+            if tasas[self.selec_canal] > 0 and self.beepbox.isChecked():
+                #print '\a' #con un archivo y qtsound MEJORAR
+                os.system("beep -f 800 -l 50")
         else:
             aux=np.fft.fft(data[self.selec_tet*4+self.selec_canal,:]) #/config.CANT_DISPLAY
             self.curve.setData(x=fft_frec_dialog,y=abs(aux[:np.size(aux)/2]))
@@ -156,16 +159,19 @@ class  plus_display():
     def change_display_mode(self,new_mode):
         
         if new_mode is 0:
+            self.graf.setLogMode(x=False,y=False)
             if(self.mode is 1):
                 self.graf.removeItem(self.graf_umbral)
             
         elif new_mode is 1:
             self.graf.addItem(self.graf_umbral)
+            self.graf.setLogMode(x=False,y=False)
             if self.tmode_auto[self.selec_canal+4*self.selec_tet] is False:
                 self.graf_umbral.setValue(self.umbrales_manuales[self.selec_tet*4+self.selec_canal])
                 self.graf_umbral.setMovable(True)
 
         else: 
+            self.graf.setLogMode(x=True,y=True)
             if(self.mode is 1):
                 self.graf.removeItem(self.graf_umbral)
         self.mode=new_mode
@@ -179,7 +185,7 @@ class  plus_display():
         self.change_line_mode()
         
     def change_tet(self,tet):
-        self.selec_tet=tet
+        self.selec_tet=tet-1
         self.c_auto_umbral.setCheckState(2* self.tmode_auto[self.selec_canal+4*self.selec_tet])
         self.c_manual_umbral.setCheckState(2*(not self.tmode_auto[self.selec_canal+4*self.selec_tet]))
         self.change_line_mode()
@@ -194,7 +200,7 @@ class  plus_display():
             self.graf_umbral.setValue(self.umbrales_manuales[self.selec_tet*4+self.selec_canal])
         else:
             self.graf_umbral.setMovable(False)
-            
+        
             
 #class  rates_display():
     #def __init__(self,ecualizer_grid,dialogo):

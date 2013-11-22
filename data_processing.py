@@ -47,7 +47,7 @@ class  bci_data_handler():
         if self.paqdisplay is config.PAQ_DISPLAY:
             self.paqdisplay=0
         if (not self.warnigns_subproc.empty() and self.warnigns_subproc.get()):
-            print "se pierden datos"
+            print "se pierden datos!!!!!!!!!"
     def stopsave(self):
         #detiene el guardado de datos
         self.control_subproc.send('detener')

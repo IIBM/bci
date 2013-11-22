@@ -29,7 +29,7 @@ class MainWindow(QtGui.QMainWindow):
             self.tet_plus_selec.addItem('T%s' % (i + 1))
 
         
-        self.info_tetrodo=plus_display(self.plus_grid,self.plus_grid_fr,self.c_auto_umbral,self.c_manual_umbral)
+        self.info_tetrodo=plus_display(self.plus_grid,self.plus_grid_fr,self.c_auto_umbral,self.c_manual_umbral,self.beepbox)
         #self.matriz_tasas=rates_display(self.ecualizer_grid,self.dialogo)    
         
         #quedo sin conectar xq no ser estandar de la interfaz
@@ -46,8 +46,8 @@ class MainWindow(QtGui.QMainWindow):
         
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(0) #si va demasiado lento deberia bajarse el tiempo
         self.data_handler=bci_data_handler()
+        self.timer.start(0) #si va demasiado lento deberia bajarse el tiempo
         self.t1 = time.time()
     
     def update(self):

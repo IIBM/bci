@@ -14,4 +14,6 @@ CANT_DISPLAY= PAQ_DISPLAY*PAQ_USB #minimo
 TIEMPO_DISPLAY=PAQ_USB/FS #minimo en ms.. 
 
 FAKE_FILE=True #para file hay q cambiar el parser
+#ojo q esta cambiado el parse para leer archivos!!
+
 MAX_SIZE_FILE=40*1024*1024
