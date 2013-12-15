@@ -1,17 +1,17 @@
-from multiprocessing import Process, Pipe,Array,Queue
+from multiprocessing import Process, Pipe,Queue  #,Array
 import numpy as np #vectores, operaciones matematicas
 import time #hora local 
 import usb.core
 import usb.util
 import config
-import os 
+#import os 
 import array
-from pyqtgraph.Qt import QtGui
+#from pyqtgraph.Qt import QtGui
 
 
 intanVendor = 0x1CBE
 intanProduct = 0x0003
-
+BUFFER_PAQ_USB=1  #COLA
 
 def connect(idV,idP):
     # find our device
@@ -27,18 +27,110 @@ def connect(idV,idP):
    
 
 
-def parser(data,lectura):
-    cadena=lectura[:config.LARGO_TRAMA*config.PAQ_USB].tostring()
-    for i in range(0,config.PAQ_USB):
-        data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
-        if lectura[i*config.LARGO_TRAMA]!=255 or lectura[(i+1)*config.LARGO_TRAMA-1]!=70:
-            print  "paquete roto"
-        #con respecto al timestamp, puede tomarse como un dato mas, no deberia modificar nada
-        #valores[:,i]=struct.unpack('>32h',data[5+i*LARGO_TRAMA:69+i*LARGO_TRAMA].tostring())
-
+#def parser(data,lectura):
+#    cadena=lectura[:config.LARGO_TRAMA*config.PAQ_USB].tostring()
+#    for i in range(0,config.PAQ_USB):
+#        data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
+#        if lectura[i*config.LARGO_TRAMA]!=255 or lectura[(i+1)*config.LARGO_TRAMA-1]!=70:
+#            print  "paquete roto"
+#        #con respecto al timestamp, puede tomarse como un dato mas, no deberia modificar nada
+#        #valores[:,i]=struct.unpack('>32h',data[5+i*LARGO_TRAMA:69+i*LARGO_TRAMA].tostring())
+#
 
     
-def obtener_datos(comsend_warnings,dev_usb,reg_files,cola):
+
+   
+def capture_init(generic_file):
+	#lectura_nueva = Array('B',config.PAQ_USB*config.LARGO_TRAMA)
+	if not (hasattr(config, 'FAKE_FILE') or hasattr(config, 'FAKE')):
+		#verifica usb, luego comienza captura si es correcto
+		dev_usb = connect(intanVendor,intanProduct)
+	cola = Queue(maxsize=BUFFER_PAQ_USB)
+	
+	control_usb, control_ui = Pipe(duplex = False)
+	#show_warnings, send_warnings = Pipe(duplex = False)
+	warnings = Queue(maxsize=1)
+	if hasattr(config, 'FAKE_FILE'):
+		#p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,reg_files,lectura_nueva))
+		p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,warnings,cola,generic_file))
+		return p_ob_datos,control_ui,warnings,cola  
+	
+	#experim
+	if hasattr(config, 'FAKE'):
+		p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,warnings,cola))
+		return p_ob_datos,control_ui,warnings,cola  
+		
+	p_ob_datos = Process(target=obtener_datos, args=(control_usb,warnings,dev_usb,cola))
+	return p_ob_datos,control_ui,warnings,cola
+
+def fake_obtener_datos(com,send_warnings,reg_files,cola,generic_file):
+    #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
+    
+    save_data=False
+    comando='normal'
+    while(comando != 'salir'):    
+        while not com.poll():           
+            lectura=array.array('B')
+            while len(lectura) < (config.LARGO_TRAMA*config.PAQ_USB):
+                lectura.append(205)
+            
+            #t1 = time.time()
+            try:
+			#cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA))
+			    cola.put(lectura,timeout=config.TIEMPO_DISPLAY/10)
+            except:
+			    send_warnings.send('Datos no mostrados')
+            #lectura_nueva=lectura
+            #print time.time()-t1 
+            if save_data:
+                reg_files.save(lectura) 
+            #agrega el largo del archivo
+        comando=com.recv()
+        save_data= comando=='guardar'   
+    filereg_files.close()   
+
+def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
+    #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
+    reg_files=file_handle(generic_file)
+    file_input=open('data_test','rb')
+    save_data=False
+    #data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
+    comando=''
+    tiempo_espera=float(config.TIEMPO_DISPLAY)/50    
+    while(comando != config.EXIT_SIGNAL):      
+        while not com.poll():
+            #j=0
+            #lectura=array.array('B')
+            #lectura.append(file_input.read(config.PAQ_USB*config.LARGO_TRAMA))
+            #lectura=file_input.read(config.PAQ_USB*config.LARGO_TRAMA)
+            #for s in range(len(lectura)):
+			#	lectura_nueva[s]=ord(lectura[s])
+            time.sleep(config.TIEMPO_DISPLAY)
+            #lectura_nueva[:]=np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA)
+            lectura_nueva=np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA)
+            try:
+				#cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA))
+				cola.put(lectura_nueva,timeout=tiempo_espera)
+            except:
+				try:
+					send_warnings.put("SLOW SOFT!")
+				except:
+					pass	
+				#print "graficar pierde datos :("
+            #while(j<config.PAQ_USB):
+                #data[:,j]=np.fromfile(file_input,np.int16, config.CANT_CANALES)
+                #basura=np.fromfile(file_input,np.int16,1)
+                #j+=1
+            #buffer_in.send(data) #leer file-leer usb
+            if save_data:
+				reg_files.save(lectura_nueva)
+            #agrega el largo del archivo
+        comando=com.recv()
+        save_data= reg_files.actions(comando)
+    file_input.close()
+     
+
+def obtener_datos(com,send_warnings,dev_usb,reg_files,cola,generic_file):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     paq_data=config.LARGO_TRAMA*config.PAQ_USB
     dev_usb.write(1,'\xAA',0,100)
@@ -46,7 +138,7 @@ def obtener_datos(comsend_warnings,dev_usb,reg_files,cola):
     data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
     comando='normal'
 
-    while(comando != 'salir'):
+    while(comando != config.EXIT_SIGNAL):
         t1 = time.time()
         lectura = dev_usb.read(0x81,paq_data,0,400)                
         while not com.poll(): #mientras no se recivan comandos leo
@@ -75,122 +167,46 @@ def obtener_datos(comsend_warnings,dev_usb,reg_files,cola):
     dev_usb.write(1,'\xBB',0,100)
 
 
-        
-        
-def capture_init():
-	#lectura_nueva = Array('B',config.PAQ_USB*config.LARGO_TRAMA)
-	if not (hasattr(config, 'FAKE_FILE') or hasattr(config, 'FAKE')):
-		#verifica usb, luego comienza captura si es correcto
-		dev_usb = connect(intanVendor,intanProduct)
-	
-	cola = Queue(maxsize=20)
-	reg_files=file_handle()
-	control_usb, control_ui = Pipe(duplex = False)
-	#show_warnings, send_warnings = Pipe(duplex = False)
-	warnings = Queue(maxsize=1)
-	if hasattr(config, 'FAKE_FILE'):
-		#p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,reg_files,lectura_nueva))
-		p_ob_datos = Process(target=fake_file_obtener_datos, args=(control_usb,warnings,reg_files,cola))
-		return p_ob_datos,control_ui,warnings,cola  
-	
-	#experim
-	if hasattr(config, 'FAKE'):
-		p_ob_datos = Process(target=fake_obtener_datos, args=(control_usb,warnings,reg_files,cola))
-		return p_ob_datos,control_ui,warnings,cola  
-		
-	p_ob_datos = Process(target=obtener_datos, args=(control_usb,warnings,dev_usb,reg_files,cola))
-	return p_ob_datos,control_ui,warnings,cola
-
-def fake_obtener_datos(com,send_warnings,reg_files,cola):
-    #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
-    save_data=False
-    comando='normal'
-    while(comando != 'salir'):    
-        while not com.poll():           
-            lectura=array.array('B')
-            while len(lectura) < (config.LARGO_TRAMA*config.PAQ_USB):
-                lectura.append(205)
-            
-            #t1 = time.time()
-            try:
-			#cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA))
-			    cola.put(lectura,timeout=config.TIEMPO_DISPLAY/10)
-            except:
-			    send_warnings.send('Datos no mostrados')
-            #lectura_nueva=lectura
-            #print time.time()-t1 
-            if save_data:
-                reg_files.save(lectura) 
-            #agrega el largo del archivo
-        comando=com.recv()
-        save_data= comando=='guardar'   
-    filereg_files.close()   
-
-def fake_file_obtener_datos(com,send_warnings,reg_files,cola):
-    #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
-    file_input=open('data_test','rb')
-    save_data=False
-    #data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
-    comando='normal'
- 
-    while(comando != 'salir'):      
-        while not com.poll():
-            #j=0
-            #lectura=array.array('B')
-            #lectura.append(file_input.read(config.PAQ_USB*config.LARGO_TRAMA))
-            #lectura=file_input.read(config.PAQ_USB*config.LARGO_TRAMA)
-            #for s in range(len(lectura)):
-			#	lectura_nueva[s]=ord(lectura[s])
-            time.sleep(config.TIEMPO_DISPLAY)
-            #lectura_nueva[:]=np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA)
-            lectura_nueva=np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA)
-            try:
-				#cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA))
-				cola.put(lectura_nueva,timeout=config.TIEMPO_DISPLAY/10)
-            except:
-				try:
-					warnings.put(True)
-				except:
-					pass	
-				#print "graficar pierde datos :("
-            #while(j<config.PAQ_USB):
-                #data[:,j]=np.fromfile(file_input,np.int16, config.CANT_CANALES)
-                #basura=np.fromfile(file_input,np.int16,1)
-                
-                #j+=1
-            #buffer_in.send(data) #leer file-leer usb
-            if save_data:
-				reg_files.save(lectura_nueva)
-            #agrega el largo del archivo
-        comando=com.recv()
-        save_data= comando=='guardar'
-    file_input.close()
-    filereg_files.close()   
 
 class file_handle():
-    def __init__(self):
-        self.generic_file_name = QtGui.QFileDialog.getSaveFileName()
+    def __init__(self,generic_file):
+        self.generic_file_name = generic_file
         #archivo cabecera
-        file_head=open(self.generic_file_name + '0','w')
-        file_head.write("FS,LARGO_TRAMA,FECHA,LARGO_ARCHIVO,ARCHIVOS\n")
         self.paqxfile=config.MAX_SIZE_FILE/config.LARGO_TRAMA/config.PAQ_USB
-        self.part=1 #parte del registro todo corrido
-        self.file_part=open(self.generic_file_name + str(self.part),'wb')
-        self.paq_in_part=0
-
-    def save(self,data):
+        self.num_registro=-1
         
+    def new(self):
+        file_head=open(self.generic_file_name +'-'+str(self.num_registro) + '-0','w')
+        file_head.write("FS,LARGO_TRAMA,FECHA,LARGO_ARCHIVO,ARCHIVOS\n")
+        self.part=1 #parte del registro todo corrido
+        self.file_part=open(self.generic_file_name +'-'+str(self.num_registro) +'-' +str(self.part),'wb')
+        self.paq_in_part=0
+		
+    def save(self,data):
         
         if(self.paq_in_part<self.paqxfile):
             data.tofile(self.file_part)
             self.paq_in_part+=1
         else:
             self.file_part.close()
-            self.file_part=open(self.generic_file_name + str(self.part),'wb')
+            self.file_part=open(self.generic_file_name +'-'+str(self.num_registro) +'-' +str(self.part),'wb')
             data.tofile(self.file_part)
             self.part=1
+    
+    def actions(self,signal):
+        self.close()
+        if signal is config.START_SIGNAL:
+            self.num_registro+=1
+            self.new()
 
+            return True
+        
+        return False
     def close(self):
-        self.file_part.close()
-        file_head.write(str(config.FS) + ','+ str(config.LARGO_TRAMA)+','+str(time.asctime( time.localtime(time.time())))+','+str(self.paqxfile*config.PAQ_USB)+','+str(self.part)+'\n')
-        file_head.close()
+        try:
+            self.file_part.close()
+            file_head.write(str(config.FS) + ','+ str(config.LARGO_TRAMA)+','+str(time.asctime( time.localtime(time.time())))+','+str(self.paqxfile*config.PAQ_USB)+','+str(self.part)+'\n')
+            file_head.close()
+        except:
+            pass
+

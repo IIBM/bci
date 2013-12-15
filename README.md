@@ -16,9 +16,10 @@ bci
   *.ui: diseño de menus, ventanas, etc
 
 
-**Nota:** 
+**Notas:** 
 
   al definir la variable FAKE o FAKE_FILE en config.py se simulan las entradas
+  al iniciar pide el nombre del archivo donde se guardaran los datos
 
 **Dependencias:**
 
