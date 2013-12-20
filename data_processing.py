@@ -39,17 +39,22 @@ class  bci_data_handler():
     
     def update(self):
         #aux=array.array('B')
-        self.binary_data=self.cola.get()
+        #self.binary_data=self.cola.get()
         
         
         data_fake=np.int16(np.zeros([config.CANT_CANALES+1,config.PAQ_USB]))
         #aux.extend(self.cola.get())        
-        for i in range(0,config.PAQ_USB):
-            #ojo aca!!!!!!!!!
-            #data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
-            #data_fake[:,i]=struct.unpack('<'+str(config.CANT_CANALES+1)+'h',self.binary_data[i*config.LARGO_TRAMA:(i+1)*config.LARGO_TRAMA]) 
-            data_fake[:,i]=struct.unpack_from('<'+str(config.CANT_CANALES+1)+'h',self.binary_data,i*config.LARGO_TRAMA)
-            ##if lectura[i*config.LARGO_TRAMA]!=255 or lectura[(i+1)*config.LARGO_TRAMA-1]!=70:
+        t1=time.time()
+        #for i in range(0,config.PAQ_USB):
+            ##ojo aca!!!!!!!!!
+            ##data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
+            ##data_fake[:,i]=struct.unpack('<'+str(config.CANT_CANALES+1)+'h',self.binary_data[i*config.LARGO_TRAMA:(i+1)*config.LARGO_TRAMA]) 
+            #data_fake[:,i]=struct.unpack_from('<'+str(config.CANT_CANALES+1)+'h',self.binary_data,i*config.LARGO_TRAMA)
+            ###if lectura[i*config.LARGO_TRAMA]!=255 or lectura[(i+1)*config.LARGO_TRAMA-1]!=70:
+        data_fake=np.fromstring(self.cola.get(), dtype='<i2')
+        data_fake=data_fake.reshape([config.CANT_CANALES+1,config.PAQ_USB],order='F')
+        
+        print (time.time()-t1)*1000
         self.data_new=data_fake[:-1,:]
         
         
@@ -121,7 +126,7 @@ def calcular_tasa_disparo(x,umbral):
     #p_ob_datos = Process(target=procesar_datos, args=(control,cola_data,cola_graf))
     #return p_ob_datos,control_ui,cola  
 
-def procesar_datos(control,cola_input ,cola_graf):
+def data_processing(control,cola_input ,cola_graf):
         mean_calc=np.int16(np.zeros([config.CANT_CANALES,MEAN_L]))
         binary_data=array.array('B')
         binary_data.extend(cola_input.get())
@@ -150,4 +155,13 @@ def procesar_datos(control,cola_input ,cola_graf):
 
             comando=control.recv()
 
-                
+class  procces_control_class():  
+    def __init__(self):             
+        self.umbrales=np.int16(np.zeros([config.CANT_CANALES]))
+        self.filter_data=False
+        
+class  graff_data_class():   
+     def __init__(self):     
+        self.data_new=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
+        self.tasas=np.zeros(config.CANT_CANALES)
+        self.spikes_times=0
