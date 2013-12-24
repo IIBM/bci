@@ -19,7 +19,7 @@ FAKE_FILE=True #para file hay q cambiar el parser
 #ojo q esta cambiado el parser para leer archivos!!
 
 MAX_SIZE_FILE=40*1024*1024
-
+TIMEOUT_GET=10*int(PAQ_USB/FS)
 #-----------------------------------------------
 STOP_SIGNAL=1
 START_SIGNAL=2

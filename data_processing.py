@@ -1,167 +1,95 @@
-#!/usr/bin/python
-
-import config
-import struct
-import array
 from scipy import signal #proc de segnales
-from capture import capture_init
 import numpy as np #vectores, operaciones matematicas
 import time
-from multiprocessing import Process, Pipe,Queue
-[b_spike,a_spike]=signal.iirfilter(4,[float(300*2)/config.FS, float(6000*2)/config.FS], rp=None, rs=None, btype='band', analog=False, ftype='butter',output='ba')
+import config
+
+#[b_spike,a_spike]=signal.iirfilter(4,[float(300*2)/config.FS, float(6000*2)/config.FS], rp=None, rs=None, btype='band', analog=False, ftype='butter',output='ba')
+filter_coef=signal.firwin(100, [float(300*2)/config.FS,float(3000*2)/config.FS], width=None, window='hamming', pass_zero=False)
+
 
 MEAN_L=5  #ESTO PODRIA PONERSE A BASE DE TIEMPO
 
-
-class  bci_data_handler():
-    def __init__(self,generic_file):
-       
-        #ojo aca!!!!1
-        #self.graf_data=np.uint16(np.zeros([config.CANT_CANALES,config.CANT_DISPLAY]))
-        #self.graf_data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB])) 
-        self.data_new=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB])) 
-        #self.aux=array.array('B',[0 for i in range(config.PAQ_USB*config.LARGO_TRAMA)])
-        self.graf_data=np.int16(np.zeros([config.CANT_CANALES,config.MAX_PAQ_DISPLAY*config.PAQ_USB]))
-        self.p_ob_datos,self.control_subproc,self.warnigns_subproc,self.cola=capture_init(generic_file)
-        self.mean_calc=np.int16(np.zeros([config.CANT_CANALES,MEAN_L]))
-        self.paqdisplay=0
-        self.mean_l=0
-        self.paq_view=1
-        self.new_paq_view=1
-        self.n_view=self.paq_view*config.PAQ_USB
-        self.xtime=np.zeros([config.MAX_PAQ_DISPLAY*config.PAQ_USB])
-        self.xtime[:self.n_view]=np.linspace(0,config.MAX_PAQ_DISPLAY*config.PAQ_USB/float(config.FS),self.n_view)
-        self.p_ob_datos.start()
-        self.update()
-        self.binary_data=array.array('B')
-        self.binary_data.extend(self.cola.get())
-        ####
+#def calcular_umbral_disparo(data,canales):
+    #x=abs(signal.lfilter(b_spike,a_spike,data[canales,:]))
+    #umbrales=4*np.median(x/0.6745,1)
+    #return x,umbrales
     
-    def update(self):
-        #aux=array.array('B')
-        #self.binary_data=self.cola.get()
-        
-        
-        data_fake=np.int16(np.zeros([config.CANT_CANALES+1,config.PAQ_USB]))
-        #aux.extend(self.cola.get())        
-        t1=time.time()
-        #for i in range(0,config.PAQ_USB):
-            ##ojo aca!!!!!!!!!
-            ##data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
-            ##data_fake[:,i]=struct.unpack('<'+str(config.CANT_CANALES+1)+'h',self.binary_data[i*config.LARGO_TRAMA:(i+1)*config.LARGO_TRAMA]) 
-            #data_fake[:,i]=struct.unpack_from('<'+str(config.CANT_CANALES+1)+'h',self.binary_data,i*config.LARGO_TRAMA)
-            ###if lectura[i*config.LARGO_TRAMA]!=255 or lectura[(i+1)*config.LARGO_TRAMA-1]!=70:
-        data_fake=np.fromstring(self.cola.get(), dtype='<i2')
-        data_fake=data_fake.reshape([config.CANT_CANALES+1,config.PAQ_USB],order='F')
-        
-        print (time.time()-t1)*1000
-        self.data_new=data_fake[:-1,:]
-        
-        
-        
-        #self.data=np.append(self.data[:,config.CANT_DISPLAY:],data_new,axis=1)
-        #self.graf_data=np.concatenate([self.graf_data[:,config.PAQ_USB:], self.data_new],axis=1) #hace lo mismo q la de arriba... no encontre mejoras
-        self.mean_calc[:,self.mean_l]=np.mean(self.data_new,1)
-        self.mean_l+=1
-        if self.mean_l is MEAN_L :
-            self.mean_l=0
-            
-        
-        mean_aux=np.mean(self.mean_calc,1)
-        if(self.new_paq_view != self.paq_view):
-            self.paq_view=self.new_paq_view
-            self.n_view=self.paq_view*config.PAQ_USB
-            self.xtime[:self.n_view]=np.linspace(0,self.n_view/float(config.FS),self.n_view)
-        
-        if self.paqdisplay >= self.paq_view:
-            self.paqdisplay=0
-            
+#def calcular_tasa_disparo(x,umbral):
+    #t1=time.time()
+    #if umbral >= 0:
+        #pasa_umbral=(x>umbral)
+    #else:
+        #pasa_umbral=(x<umbral)
+    #np.sum(pasa_umbral[:-1] * ~ pasa_umbral[1:])
+    #print time.time()-t1
 
-        
-        for i in range(config.PAQ_USB):
-            self.graf_data[:,self.paqdisplay*config.PAQ_USB+i]=self.data_new[:,i]-mean_aux
-        self.paqdisplay+=1
-        
-            
-        if (not self.warnigns_subproc.empty()):
-            return self.warnigns_subproc.get()
-        else:
-            return ''
-            
-    def stopsave(self):
-        #detiene el guardado de datos
-        self.control_subproc.send(config.STOP_SIGNAL)
+def spikes_detect(x,umbral):
+    b=np.matrix(x*np.sign(umbral)>np.abs(umbral),np.int)        
+    b=np.diff(b,1,1)
+    aux=np.nonzero(b)
+    new_spikes_times=list([[] for i in range(config.CANT_CANALES)])
+    for i in range(aux[0].size):
+        new_spikes_times[aux[0][0,i]].append(aux[1][0,i])
     
-    def close(self):
-        self.control_subproc.send(config.EXIT_SIGNAL)
-        self.p_ob_datos.join(1)
-        self.p_ob_datos.terminate()
-        #self.cola.close()
-        
-    def startsave(self):
-        self.control_subproc.send(config.START_SIGNAL) 
+    return new_spikes_times
 
-    def change_paq_view(self,i):
-        self.new_paq_view=i
-    
-        
-        
-def calcular_umbral_disparo(data,canales):
-    x=abs(signal.lfilter(b_spike,a_spike,data[canales,:]))
-    umbrales=4*np.median(x/0.6745,1)
-    return x,umbrales
-    
-
-def calcular_tasa_disparo(x,umbral):
-    if umbral >= 0:
-        pasa_umbral=(x>umbral)
-    else:
-        pasa_umbral=(x<umbral)
-    return np.sum(pasa_umbral[:-1] * ~ pasa_umbral[1:])
-
-
-#def processing_init():
-    #cola = Queue(maxsize=BUFFER_PAQ_USB)
-    #control_prossesing, control_ui = Pipe(duplex = False)
-    #p_ob_datos = Process(target=procesar_datos, args=(control,cola_data,cola_graf))
-    #return p_ob_datos,control_ui,cola  
-
-def data_processing(control,cola_input ,cola_graf):
-        mean_calc=np.int16(np.zeros([config.CANT_CANALES,MEAN_L]))
-        binary_data=array.array('B')
-        binary_data.extend(cola_input.get())
-        tasas=np.zeros([config.CANT_CANALES])
-        comando=''
-        
-        ## FAKE
-        data_fake=np.int16(np.zeros([config.CANT_CANALES+1,config.PAQ_USB]))
-        while(comando != config.EXIT_SIGNAL):
-            while not control.poll():
-                self.binary_data=self.cola.get()
+def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_control,warnings):
+    #import config
+    graph_data=Data_proc2ui()
+    control=''
+    mean_calc=np.int16(np.zeros([config.CANT_CANALES,MEAN_L]))
+    mean_l=0
+    mean_aux=np.ndarray([config.CANT_CANALES,1])
+    while(control != config.EXIT_SIGNAL):
+        while not proccesing_control.poll():
+            if not ui_config_queue.empty():
+                try:
+                    ui_config=ui_config_queue.get(config.TIMEOUT_GET)
+                except:
+                    pass
+            try:
+                new_data=data_queue.get(config.TIMEOUT_GET)
+            except:
+                continue
+            new_data=new_data[:-1,:] #casa en este caso xq saco el 25 avo
+            #filtar y enviar si filtro activo en conf o bien asi como esta
+            np.mean(new_data,1,out=mean_calc[:,mean_l])
+            mean_l+=1
+            if mean_l is MEAN_L :
+                mean_l=0
+            
+            np.mean(mean_calc,1,out=mean_aux)
+            #casa falta muucho 
+            new_data=new_data-mean_aux
+            
+            
+            filtered_data=signal.lfilter(filter_coef,1,new_data) #casa terriblemente mal no tiene en cuenta nada
                 
-                for i in range(0,config.PAQ_USB):
-                #ojo aca!!!!!!!!!
-                #data[:,i]=struct.unpack('<'+str(config.CANT_CANALES)+'H',cadena[i*config.LARGO_TRAMA+1:(i+1)*config.LARGO_TRAMA-1]) 
-                    data_fake[:,i]=struct.unpack_from('<'+str(config.CANT_CANALES+1)+'h',self.binary_data,i*config.LARGO_TRAMA)
-                self.data_new=data_fake[:-1,:] #FAKE OJO ACA
-        
-            #procesoosososososos
-            self.mean_calc[:,self.mean_l]=np.mean(self.data_new,1)
-            self.mean_l+=1
-            if self.mean_l is MEAN_L:
-                self.mean_l=0
-            for i in range(config.PAQ_USB):
-                data[:,self.paqdisplay*config.PAQ_USB+i]=self.data_new[:,i]-mean_aux
+            spikes_times=spikes_detect(filtered_data,ui_config.thresholds)
+            #casa ojo la fase lineal q desplaza todo
+            
 
-            comando=control.recv()
+            graph_data.spikes_times=spikes_times
+            
+            if ui_config.filter_mode is True:
+                graph_data.new_data=filtered_data
+            else:
+                graph_data.new_data=new_data
+                
+            try:
+                graph_data_queue.put_nowait(graph_data)
+            except:
+                try:
+                    warnings.put_nowait('Loss data in slow graphics') 
+                except:
+                    pass
+                
+        control=proccesing_control.recv()
+       #numpy.where !!!
+       
 
-class  procces_control_class():  
-    def __init__(self):             
-        self.umbrales=np.int16(np.zeros([config.CANT_CANALES]))
-        self.filter_data=False
-        
-class  graff_data_class():   
-     def __init__(self):     
-        self.data_new=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
-        self.tasas=np.zeros(config.CANT_CANALES)
-        self.spikes_times=0
+class Data_proc2ui():
+    def __init__(self):
+        self.new_data=0
+        self.spikes_times=np.zeros([0])
+        #aca podria cambiar de filtro con un aviso para el recalculo.. aunq afectaria el sorting
