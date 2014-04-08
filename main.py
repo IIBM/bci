@@ -22,9 +22,9 @@ def main():
                 if(QtGui.QMessageBox.question(QtGui.QWidget(),'Error', "error: USB device not found, try again?", 
                 QtGui.QMessageBox.Ok |QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Cancel ):
                     exit()
-    
-    #processing_process,get_data_process=init_process(QtGui.QFileDialog.getSaveFileName(),dev_usb)
-#    
+# ## ## ## ## ## ## ## ## ## ## ## ## #   
+    #processing_process,get_data_process=init_process(QtGui.QFileDialog.getSaveFileName(),dev_usb) 
+# ## ## ## ## ## ## ## ## ## ## #   
     processing_process,get_data_process=init_process(" ",0)
 #    processing_process.process.start()
 #    get_data_process.process.start()

@@ -21,17 +21,15 @@ ch_colors=['r','y','g','c']
 FFT_L=8192*2 #largo del vector con el q se realiza fft
 FFT_N=4  #cantidad de ffts q se promedian
 FFT_L_PAQ=3 #cantidad de paqueques q se concatenan para fft
-numero_filas_tet_display=3
-#pasa_bajos=signal.firwin(61, 0.01)
-#pasa_altos=signal.firwin(61, 0.01, pass_zero=False)
-#fft_frec= np.linspace(0, config.FS/2, config.CANT_DISPLAY/2/subm)
-#xtime_dialog=np.linspace(0,float(config.CANT_DISPLAY)/float(config.FS),config.CANT_DISPLAY)
-fft_frec= np.linspace(0, config.FS/2, FFT_L/2)
-ESCALA_DISPLAY=200
+ROWS_DISPLAY=3
+
 TWO_WINDOWS=False
 BEEP_DURATION=20
+TIME_SPIKE_COUNT=1 #ventana de tiempo donde se estima la frec de disparo.Aprox: secons 
+DISPLAY_LIMY=200
+fft_frec= np.linspace(0, config.FS/2, FFT_L/2)
+PACK_xSPIKE_COUNT=int(float(TIME_SPIKE_COUNT)/config.TIEMPO_DISPLAY)
 
-   
 class MainWindow(QtGui.QMainWindow):
     def __init__(self,processing_process,get_data_process):
         QtGui.QMainWindow.__init__(self)
@@ -39,30 +37,26 @@ class MainWindow(QtGui.QMainWindow):
         #self.tet_plus_selec
         #diagolo q da mas info del canal
         #self.dialogo=Dialog_Tet()
-        #matriz de graphicos general
         #self.matriz_tetrodos=tets_display(self.espacio_pg)
         #for i in range((config.CANT_CANALES)/4):
             #self.tet_plus_selec.addItem('T%s' % (i + 1))
         self.processing_process=processing_process
         self.get_data_process=get_data_process
-        
-        self.signal_config=Config_processing(False,ESCALA_DISPLAY*np.ones([config.CANT_CANALES,1])/2)
+        self.signal_config=Config_processing(False,DISPLAY_LIMY/2*np.ones([config.CANT_CANALES,1])) #HARDCODE
+        self.active_channels=[False for j in range(config.CANT_CANALES)]
         try:
             processing_process.ui_config_queue.put(self.signal_config)
         except:
             pass
-        self.info_tetrodo=plus_display(self.plus_grid,self.plus_grid_fr,self.c_auto_umbral,self.c_manual_umbral,self.signal_config)
+        self.info_tetrodo=plus_display(self.plus_grid,self.plus_grid_fr,self.signal_config)
         self.matriz_tetrodos=general_display(self.espacio_pg,self.info_tetrodo)
         self.data_handler=bci_data_handler()
         #QtCore.QObject.connect(self.autoRange, QtCore.SIGNAL("clicked()"), self.set_autoRange)
         QtCore.QObject.connect(self.tet_plus_mode, QtCore.SIGNAL("currentIndexChanged(int)"), self.info_tetrodo.change_display_mode) 
-        QtCore.QObject.connect(self.c_auto_umbral, QtCore.SIGNAL("stateChanged(int)"), self.info_tetrodo.change_tmode) 
-        QtCore.QObject.connect(self.escala_display, QtCore.SIGNAL("valueChanged(int)"), self.matriz_tetrodos.change_Yrange)  
+        #QtCore.QObject.connect(self.c_auto_umbral, QtCore.SIGNAL("stateChanged(int)"), self.info_tetrodo.change_tmode) 
+        QtCore.QObject.connect(self.display_scale, QtCore.SIGNAL("valueChanged(int)"), self.matriz_tetrodos.change_Yrange)  
         QtCore.QObject.connect(self.paq_view, QtCore.SIGNAL("valueChanged(int)"), self.changeXrange)  
-        
-        QtCore.QObject.connect(self.filter_mode_cb, QtCore.SIGNAL("currentIndexChanged(int)"), self.change_filter_mode)  
-
-        
+        QtCore.QObject.connect(self.active_channel_cb, QtCore.SIGNAL("clicked( bool)"),self.activate_channel)
         
         self.file_label.setText('Sin Guardar')
         self.contador_registro=-1
@@ -76,29 +70,29 @@ class MainWindow(QtGui.QMainWindow):
         
     def update(self):
         #check if get_data process can send data
-        t1 = time.time()
 
+        self.signal_config.filter_mode= self.filter_mode_button.isChecked()
+        
+        try:
+            self.data_handler.update(self.processing_process.new_data_queue.get(config.TIMEOUT_GET),self.signal_config.filter_mode,self.pausa.isChecked())
+        except:
+            return 1
         if (not self.get_data_process.warnings.empty()):
             self.warnings.setText(self.get_data_process.warnings.get(config.TIMEOUT_GET))
         else:
-            self.warnings.setText("Ok") 
+            self.warnings.setText("") 
         
-        try:
-            self.data_handler.update(self.processing_process.new_data_queue.get(config.TIMEOUT_GET))
-        except:
-            return 1
+        if (not self.processing_process.warnings.empty()):
+            self.status.setText(self.processing_process.warnings.get(config.TIMEOUT_GET))
+        else:
+            self.status.setText("")                  
+            
+            
         if self.beepbox.isChecked():
             t = threading.Thread(target=beep,args=[self.data_handler.spikes_times[self.info_tetrodo.channel]])
             t.start()    
-            
-        #casa error del procesamiento
-        #if (not self.processing_process.warnigns.empty()):
-            #self.warnings.setText(self.processing_process.warnigns.get(config.TIMEOUT_GET))
-        #else:
-            #return ''
-        if not self.pausa.isChecked():
-            self.update_graphicos()
-        self.status.setText('update: '+str(int((time.time() - t1)*1000)))
+                   
+        self.update_graphicos()
         try:
             self.processing_process.ui_config_queue.put(self.signal_config)
         except:
@@ -110,7 +104,8 @@ class MainWindow(QtGui.QMainWindow):
         self.matriz_tetrodos.update(self.data_handler.graph_data,self.data_handler.n_view)
         self.info_tetrodo.update(self.data_handler)
         self.info_label.setText('TET:'+str(int(self.info_tetrodo.channel/4)+1)+' C:'+str(self.info_tetrodo.channel%4+1))
-
+        self.active_channel_cb.setChecked(self.active_channels[self.info_tetrodo.channel])
+    
     def on_actionDetener(self):
         #detiene el guardado de datos
         self.get_data_process.control.send(config.STOP_SIGNAL)
@@ -133,6 +128,7 @@ class MainWindow(QtGui.QMainWindow):
         self.contador_registro+=1
         self.file_label.setText('Guardando:'+self.generic_file +'-'+str(self.contador_registro))
 
+
     #def set_autoRange(self):
         #if self.autoRange.isChecked():
             #self.matriz_tetrodos.setAutoRange(True)
@@ -146,23 +142,25 @@ class MainWindow(QtGui.QMainWindow):
         self.data_handler.change_paq_view(i)
         self.matriz_tetrodos.changeXrange(i)
     
-    def change_filter_mode(self,i):
-        self.signal_config.filter_mode= bool(i)
-    #casa
-    
-    
+    def activate_channel(self,i):
+        self.active_channels[self.info_tetrodo.channel]=i
+        
+    def on_actionInit_SP(self):
+        self.active_channel_cb.setCheckable(False)
+        self.processing_process.control.send(active_channels)
+        pass #FER termina esto
     #@QtCore.pyqtSlot()          
     #def on_s_canal1_valueChanged(self,int):
         #print str(self.s_canal1.value())
 
                 
 class  plus_display():
-    def __init__(self,espacio_pg,plus_grid_fr,c_auto_umbral,c_manual_umbral,signal_config): 
+    def __init__(self,espacio_pg,plus_grid_fr,signal_config): 
         #self.tmodes=np.ones(config.CANT_CANALES) #modos por defecto en 1, osea en auto
-        self.tmode_auto=list([False for i in range(config.CANT_CANALES)]) #modos por defecto, en 2 es AUTO check
+        #self.tmode_auto=list([False for i in range(config.CANT_CANALES)]) #modos por defecto, en 2 es AUTO check
         self.mode=0
-        self.c_auto_umbral=c_auto_umbral
-        self.c_manual_umbral=c_manual_umbral
+        #self.c_auto_umbral=c_auto_umbral
+        #self.c_manual_umbral=c_manual_umbral
         self.channel=0
         #layout_graphicos = pg.GraphicsLayout() #para ordenar los graphicos(items) asi como el simil con los widgets
         self.signal_config=signal_config
@@ -172,7 +170,7 @@ class  plus_display():
         self.graph = pg.PlotItem()
         self.VB=self.graph.getViewBox()
         self.VB.setXRange(0, config.PAQ_USB/float(config.FS), padding=0, update=True)
-        self.VB.setYRange(ESCALA_DISPLAY,-ESCALA_DISPLAY, padding=0, update=True)
+        self.VB.setYRange(DISPLAY_LIMY,-DISPLAY_LIMY, padding=0, update=True)
         self.graph.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
         self.graph.setDownsampling(auto=True)
         self.curve=self.graph.plot()
@@ -193,13 +191,9 @@ class  plus_display():
         n_view=data_handler.n_view
         xtime=data_handler.xtime
         
-        if self.tmode_auto[self.channel] is False:
-            self.signal_config.thresholds[self.channel]=self.graph_umbral.value()
+        self.signal_config.thresholds[self.channel]=self.graph_umbral.value()
         self.max_xtime=xtime[n_view-1]
         #tasas=np.zeros([4])
-        #reordenar esto, se calculan medianas q podrian no estarse usando.MEJORAR
-        #x,umbral_calc=calcular_umbral_disparo(data[:,:n_view],range(4*self.selec_tet,4*self.selec_tet+4))
-        
         
         #for i in range(4):
             #if self.tmode_auto[4*self.selec_tet+i] is True:
@@ -252,8 +246,6 @@ class  plus_display():
             self.graph.addItem(self.graph_umbral)
             self.VB.setXRange(0, self.max_xtime, padding=0, update=False)
             #self.graph.setLogMode(x=False,y=False)
-            if(self.mode is 1):
-                self.graph.removeItem(self.graph_umbral)
             
         #elif new_mode is 1:
             #self.graph.addItem(self.graph_umbral)
@@ -261,9 +253,8 @@ class  plus_display():
             ##self.VB.setXRange(0, self_max_xtime, padding=0, update=False)
             ##self.graph.setLogMode(x=False,y=False)
             
-            if self.tmode_auto[self.channel] is False:
-                self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
-                self.graph_umbral.setMovable(True)
+            self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
+            #self.graph_umbral.setMovable(True)
 
         else: 
             #self.graph.setLogMode(x=True,y=True)
@@ -274,33 +265,26 @@ class  plus_display():
             self.fft_n=0    
             #self.curve.setData(x=[0],y=[0])
         self.mode=new_mode
-        self.change_line_mode()
         
         
     def change_channel(self,canal):
+        if int(self.channel/4) != int(self.channel/4):
+            self.tasas_bars.tet_changed()
         self.channel=canal
-        self.c_auto_umbral.setCheckState(2* self.tmode_auto[canal])
-        self.c_manual_umbral.setCheckState(2*(not self.tmode_auto[canal]))
-        self.change_line_mode()
+        self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
         self.fft_l=0
         self.fft_n=0
         
-    def change_tmode(self,new_mode):
-        self.tmode_auto[self.channel]=(new_mode is 2)
-        self.change_line_mode()
-    
-    def change_line_mode(self):
-        if self.tmode_auto[self.channel] is False:
-            self.graph_umbral.setMovable(True)
-            self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
-        else:
-            self.graph_umbral.setMovable(False)
-        
-            
+    #def change_tmode(self,new_mode):
+        #self.tmode_auto[self.channel]=(new_mode is 2)
+        #self.change_line_mode()    
+
 
 class  bar_graph(pg.PlotItem):
     def __init__(self):
+        self.npack=0
         self.tasa_bars=list()
+        self.tasas=np.zeros([PACK_xSPIKE_COUNT,4])
         pg.PlotItem.__init__(self)
         self.showAxis('bottom', False)
         self.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
@@ -316,11 +300,18 @@ class  bar_graph(pg.PlotItem):
         self.tasa_bars.append(self.plot(pen=ch_colors[2], fillLevel=0,brush=pg.mkBrush(ch_colors[2])))
         self.tasa_bars.append(self.plot(pen=ch_colors[3], fillLevel=0,brush=pg.mkBrush(ch_colors[3])))
 
-    def update(self,spike_times):
+    def update(self,spike_times):  
             for i in range(4):
-                tasas=np.size(spike_times[i])
-                self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas,tasas], _callSync='off')
+                self.tasas[self.npack,i]=np.size(spike_times[i],1)
+                tasas_aux=self.tasas[:,i].sum()       
+                self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas_aux,tasas_aux], _callSync='off')
+            self.npack+=1
+            if self.npack is PACK_xSPIKE_COUNT:
+               self.npack=0 
 
+    def tet_changed(self):
+        self.npack=0
+        self.tasas=np.zeros([PACK_xSPIKE_COUNT,4])
         
 class general_display():
     def __init__(self,espacio_pg,info_tet):
@@ -346,16 +337,16 @@ class general_display():
             vb=ViewBox_General_Display(i,info_tet)
             
             if (i < main_win_ch):
-                graph = layout_graphicos.addPlot(viewBox=vb,row=int(i/4/numero_filas_tet_display)*4+i%4, col=int(i/4)%numero_filas_tet_display, rowspan=1, colspan=1)
+                graph = layout_graphicos.addPlot(viewBox=vb,row=int(i/4/ROWS_DISPLAY)*4+i%4, col=int(i/4)%ROWS_DISPLAY, rowspan=1, colspan=1)
             else:
-                graph = layout_graphicos_2.addPlot(viewBox=vb,row=int((i-main_win_ch)/4/numero_filas_tet_display)*4+(i-main_win_ch)%4, col=int((i-main_win_ch)/4)%numero_filas_tet_display, rowspan=1, colspan=1)
+                graph = layout_graphicos_2.addPlot(viewBox=vb,row=int((i-main_win_ch)/4/ROWS_DISPLAY)*4+(i-main_win_ch)%4, col=int((i-main_win_ch)/4)%ROWS_DISPLAY, rowspan=1, colspan=1)
             
             graph.hideButtons()
             graph.setDownsampling(auto=True)
             
             VB=graph.getViewBox()
             VB.setXRange(0, config.PAQ_USB, padding=0, update=True) #HARDCODE
-            VB.setYRange(ESCALA_DISPLAY,-ESCALA_DISPLAY, padding=0, update=True)
+            VB.setYRange(DISPLAY_LIMY,-DISPLAY_LIMY, padding=0, update=True)
             #self.vieboxs.append(VB)
             if i%4 is 0:
                 graph.setTitle('Tetrodo ' + str(i/4+1))
@@ -371,13 +362,13 @@ class general_display():
             self.curv_canal.append(graph.plot())
             self.curv_canal[-1].setPen(width=1,color=ch_colors[i%4])
             self.graphicos.append(graph)
-        #self.casa=4
+
         
         
     def change_Yrange(self,p):
         p=float(p)/10
         for i in range(config.CANT_CANALES):
-           self.graphicos[i].setYRange(ESCALA_DISPLAY*p,-1*ESCALA_DISPLAY*p, padding=0, update=False)
+           self.graphicos[i].setYRange(DISPLAY_LIMY*p,-1*DISPLAY_LIMY*p, padding=0, update=False)
     
     
     def changeXrange(self,i):
@@ -451,8 +442,14 @@ class  bci_data_handler():
         self.xtime[:self.n_view]=np.linspace(0,config.MAX_PAQ_DISPLAY*config.PAQ_USB/float(config.FS),self.n_view)
         ####
     
-    def update(self,data_struct):
+    def update(self,data_struct,is_filtered_signal,pause):
+        if pause is True:
+            return
         self.data_new=data_struct.new_data
+        
+        if data_struct.filter_mode is False:
+            mean=self.data_new.mean(axis=1)
+            self.data_new=self.data_new - mean[:, np.newaxis]
         self.spikes_times=data_struct.spikes_times
         if(self.new_paq_view != self.paq_view):
             self.paq_view=self.new_paq_view
@@ -468,7 +465,9 @@ class  bci_data_handler():
         
     def change_paq_view(self,i):
         self.new_paq_view=i
-
+        
+        
+        
 def beep(sk_time):
     sk_size=np.size(sk_time)
     if not sk_size:
@@ -476,6 +475,7 @@ def beep(sk_time):
 
     i=0 
     n_beep_duration=int(float(BEEP_DURATION)/1000*config.FS)
+    sk_time=np.reshape(sk_time,sk_size,1)
     time.sleep(float(sk_time[0])/config.FS)
 
     

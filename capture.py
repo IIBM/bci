@@ -74,7 +74,8 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
             try:
                 #cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*config.LARGO_TRAMA))
                 #t1 = time.time()
-                cola.put_nowait(data.reshape([config.CANT_CANALES+1,config.PAQ_USB],order='F'))
+                new_data=data.reshape([config.CANT_CANALES+1,config.PAQ_USB],order='F')
+		cola.put_nowait(new_data[:-1,:])
                 #print (time.time() - t1)*1000
             except:
                 try:
