@@ -7,7 +7,7 @@ import numpy as np
 import config
 import time
 import threading
-
+import copy    
 second_win_file = os.path.join(
     os.path.abspath(
         os.path.dirname(__file__)),'second_window.ui')
@@ -74,7 +74,7 @@ class MainWindow(QtGui.QMainWindow):
         self.signal_config.filter_mode= self.filter_mode_button.isChecked()
         
         try:
-            self.data_handler.update(self.processing_process.new_data_queue.get(config.TIMEOUT_GET),self.signal_config.filter_mode,self.pausa.isChecked())
+            self.data_handler.update(self.processing_process.new_data_queue.get(config.TIMEOUT_GET),self.signal_config.filter_mode)
         except:
             return 1
         if (not self.get_data_process.warnings.empty()):
@@ -102,7 +102,7 @@ class MainWindow(QtGui.QMainWindow):
         #self.dialogo.update(self.data)
         #self.matriz_tasas.update(self.tasas_disparo)
         self.matriz_tetrodos.update(self.data_handler.graph_data,self.data_handler.n_view)
-        self.info_tetrodo.update(self.data_handler)
+        self.info_tetrodo.update(self.data_handler,self.pausa.isChecked())
         self.info_label.setText('TET:'+str(int(self.info_tetrodo.channel/4)+1)+' C:'+str(self.info_tetrodo.channel%4+1))
         self.active_channel_cb.setChecked(self.active_channels[self.info_tetrodo.channel])
     
@@ -185,9 +185,22 @@ class  plus_display():
         self.data_fft_aux=np.zeros([config.PAQ_USB*FFT_L_PAQ])
         self.graph.addItem(self.graph_umbral)
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
+        self.pause_mode=False
         
-    def update(self,data_handler):
-        data=data_handler.graph_data
+        
+    def update(self,data_handler,pause_mode):
+        if pause_mode != self.pause_mode:
+            if self.pause_mode == False:
+                self.data_old=copy.copy(data_handler.graph_data)
+                self.pause_mode=pause_mode
+            else:
+                self.pause_mode=pause_mode
+        
+        if self.pause_mode==True:
+            data=self.data_old
+        else:
+            data=data_handler.graph_data
+        
         n_view=data_handler.n_view
         xtime=data_handler.xtime
         
@@ -403,7 +416,9 @@ class ViewBox_General_Display(pg.ViewBox):
     def mouseClickEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
             self.info_tet.change_channel(self.i)
-            
+    def mouseDragEvent(self,event):
+        pass
+          
 class Second_Display_Window(QtGui.QDialog):
     ##Ventana extra
     def __init__(self):
@@ -442,9 +457,8 @@ class  bci_data_handler():
         self.xtime[:self.n_view]=np.linspace(0,config.MAX_PAQ_DISPLAY*config.PAQ_USB/float(config.FS),self.n_view)
         ####
     
-    def update(self,data_struct,is_filtered_signal,pause):
-        if pause is True:
-            return
+    def update(self,data_struct,is_filtered_signal):
+        
         self.data_new=data_struct.new_data
         
         if data_struct.filter_mode is False:

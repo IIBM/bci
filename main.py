@@ -6,7 +6,7 @@ from libgraph import MainWindow
 from capture import connect
 from multi_process import init_process
 import config
-        
+
 def main():
     app = QtGui.QApplication([])
     
