@@ -2,9 +2,7 @@ import config
 from multiprocessing import Process, Pipe,Queue
 from capture import  obtener_datos, fake_file_obtener_datos
 from data_processing import data_processing
-GRAPH_DATA_BUFFER=10
-DATA_BUFFER=10
-WARNIGNS_BUFFER =10
+from multiprocess_config import *
 
 
 def init_process(head_file_name,dev_usb):

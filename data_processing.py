@@ -2,14 +2,16 @@ from scipy import signal #proc de segnales
 import numpy as np #vectores, operaciones matematicas
 import time
 import config
-
+from multiprocess_config import *
+from signal_processing_config import *
 #[b_spike,a_spike]=signal.iirfilter(4,[float(300*2)/config.FS, float(6000*2)/config.FS], rp=None, rs=None, btype='band', analog=False, ftype='butter',output='ba')
-length_bandpass=150
-filter_coef=signal.firwin(length_bandpass, [float(300*2)/config.FS,float(3000*2)/config.FS], width=None, window='hamming', pass_zero=False)
+
+
+filter_coef=signal.firwin(length_bandpass, [float(Fmin*2)/config.FS,float(Fmax*2)/config.FS], width=None, window=window_type, pass_zero=False)
 group_delay=((length_bandpass-1)/2)*(length_bandpass%2)+(length_bandpass+1)%2*(length_bandpass/2)
 
 
-MEAN_L=5  #ESTO PODRIA PONERSE A BASE DE TIEMPO
+#MEAN_L=5  #ESTO PODRIA PONERSE A BASE DE TIEMPO
 
 #def calcular_umbral_disparo(data,canales):
     #x=abs(signal.lfilter(b_spike,a_spike,data[canales,:]))
@@ -44,14 +46,21 @@ def spikes_detect(x,umbral):
 #        else:
 #            aux=np.nonzero(np.ediff1d(x[i,:]<umbral[i], to_end=None, to_begin=None))
 #        new_spikes_times.append(aux)
-        #aux=[]
         if(umbral[i]>0):
-            #aux=np.nonzero(np.ediff1d(x[i,:]>umbrales[i], to_end=None, to_begin=None)) 
-            new_spikes_times.append(np.nonzero(np.ediff1d(np.sign(x[i,:]>umbral[i]), to_end=None, to_begin=None)>0) )
+                aux=np.less(x[i,:],umbral[i])
         else:
-            new_spikes_times.append(np.nonzero(np.ediff1d(np.sign(x[i,:]<umbral[i]), to_end=None, to_begin=None)>0) )
+                aux=np.greater(x[i,:],umbral[i])
+        new_spikes_times.append(np.nonzero(aux[1:].__and__(~aux[:-1])))    
+        
+        
+        #aux=[]
+#        if(umbral[i]>0):
+#            #aux=np.nonzero(np.ediff1d(x[i,:]>umbrales[i], to_end=None, to_begin=None)) 
+#            new_spikes_times.append(np.nonzero(np.ediff1d(np.sign(x[i,:]>umbral[i]), to_end=None, to_begin=None)>0) )
+#        else:
+#            new_spikes_times.append(np.nonzero(np.ediff1d(np.sign(x[i,:]<umbral[i]), to_end=None, to_begin=None)>0) )
             #aux=np.nonzero(np.ediff1d(x[i,:]<umbrales[i], to_end=None, to_begin=None))
-  
+        
     
     return new_spikes_times
     
@@ -63,15 +72,15 @@ def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_contr
 #    mean_l=0
 #    mean_aux=np.ndarray([config.CANT_CANALES,1])
     new_data=np.ndarray([config.CANT_CANALES,config.PAQ_USB+length_bandpass-1])
-    while(control != config.EXIT_SIGNAL):
+    while(control != EXIT_SIGNAL):
         while not proccesing_control.poll():
             if not ui_config_queue.empty():
                 try:
-                    ui_config=ui_config_queue.get(config.TIMEOUT_GET)
+                    ui_config=ui_config_queue.get(TIMEOUT_GET)
                 except:
                     pass
             try:
-                new_data[:,length_bandpass-1:]=data_queue.get(config.TIMEOUT_GET)
+                new_data[:,length_bandpass-1:]=data_queue.get(TIMEOUT_GET)
             except:
                 continue
             #filtar y enviar si filtro activo en conf o bien asi como esta
@@ -103,7 +112,7 @@ def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_contr
                 graph_data_queue.put_nowait(graph_data)
             except:
                 try:
-                    warnings.put_nowait('Loss data in slow graphics') 
+                    warnings.put_nowait(SLOW_GRAPHICS_SIGNAL) 
                 except:
                     pass
             new_data[:,:length_bandpass-1]=new_data[:,-length_bandpass+1:]

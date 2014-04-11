@@ -1,34 +1,23 @@
 from pyqtgraph.Qt import QtCore #interfaz en general
 import pyqtgraph as pg #graphicos
-import os
 from PyQt4  import QtGui,uic
 from scipy import signal,fftpack
 import numpy as np
 import config
 import time
 import threading
-import copy    
-second_win_file = os.path.join(
-    os.path.abspath(
-        os.path.dirname(__file__)),'second_window.ui')
-        
-uifile = os.path.join(
-    os.path.abspath(
-        os.path.dirname(__file__)),'bciui.ui')
-        
-ch_colors=['r','y','g','c']
+import copy
+from multiprocess_config import *
+from libgraph_config import *
+from spikes_config import spike_duration
+     
+spike_duration_samples=int(spike_duration/1000.0*config.FS)
 
-FFT_L=8192*2 #largo del vector con el q se realiza fft
-FFT_N=4  #cantidad de ffts q se promedian
-FFT_L_PAQ=3 #cantidad de paqueques q se concatenan para fft
-ROWS_DISPLAY=3
-
-TWO_WINDOWS=False
-BEEP_DURATION=20
-TIME_SPIKE_COUNT=1 #ventana de tiempo donde se estima la frec de disparo.Aprox: secons 
-DISPLAY_LIMY=200
 fft_frec= np.linspace(0, config.FS/2, FFT_L/2)
-PACK_xSPIKE_COUNT=int(float(TIME_SPIKE_COUNT)/config.TIEMPO_DISPLAY)
+one_pack_time=config.PAQ_USB/config.FS
+PACK_xSPIKE_COUNT=int(float(TIME_SPIKE_COUNT)/one_pack_time)
+FREQFIX_xSPIKE_COUNT=(float(PACK_xSPIKE_COUNT)*one_pack_time)
+
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self,processing_process,get_data_process):
@@ -57,8 +46,9 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.display_scale, QtCore.SIGNAL("valueChanged(int)"), self.matriz_tetrodos.change_Yrange)  
         QtCore.QObject.connect(self.paq_view, QtCore.SIGNAL("valueChanged(int)"), self.changeXrange)  
         QtCore.QObject.connect(self.active_channel_cb, QtCore.SIGNAL("clicked( bool)"),self.activate_channel)
-        
-        self.file_label.setText('Sin Guardar')
+        self.get_data_warning_time=0
+        self.processing_process_warning_time=0
+        self.file_label.setText(NOT_SAVING_MESSAGE)
         self.contador_registro=-1
         self.timer = QtCore.QTimer()
         
@@ -74,18 +64,22 @@ class MainWindow(QtGui.QMainWindow):
         self.signal_config.filter_mode= self.filter_mode_button.isChecked()
         
         try:
-            self.data_handler.update(self.processing_process.new_data_queue.get(config.TIMEOUT_GET),self.signal_config.filter_mode)
+            self.data_handler.update(self.processing_process.new_data_queue.get(TIMEOUT_GET),self.signal_config.filter_mode)
         except:
             return 1
         if (not self.get_data_process.warnings.empty()):
-            self.warnings.setText(self.get_data_process.warnings.get(config.TIMEOUT_GET))
+            self.get_data_warning_time=time.time()
+            self.warnings.setText(Errors_Messages[self.get_data_process.warnings.get(TIMEOUT_GET)])
         else:
-            self.warnings.setText("") 
+            if(time.time()-self.get_data_warning_time > MESSAGE_TIME):
+                self.warnings.setText("") 
         
         if (not self.processing_process.warnings.empty()):
-            self.status.setText(self.processing_process.warnings.get(config.TIMEOUT_GET))
+            self.processing_process_warning_time=time.time()
+            self.status.setText(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)])
         else:
-            self.status.setText("")                  
+            if(time.time()-self.processing_process_warning_time > MESSAGE_TIME):
+                self.status.setText("")                  
             
             
         if self.beepbox.isChecked():
@@ -108,13 +102,13 @@ class MainWindow(QtGui.QMainWindow):
     
     def on_actionDetener(self):
         #detiene el guardado de datos
-        self.get_data_process.control.send(config.STOP_SIGNAL)
-        self.file_label.setText('Sin Guardar')
+        self.get_data_process.control.send(STOP_SIGNAL)
+        self.file_label.setText(NOT_SAVING_MESSAGE)
 
     def on_actionSalir(self):
         self.timer.stop()
-        self.get_data_process.control.send(config.EXIT_SIGNAL)
-        self.processing_process.control.send(config.EXIT_SIGNAL)
+        self.get_data_process.control.send(EXIT_SIGNAL)
+        self.processing_process.control.send(EXIT_SIGNAL)
         self.get_data_process.process.join(1)
         self.processing_process.process.join(1)
         self.get_data_process.process.join(1)
@@ -124,9 +118,9 @@ class MainWindow(QtGui.QMainWindow):
         self.close()
        
     def on_actionNuevo(self):
-        self.get_data_process.control.send(config.START_SIGNAL)
+        self.get_data_process.control.send(START_SIGNAL)
         self.contador_registro+=1
-        self.file_label.setText('Guardando:'+self.generic_file +'-'+str(self.contador_registro))
+        self.file_label.setText(SAVING_MESSAGE + self.generic_file +'-'+str(self.contador_registro))
 
 
     #def set_autoRange(self):
@@ -222,7 +216,7 @@ class  plus_display():
             ##print '\a' 
             #os.system("beep -f 700 -l 18 &")
         tet=int(self.channel/4)
-        self.tasas_bars.update(data_handler.spikes_times[tet:tet+4])
+        self.tasas_bars.update(data_handler.spikes_times[tet*4:tet*4+4])
         
         #self.curve.setPen(ch_colors[self.selec_canal])
         if self.mode is 0:
@@ -315,8 +309,10 @@ class  bar_graph(pg.PlotItem):
 
     def update(self,spike_times):  
             for i in range(4):
-                self.tasas[self.npack,i]=np.size(spike_times[i],1)
-                tasas_aux=self.tasas[:,i].sum()       
+                #self.tasas[self.npack,i]=(spike_times[i][0]).size
+                self.tasas[self.npack,i]=(np.greater(spike_times[i][0][1:]-spike_times[i][0][:-1],spike_duration_samples)).sum() + ((spike_times[i][0]).size > 0)
+                tasas_aux=self.tasas[:,i].sum()/FREQFIX_xSPIKE_COUNT  
+                    
                 self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas_aux,tasas_aux], _callSync='off')
             self.npack+=1
             if self.npack is PACK_xSPIKE_COUNT:
@@ -337,7 +333,7 @@ class general_display():
         #graphicos principales
         
         
-        if TWO_WINDOWS is False:
+        if config.TWO_WINDOWS is False:
             main_win_ch=config.CANT_CANALES
     
         else:
@@ -405,7 +401,7 @@ class general_display():
         #for graphico in self.graphicos:
             #graphico.enableAutoRange('xy', state)  
     def close(self):
-        if TWO_WINDOWS is True:
+        if config.TWO_WINDOWS is True:
             self.second_win.Close()
             
 class ViewBox_General_Display(pg.ViewBox):
@@ -447,7 +443,6 @@ class  bci_data_handler():
         #self.graph_data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB])) 
         self.data_new=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
         self.spikes_times=0
-        #self.aux=array.array('B',[0 for i in range(config.PAQ_USB*config.LARGO_TRAMA)])
         self.graph_data=np.int16(np.zeros([config.CANT_CANALES,config.MAX_PAQ_DISPLAY*config.PAQ_USB]))
         self.paqdisplay=0
         self.paq_view=1
@@ -483,34 +478,67 @@ class  bci_data_handler():
         
         
 def beep(sk_time):
+    sk_time=sk_time[0]
     sk_size=np.size(sk_time)
     if not sk_size:
         return
 
-    i=0 
-    n_beep_duration=int(float(BEEP_DURATION)/1000*config.FS)
-    sk_time=np.reshape(sk_time,sk_size,1)
-    time.sleep(float(sk_time[0])/config.FS)
+     
+    
+    #sk_time=np.reshape(sk_time,sk_size,1)
+    #time.sleep(float(sk_time[0])/config.FS)
+
+    #i=0
+    #while i < sk_size:
+            
+        #x=sk_time[i]+spike_duration_samples
+        #ii=0
+        #while i+ii+1<sk_size and x>sk_time[i+ii+1]:
+            #ii+=1
+            #x=sk_time[i+ii]+spike_duration_samples
+        #if ii is 0:
+            #l=spike_duration
+        #else:
+            #l=int((sk_time[i+ii]-sk_time[i]+spike_duration_samples)*1000/config.FS)
+        #os.system("beep -f" + BEEP_FREQ + "-l " + str(l))
+        
+        #if i+ii+1 < sk_size:
+            #time.sleep(((sk_time[i+ii+1]-sk_time[i+ii]-spike_duration_samples)/config.FS))
+        #i+=ii+1
+    #return  
+        
+    #cadena_beep="beep -f" + BEEP_FREQ + "-l " + str(spike_duration)
+    #time.sleep(float(sk_time[0])/config.FS) 
+    #os.system(cadena_beep)
+    
+    #if sk_size is 1:
+        #return
+    #time.sleep(float(sk_time[1]-sk_time[0])/config.FS)   
+    #sp_aux=(np.greater(sk_time[1:]-sk_time[:-1],spike_duration_samples))
+    #sp=(sk_time[1:])[sp_aux]
+    #if sk_size is 1:
+        #return
+    
+    #time.sleep(float(sp[0]-sk_time[0])/config.FS) 
+    
+    #for i in range(sp.size-1):
+        #t1=time.time()
+        #os.system(cadena_beep)
+        #aux=float(sp[i+1]-sp[i])/config.FS-(time.time()-t1)
+        #if aux>0:
+            #time.sleep(aux) 
+        
+    #os.system(cadena_beep)
+    
+    sp=(np.greater(sk_time[1:]-sk_time[:-1],spike_duration_samples)).sum()+1
+    delay=(one_pack_time*1000.0-spike_duration*sp)/sp
+    cadena_beep="beep -f" + BEEP_FREQ + "-l " + str(spike_duration) + "-d" + str(delay) + "-N" +str(sp)
+    os.system(cadena_beep)
 
     
-    while i < sk_size:
-            
-        x=sk_time[i]+n_beep_duration
-        ii=0
-        while i+ii+1<sk_size and x>sk_time[i+ii+1]:
-            ii+=1
-            x=sk_time[i+ii]+n_beep_duration
-        if ii is 0:
-            l=BEEP_DURATION
-        else:
-            l=int((sk_time[i+ii]-sk_time[i]+n_beep_duration)*1000/config.FS)
-        os.system("beep -f 700 -l " + str(l))
-        
-        if i+ii+1 < sk_size:
-            time.sleep(((sk_time[i+ii+1]-sk_time[i+ii]-n_beep_duration)/config.FS))
-        i+=ii+1
-    return  
     
+        
+    return 
 class Config_processing():
     def __init__(self,filter_mode,thresholds):
         self.filter_mode=filter_mode
