@@ -10,7 +10,7 @@ import config
 def main():
     app = QtGui.QApplication([])
     
-    if hasattr(config, 'FAKE_FILE'):
+    if hasattr(config, 'FAKE_FILE') and FAKE_FILE is True:
         dev_usb=False
     else:
         while(True):
@@ -22,15 +22,12 @@ def main():
                 if(QtGui.QMessageBox.question(QtGui.QWidget(),'Error', "error: USB device not found, try again?", 
                 QtGui.QMessageBox.Ok |QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Cancel ):
                     exit()
-# ## ## ## ## ## ## ## ## ## ## ## ## #   
-    #processing_process,get_data_process=init_process(QtGui.QFileDialog.getSaveFileName(),dev_usb) 
+# ## ## ## ## ## ## ## ## ## ## #
+    processing_process,get_data_process=init_process(QtGui.QFileDialog.getSaveFileName(),dev_usb)
+    #processing_process,get_data_process=init_process(" ",0)
 # ## ## ## ## ## ## ## ## ## ## #   
-    processing_process,get_data_process=init_process(" ",0)
-#    processing_process.process.start()
-#    get_data_process.process.start()
-#    time.sleep(30)
-#    processing_process.process.terminate()
-#    get_data_process.process.terminate()
+    
+
     window=MainWindow(processing_process,get_data_process)
     window.show()
     app.exec_()

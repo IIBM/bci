@@ -4,7 +4,7 @@
 from os.path import isfile
 
 if isfile("user_config_EXAMPLE.py"):
-    from user_config_EXAMPLE import *
+    from user_config import *
 else:
     from user_config_DEFAULT import *
 

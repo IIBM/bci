@@ -8,22 +8,28 @@ import array
 #from pyqtgraph.Qt import QtGui
 from multiprocess_config import *
 
-intanVendor = 0x1CBE
-intanProduct = 0x0003
 
-LARGO_TRAMA=2*config.CANT_CANALES+2
+# Trama 
+# byte alto   byte bajo
+#      0xFF   Nro de canales
+# H_contador  L_contador
+# config      config
+# config      config
+# C0_H        C0_L
+# ...         ...
+# C31_H       C31_L 
+# AUX1_H      AUX1_L
+# AUX2_H      AUX2_L
+# VCC_H       VCC_L
+# CRC_H       CRC_L
+
+import okapi
 
 
 def connect(idV=intanVendor,idP=intanProduct):
     # find our device
-    dev = usb.core.find(idVendor=idV, idProduct=idP)
-    msg = ('Device idVendor = ' + str(hex(idV)) + ' and idProduct = ' + str(hex(idP)) + ' not found')
-    # was it found?
-    if dev is None:
-        raise ValueError(msg)
-    # set the active configuration. With no arguments, the first
-    # configuration will be the active one
-    dev.set_configuration()
+    dev = okapy.OpalKelly()
+    dev.Reset()
     return dev
    
 
@@ -55,6 +61,7 @@ def fake_obtener_datos(com,send_warnings,reg_files,cola,generic_file):
 
 def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
+    LARGO_TRAMA=2*config.CANT_CANALES+2    
     reg_files=file_handle(generic_file)
     file_input=open('data_test','rb')
     save_data=False
@@ -99,43 +106,43 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
     file_input.close()
      
 
-def obtener_datos(com,send_warnings,dev_usb,reg_files,cola,generic_file):
+def obtener_datos(com,send_warnings,dev_usb,cola,generic_file):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
-    paq_data=LARGO_TRAMA*config.PAQ_USB
-    dev_usb.write(1,'\xAA',0,100)
+    LARGO_TRAMA=config.CANT_CANALES*2
+    CANT_TRAMA_FIJO=100
+    pedidos=config.PAQ_USB/CANT_TRAMA_FIJO
+    paq_data=LARGO_TRAMA*config.CANT_TRAMA_FIJO
     save_data=False
-    data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
+    reg_files=file_handle(generic_file)
+    lectura=np.ndarray([config.CANT_CANALES,config.PAQ_USB],np.uint16)
+    dev.Start()
     comando='normal'
-
+    contador=0
     while(comando != EXIT_SIGNAL):
-        t1 = time.time()
-        lectura = dev_usb.read(0x81,paq_data,0,400)                
         while not com.poll(): #mientras no se recivan comandos leo
-            #tomar muchas muestras concatenerlas verificarlas y luego enviar y guardar
-            #lectura = dev_usb.read(0x81,paq_data,0,200)
-            
-            while len(lectura) < paq_data:
-                #config.LARGO_TRAMA*2**(n.bit_length() - 1)
-                lectura.extend(dev_usb.read(0x81,paq_data,0,10))
-             
-            #parser(data,lectura) #castear todo junto es ligeramente mas rapido
-            #t1 = time.time()
-            #buffer_in.send()
-            #shared_mem=lectura[:paq_data]
-            
-            try:
-                cola.put(lectura[:paq_data],timeout=TIMEOUT_PUT)
-            except:
-                send_warnings.send('Datos no mostrados')
+            if (dev.is_data_ready() == True):
+                # data es un array de numpy de uint16
+                # n es un entero que tiene la cantidad de palabras de 16 bits transmitidas
+                data,n = dev.read_data(paq_data)
+		lectura[c*CANT_TRAMA_FIJO:c*CANT_TRAMA_FIJO+CANT_TRAMA_FIJO,:]=np.fromstring(data,np.uint16) 
+		c=+1
+		if contador == pedidos:
+		    try:
+			cola.put(lectura,timeout=TIMEOUT_PUT)      
+		    except:
+			try:
+			    send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
+			except:
+			    pass	
+		c=0
+                if save_data:
+                    reg_files.save(lectura[:paq_data]) 
 
-            if save_data:
-                reg_files.save(lectura[:paq_data]) 
-            lectura=lectura[paq_data:]    
+            else :
+              time.sleep(2/config.FS)
         comando=com.recv()
-        save_data= comando=='guardar'
-    dev_usb.write(1,'\xBB',0,100)
-
-
+        save_data= (comando=='guardar')
+    dev.close();
 
 class file_handle():
     def __init__(self,generic_file):

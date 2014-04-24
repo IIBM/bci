@@ -17,7 +17,7 @@ fft_frec= np.linspace(0, config.FS/2, FFT_L/2)
 one_pack_time=config.PAQ_USB/config.FS
 PACK_xSPIKE_COUNT=int(float(TIME_SPIKE_COUNT)/one_pack_time)
 FREQFIX_xSPIKE_COUNT=(float(PACK_xSPIKE_COUNT)*one_pack_time)
-
+beep_command="beep -f" + BEEP_FREQ + "-l " + str(spike_duration) + "-d"
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self,processing_process,get_data_process):
@@ -482,7 +482,12 @@ def beep(sk_time):
     sk_size=np.size(sk_time)
     if not sk_size:
         return
-
+    
+    sp=(np.greater(sk_time[1:]-sk_time[:-1],spike_duration_samples)).sum()+1
+    delay=(one_pack_time*1000.0-spike_duration*sp)/sp 
+    os.system(beep_command + str(delay) + "-N" +str(sp))
+   
+    return     
      
     
     #sk_time=np.reshape(sk_time,sk_size,1)
@@ -530,15 +535,7 @@ def beep(sk_time):
         
     #os.system(cadena_beep)
     
-    sp=(np.greater(sk_time[1:]-sk_time[:-1],spike_duration_samples)).sum()+1
-    delay=(one_pack_time*1000.0-spike_duration*sp)/sp
-    cadena_beep="beep -f" + BEEP_FREQ + "-l " + str(spike_duration) + "-d" + str(delay) + "-N" +str(sp)
-    os.system(cadena_beep)
 
-    
-    
-        
-    return 
 class Config_processing():
     def __init__(self,filter_mode,thresholds):
         self.filter_mode=filter_mode
