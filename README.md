@@ -17,11 +17,9 @@ bci
   
   multiprocess: crea y configura las colas, tuberias y procesos que se utilizaran. multiprocess_config es su archivo de configuracion
   
-  user_config_DEFAULT: Caracteristicas generales que un usuario tipo querria modificar. Si se encuentra el archivo user_config_EXAMPLE.py se utiliza este en su lugar
+  user_config_DEFAULT: Caracteristicas generales que un usuario tipo querria modificar. Si se encuentra el archivo user_config.py se utiliza este en su lugar
   
   *.ui: diseño de menus, ventanas, etc
-  
-  
 
     
 **Notas:** 
@@ -32,11 +30,10 @@ bci
 **Dependencias:**
 
   * Python 2.7 
-  * PyQt 4.8+ 
+  * PyQt 4.8+
   * numpy 
   * scipy 
-  * pyqtgraph-0.9.7
-  * PyUSB
+  * pyqtgraph-0.9.8
   * Beep (linux)
 
 
