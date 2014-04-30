@@ -20,9 +20,10 @@ FREQFIX_xSPIKE_COUNT=(float(PACK_xSPIKE_COUNT)*one_pack_time)
 beep_command="beep -f" + BEEP_FREQ + "-l " + str(spike_duration) + "-d"
 
 class MainWindow(QtGui.QMainWindow):
-    def __init__(self,processing_process,get_data_process):
+    def __init__(self,processing_process,get_data_process,generic_file):
         QtGui.QMainWindow.__init__(self)
         uic.loadUi(uifile, self)
+        self.generic_file=generic_file
         #self.tet_plus_selec
         #diagolo q da mas info del canal
         #self.dialogo=Dialog_Tet()

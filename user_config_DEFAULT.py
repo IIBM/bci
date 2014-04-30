@@ -4,7 +4,8 @@
 
 
 CANT_CANALES=40
-FS=float(30030)
+#CANT_CANALES=24
+FS=float(20000)
 PAQ_USB=5000
 #FAKE_FILE=True #para file hay q cambiar el parser
 

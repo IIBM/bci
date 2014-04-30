@@ -10,7 +10,7 @@ import config
 def main():
     app = QtGui.QApplication([])
     
-    if hasattr(config, 'FAKE_FILE') and FAKE_FILE is True:
+    if hasattr(config, 'FAKE_FILE') and config.FAKE_FILE is True:
         dev_usb=False
     else:
         while(True):
@@ -23,12 +23,13 @@ def main():
                 QtGui.QMessageBox.Ok |QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Cancel ):
                     exit()
 # ## ## ## ## ## ## ## ## ## ## #
-    processing_process,get_data_process=init_process(QtGui.QFileDialog.getSaveFileName(),dev_usb)
+	generic_file=QtGui.QFileDialog.getSaveFileName()
+    processing_process,get_data_process=init_process(generic_file,dev_usb)
     #processing_process,get_data_process=init_process(" ",0)
 # ## ## ## ## ## ## ## ## ## ## #   
     
 
-    window=MainWindow(processing_process,get_data_process)
+    window=MainWindow(processing_process,get_data_process,generic_file)
     window.show()
     app.exec_()
 

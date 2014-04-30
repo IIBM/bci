@@ -3,7 +3,7 @@
 
 #Band-pass Filter features:
 
-length_bandpass=120
+length_bandpass=80
 Fmin=250 #Hz
 Fmax=5000 #Hz
 window_type='hamming'

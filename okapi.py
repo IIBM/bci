@@ -46,7 +46,7 @@ class OpalKelly():
 
   def read_data(self,size=m_u32SegmentSize):
     #datos = numpy.array([0 for i in range(size)],numpy.uint16)
-    datos =np.ndarray(size,np.uint16)
+    datos =numpy.ndarray(size,numpy.uint16)
     n = self._xem.ReadFromPipeOut(byteDatos, datos)
     return datos,n
 
@@ -64,7 +64,7 @@ if __name__ == '__main__':
   n = 0
   largo = 35*2
   tramas = int(8000/largo)
-  while n<5000:
+  while n<50:
     while (a.is_data_ready() == False):
       time.sleep(.01)
 

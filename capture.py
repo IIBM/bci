@@ -1,7 +1,5 @@
 import numpy as np #vectores, operaciones matematicas
 import time #hora local 
-import usb.core
-import usb.util
 import config
 #import os 
 import array
@@ -26,10 +24,10 @@ from multiprocess_config import *
 import okapi
 
 
-def connect(idV=intanVendor,idP=intanProduct):
+def connect():
     # find our device
-    dev = okapy.OpalKelly()
-    dev.Reset()
+    dev = okapi.OpalKelly()
+    dev.reset()
     return dev
    
 
@@ -62,7 +60,7 @@ def fake_obtener_datos(com,send_warnings,reg_files,cola,generic_file):
 def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     LARGO_TRAMA=2*config.CANT_CANALES+2    
-    reg_files=file_handle(generic_file)
+    reg_files=file_handle(generic_file,LARGO_TRAMA)
     file_input=open('data_test','rb')
     save_data=False
     #data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
@@ -106,16 +104,16 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
     file_input.close()
      
 
-def obtener_datos(com,send_warnings,dev_usb,cola,generic_file):
+def obtener_datos(com,send_warnings,dev,cola,generic_file):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
-    LARGO_TRAMA=config.CANT_CANALES*2
-    CANT_TRAMA_FIJO=100
+    LARGO_TRAMA=config.CANT_CANALES
+    CANT_TRAMA_FIJO=25
     pedidos=config.PAQ_USB/CANT_TRAMA_FIJO
-    paq_data=LARGO_TRAMA*config.CANT_TRAMA_FIJO
+    paq_data=LARGO_TRAMA*CANT_TRAMA_FIJO
     save_data=False
-    reg_files=file_handle(generic_file)
+    reg_files=file_handle(generic_file,LARGO_TRAMA)
     lectura=np.ndarray([config.CANT_CANALES,config.PAQ_USB],np.uint16)
-    dev.Start()
+    dev.start()
     comando='normal'
     contador=0
     while(comando != EXIT_SIGNAL):
@@ -123,20 +121,23 @@ def obtener_datos(com,send_warnings,dev_usb,cola,generic_file):
             if (dev.is_data_ready() == True):
                 # data es un array de numpy de uint16
                 # n es un entero que tiene la cantidad de palabras de 16 bits transmitidas
-                data,n = dev.read_data(paq_data)
-		lectura[c*CANT_TRAMA_FIJO:c*CANT_TRAMA_FIJO+CANT_TRAMA_FIJO,:]=np.fromstring(data,np.uint16) 
-		c=+1
+		data,n = dev.read_data(paq_data)
+		lectura[:,contador*CANT_TRAMA_FIJO:contador*CANT_TRAMA_FIJO+CANT_TRAMA_FIJO]=np.reshape(np.fromstring(data,np.uint16),[LARGO_TRAMA,CANT_TRAMA_FIJO],'F')
+		contador+=1
 		if contador == pedidos:
+
+		    contador=0
 		    try:
-			cola.put(lectura,timeout=TIMEOUT_PUT)      
+			cola.put(lectura,timeout=TIMEOUT_PUT)
+
 		    except:
 			try:
 			    send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
 			except:
 			    pass	
-		c=0
-                if save_data:
-                    reg_files.save(lectura[:paq_data]) 
+		
+            if save_data:
+				reg_files.save(lectura[:paq_data]) 
 
             else :
               time.sleep(2/config.FS)
@@ -145,11 +146,11 @@ def obtener_datos(com,send_warnings,dev_usb,cola,generic_file):
     dev.close();
 
 class file_handle():
-    def __init__(self,generic_file):
-        self.generic_file_name = generic_file
-        #archivo cabecera
-        self.paqxfile=config.MAX_SIZE_FILE/LARGO_TRAMA/config.PAQ_USB
-        self.num_registro=-1
+    def __init__(self,generic_file,LARGO_TRAMA):
+		self.generic_file_name = generic_file
+		#archivo cabecera
+		self.paqxfile=config.MAX_SIZE_FILE/LARGO_TRAMA/config.PAQ_USB
+		self.num_registro=-1
         
     def new(self):
         file_head=open(self.generic_file_name +'-'+str(self.num_registro) + '-0','w')
