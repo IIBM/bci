@@ -3,7 +3,7 @@
 
 from os.path import isfile
 
-if isfile("user_config_EXAMPLE.py"):
+if isfile("user_config.py"):
     from user_config import *
 else:
     from user_config_DEFAULT import *
