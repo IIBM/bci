@@ -44,10 +44,10 @@ def fake_obtener_datos(com,send_warnings,reg_files,cola,generic_file):
             
             #t1 = time.time()
             try:
-			#cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*LARGO_TRAMA))
-			    cola.put(lectura,timeout=TIMEOUT_PUT)
+            #cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*LARGO_TRAMA))
+                cola.put(lectura,timeout=TIMEOUT_PUT)
             except:
-			    send_warnings.send('Datos no mostrados')
+                send_warnings.send('Datos no mostrados')
             #lectura_nueva=lectura
             #print time.time()-t1 
             if save_data:
@@ -73,7 +73,7 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
             #lectura.append(file_input.read(config.PAQ_USB*LARGO_TRAMA))
             #lectura=file_input.read(config.PAQ_USB*LARGO_TRAMA)
             #for s in range(len(lectura)):
-			#	lectura_nueva[s]=ord(lectura[s])
+            #    lectura_nueva[s]=ord(lectura[s])
             
             #lectura_nueva[:]=np.fromfile(file_input,'B',config.PAQ_USB*LARGO_TRAMA)
             lectura_nueva=np.fromfile(file_input,'B',config.PAQ_USB*LARGO_TRAMA)
@@ -82,13 +82,13 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
                 #cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*LARGO_TRAMA))
                 #t1 = time.time()
                 new_data=data.reshape([config.CANT_CANALES+1,config.PAQ_USB],order='F')
-		cola.put_nowait(new_data[:-1,:])
+                cola.put_nowait(new_data[:-1,:])
                 #print (time.time() - t1)*1000
             except:
                 try:
                     send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
                 except:
-                    pass	
+                    pass    
             time.sleep(config.PAQ_USB/config.FS)
             #print "graphicar pierde datos :("
             #while(j<config.PAQ_USB):
@@ -121,36 +121,36 @@ def obtener_datos(com,send_warnings,dev,cola,generic_file):
             if (dev.is_data_ready() == True):
                 # data es un array de numpy de uint16
                 # n es un entero que tiene la cantidad de palabras de 16 bits transmitidas
-		data,n = dev.read_data(paq_data)
-		lectura[:,contador*CANT_TRAMA_FIJO:contador*CANT_TRAMA_FIJO+CANT_TRAMA_FIJO]=np.reshape(np.fromstring(data,np.uint16),[LARGO_TRAMA,CANT_TRAMA_FIJO],'F')
-		contador+=1
-		if contador == pedidos:
+                data,n = dev.read_data(paq_data)
+                lectura[:,contador*CANT_TRAMA_FIJO:contador*CANT_TRAMA_FIJO+CANT_TRAMA_FIJO]=np.reshape(np.fromstring(data,np.uint16),[LARGO_TRAMA,CANT_TRAMA_FIJO],'F')
+                contador+=1
+                if contador == pedidos:
 
-		    contador=0
-		    try:
-			cola.put(lectura,timeout=TIMEOUT_PUT)
+                    contador=0
+                    try:
+                        cola.put(lectura,timeout=TIMEOUT_PUT)
 
-		    except:
-			try:
-			    send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
-			except:
-			    pass	
-		
-            if save_data:
-				reg_files.save(lectura[:paq_data]) 
+                    except:
+                        try:
+                            send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
+                        except:
+                            pass    
+                
+                    if save_data:
+                        reg_files.save(lectura[:paq_data]) 
 
-            else :
-              time.sleep(2/config.FS)
+                else :
+                    time.sleep(2/config.FS)
         comando=com.recv()
         save_data= (comando=='guardar')
     dev.close();
 
 class file_handle():
     def __init__(self,generic_file,LARGO_TRAMA):
-		self.generic_file_name = generic_file
-		#archivo cabecera
-		self.paqxfile=config.MAX_SIZE_FILE/LARGO_TRAMA/config.PAQ_USB
-		self.num_registro=-1
+        self.generic_file_name = generic_file
+        #archivo cabecera
+        self.paqxfile=config.MAX_SIZE_FILE/LARGO_TRAMA/config.PAQ_USB
+        self.num_registro=-1
         
     def new(self):
         file_head=open(self.generic_file_name +'-'+str(self.num_registro) + '-0','w')
@@ -158,7 +158,7 @@ class file_handle():
         self.part=1 #parte del registro todo corrido
         self.file_part=open(self.generic_file_name +'-'+str(self.num_registro) +'-' +str(self.part),'wb')
         self.paq_in_part=0
-		
+        
     def save(self,data):
         
         if(self.paq_in_part<self.paqxfile):

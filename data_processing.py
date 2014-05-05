@@ -71,7 +71,7 @@ def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_contr
 #    mean_calc=np.int16(np.zeros([config.CANT_CANALES,MEAN_L]))
 #    mean_l=0
 #    mean_aux=np.ndarray([config.CANT_CANALES,1])
-    new_data=np.ndarray([config.CANT_CANALES,config.PAQ_USB+length_bandpass-1],np.uint16)
+    new_data=np.ndarray([config.CANT_CANALES,config.PAQ_USB+length_bandpass-1])
     while(control != EXIT_SIGNAL):
         while not proccesing_control.poll():
             if not ui_config_queue.empty():
