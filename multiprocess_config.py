@@ -21,5 +21,8 @@ SLOW_PROCESS_SIGNAL=3
 SLOW_GRAPHICS_SIGNAL=4
 
 #--------
-Errors_Messages = {SLOW_PROCESS_SIGNAL: "Loss data, slow processing", 
-SLOW_GRAPHICS_SIGNAL:'Loss data, slow graphics' }
+Errors_Messages = {SLOW_PROCESS_SIGNAL: "Loss data in processing", 
+SLOW_GRAPHICS_SIGNAL:'Loss data in graphics',
+SLOW_CAPTURE_DATA:'Loss data in capture',
+DATA_NONSYNCHRONIZED:'data non-synchronized',
+DATA_CORRUPTION:'the data stream is corrupted' }

@@ -104,7 +104,7 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
     file_input.close()
      
 
-def obtener_datos(com,send_warnings,dev,cola,generic_file):
+def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSCAR FF Y ENGANCHARSE
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     LARGO_TRAMA=config.CANT_CANALES
     CANT_TRAMA_FIJO=25
@@ -121,7 +121,7 @@ def obtener_datos(com,send_warnings,dev,cola,generic_file):
             if (dev.is_data_ready() == True):
                 # data es un array de numpy de uint16
                 # n es un entero que tiene la cantidad de palabras de 16 bits transmitidas
-                data,n = dev.read_data(paq_data)
+                data,n = dev.read_data(paq_data) 
                 lectura[:,contador*CANT_TRAMA_FIJO:contador*CANT_TRAMA_FIJO+CANT_TRAMA_FIJO]=np.reshape(np.fromstring(data,np.uint16),[LARGO_TRAMA,CANT_TRAMA_FIJO],'F')
                 contador+=1
                 if contador == pedidos:
@@ -187,3 +187,8 @@ class file_handle():
         except:
             pass
 
+class data_in():
+    def __init__(self):
+        self.data_loss_cuts=list()
+        self.spikes=list()
+		self.channels=ndarray([config.CANT_CANALES,config.PAQ_USB],np.uint16)
