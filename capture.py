@@ -191,4 +191,4 @@ class data_in():
     def __init__(self):
         self.data_loss_cuts=list()
         self.spikes=list()
-		self.channels=ndarray([config.CANT_CANALES,config.PAQ_USB],np.uint16)
+        self.channels=ndarray([config.CANT_CANALES,config.PAQ_USB],np.uint16)

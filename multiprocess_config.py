@@ -19,10 +19,15 @@ START_SIGNAL=2
 
 SLOW_PROCESS_SIGNAL=3
 SLOW_GRAPHICS_SIGNAL=4
+SLOW_CAPTURE_DATA=5
+DATA_NONSYNCHRONIZED=6
+DATA_CORRUPTION=7
+
 
 #--------
 Errors_Messages = {SLOW_PROCESS_SIGNAL: "Loss data in processing", 
-SLOW_GRAPHICS_SIGNAL:'Loss data in graphics',
-SLOW_CAPTURE_DATA:'Loss data in capture',
-DATA_NONSYNCHRONIZED:'data non-synchronized',
-DATA_CORRUPTION:'the data stream is corrupted' }
+SLOW_GRAPHICS_SIGNAL: 'Loss data in graphics',
+SLOW_CAPTURE_DATA: 'Loss data in capture',
+DATA_NONSYNCHRONIZED: 'data non-synchronized',
+DATA_CORRUPTION: 'the data stream is corrupted'}
+
