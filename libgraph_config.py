@@ -5,8 +5,8 @@ import config
 
 BEEP_FREQ="700" #Hz (str)       
 ch_colors=['r','y','g','c']
-NOT_SAVING_MESSAGE='Sin Guardar'
-SAVING_MESSAGE='Guardando:'
+NOT_SAVING_MESSAGE='Without Saving'
+SAVING_MESSAGE='Writing in:'
 FFT_L=8192*2 #largo del vector con el q se realiza fft
 FFT_N=4  #cantidad de ffts q se promedian
 FFT_L_PAQ=3 #cantidad de paqueques q se concatenan para fft

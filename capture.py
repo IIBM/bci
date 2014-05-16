@@ -21,10 +21,11 @@ from multiprocess_config import *
 # VCC_H       VCC_L
 # CRC_H       CRC_L
 
-import okapi
+
 
 
 def connect():
+    import okapi
     # find our device
     dev = okapi.OpalKelly()
     dev.reset()
@@ -100,7 +101,8 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
                 reg_files.save(lectura_nueva)
             #agrega el largo del archivo
         comando=com.recv()
-        save_data= reg_files.actions(comando)
+        reg_files.actions(comando)
+        save_data= comando=='guardar'
     file_input.close()
      
 
@@ -134,15 +136,16 @@ def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSC
                         try:
                             send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
                         except:
-                            pass    
+                            pass
                 
                     if save_data:
-                        reg_files.save(lectura[:paq_data]) 
+                        reg_files.save(lectura) 
 
                 else :
                     time.sleep(2/config.FS)
         comando=com.recv()
-        save_data= (comando=='guardar')
+        save_data= (comando==START_SIGNAL)
+	reg_files.actions(comando)
     dev.close();
 
 class file_handle():
@@ -153,7 +156,7 @@ class file_handle():
         self.num_registro=-1
         
     def new(self):
-        file_head=open(self.generic_file_name +'-'+str(self.num_registro) + '-0','w')
+	file_head=open(self.generic_file_name +'-'+str(self.num_registro) + '-0','w')
         file_head.write("FS,LARGO_TRAMA,FECHA,LARGO_ARCHIVO,ARCHIVOS\n")
         self.part=1 #parte del registro todo corrido
         self.file_part=open(self.generic_file_name +'-'+str(self.num_registro) +'-' +str(self.part),'wb')
@@ -175,10 +178,9 @@ class file_handle():
         if signal is START_SIGNAL:
             self.num_registro+=1
             self.new()
+	elif signal is EXIT_SIGNAL:
+            self.close()
 
-            return True
-        
-        return False
     def close(self):
         try:
             self.file_part.close()
@@ -186,7 +188,15 @@ class file_handle():
             file_head.close()
         except:
             pass
-
+        
+        
+class data_in_parser():
+    def __init__(self):
+        self.data=data_in()
+        self.c=np.int()
+        self.desynchronized_flag=False
+        
+        
 class data_in():
     def __init__(self):
         self.data_loss_cuts=list()

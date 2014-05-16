@@ -3,7 +3,7 @@
 from pyqtgraph.Qt import QtGui #interfaz en general
 import time #hora local 
 from libgraph import MainWindow
-from capture import connect
+
 from multi_process import init_process
 import config
 
@@ -13,8 +13,10 @@ def main():
     if hasattr(config, 'FAKE_FILE') and config.FAKE_FILE is True:
         dev_usb=False
     else:
+        from capture import connect
         while(True):
         #verifica usb, luego comienza captura si es correcto
+            
             try:
                 dev_usb = connect()
                 break

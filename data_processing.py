@@ -7,7 +7,13 @@ from signal_processing_config import *
 #[b_spike,a_spike]=signal.iirfilter(4,[float(300*2)/config.FS, float(6000*2)/config.FS], rp=None, rs=None, btype='band', analog=False, ftype='butter',output='ba')
 
 
-filter_coef=signal.firwin(length_bandpass, [float(Fmin*2)/config.FS,float(Fmax*2)/config.FS], width=None, window=window_type, pass_zero=False)
+
+if(Fmax < config.FS):
+    filter_freq=[float(Fmin*2)/config.FS,float(Fmax*2)/config.FS]
+else:
+    filter_freq=[float(Fmin*2)/config.FS]
+    
+filter_coef=signal.firwin(length_bandpass, filter_freq, width=None, window=window_type, pass_zero=False)
 group_delay=((length_bandpass-1)/2)*(length_bandpass%2)+(length_bandpass+1)%2*(length_bandpass/2)
 
 

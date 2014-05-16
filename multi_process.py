@@ -1,6 +1,6 @@
 import config
 from multiprocessing import Process, Pipe,Queue
-from capture import  obtener_datos, fake_file_obtener_datos
+#from capture import  obtener_datos, fake_file_obtener_datos
 from data_processing import data_processing
 from multiprocess_config import *
 
@@ -12,9 +12,11 @@ def init_process(head_file_name,dev_usb):
     get_data_warnings = Queue(maxsize=WARNIGNS_BUFFER)
     
     if not (hasattr(config, 'FAKE_FILE') or hasattr(config, 'FAKE')):
+        from capture import  obtener_datos
     	p_read_data = Process(target=obtener_datos, args=(get_data_control,get_data_warnings,dev_usb,data_queue,head_file_name))
 
     elif hasattr(config, 'FAKE_FILE'):
+        from capture import fake_file_obtener_datos
         p_read_data = Process(target=fake_file_obtener_datos, args=(get_data_control,get_data_warnings,data_queue,head_file_name))
     
     get_data_process=Get_data_process_handle(p_read_data,get_data_warnings,ui_get_data_control)

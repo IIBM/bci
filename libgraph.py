@@ -450,7 +450,8 @@ class  bci_data_handler():
         self.new_paq_view=1
         self.n_view=self.paq_view*config.PAQ_USB
         self.xtime=np.zeros([config.MAX_PAQ_DISPLAY*config.PAQ_USB])
-        self.xtime[:self.n_view]=np.linspace(0,config.MAX_PAQ_DISPLAY*config.PAQ_USB/float(config.FS),self.n_view)
+        #self.xtime[:self.n_view]=np.linspace(0,config.MAX_PAQ_DISPLAY*config.PAQ_USB/float(config.FS),self.n_view)
+        self.xtime[:self.n_view]=np.linspace(0,self.n_view/float(config.FS),self.n_view)
         ####
     
     def update(self,data_struct,is_filtered_signal):
