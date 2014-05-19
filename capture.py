@@ -115,7 +115,7 @@ def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSC
     save_data=False
     reg_files=file_handle(generic_file,LARGO_TRAMA)
     lectura=np.ndarray([config.CANT_CANALES,config.PAQ_USB],np.uint16)
-    dev.start()
+    dev.start(int(config.FS))
     comando='normal'
     contador=0
     while(comando != EXIT_SIGNAL):
