@@ -101,24 +101,40 @@ class OpalKelly():
   def data_available(self):
     self._xem.UpdateWireOuts()
     a = self._xem.GetWireOutValue(byteControlOutAddr)
-    if a & (0x0001<<bit4000k) :
-      if (a & 0x000F) is not 0x000F :
+    if a & (0x0001<<bit100M) :
+      if (a & 0x00FF) is not 0x00FF :
+        print "error0"
+      return 100000000
+    if a & (0x0001<<bit10M) :
+      if (a & 0x00FF) is not 0x007F :
         print "error1"
-      return 4000000
-    if a & (0x0001<<bit2000k) :
-      if (a & 0x000F) is not 0x0007 :
+      return 10000000
+    if a & (0x0001<<bit5M) :
+      if (a & 0x00FF) is not 0x003F :
         print "error2"
-      return 2000000
-    if a & (0x0001<<bit512k) :
-      if (a & 0x000F) is not 0x0003 :
+      return 5000000
+    if a & (0x0001<<bit1M) :
+      if (a & 0x00FF) is not 0x001F :
         print "error3"
-      return 512000
-    if a & (0x0001<<bit8k) :
-      if (a & 0x000F) is not 0x0001 :
+      return 1000000
+    if a & (0x0001<<bit128k) :
+      if (a & 0x00FF) is not 0x000F :
         print "error4"
-      return 8000
+      return 128000
+    if a & (0x0001<<bit32k) :
+      if (a & 0x00FF) is not 0x0007 :
+        print "error5"
+      return 32000
+    if a & (0x0001<<bit16k) :
+      if (a & 0x00FF) is not 0x0003 :
+        print "error6"
+      return 16000
+    if a & (0x0001<<bit4k) :
+      if (a & 0x00FF) is not 0x0001 :
+        print "error7"
+      return 4000
     else:
-      print "error5"
+      print "error8"
       return 0
 
   def data_count_available(self):
@@ -146,30 +162,25 @@ class OpalKelly():
       
       
 if __name__ == '__main__':
+  import sys
   try:
     f = open('salida.txt','w')
     fb = open('salidab.txt','w')
     a = OpalKelly()
     a.reset()
     time.sleep(.1)
-    a.start(10000)
+    a.start(30000)
     n = 0
     largo = 40
-#    tramas = int(8000/largo)
-    while n<50:
+    while n<5:
 
       while (a.is_data_ready() == False):
         time.sleep(.01)
 
-      cant = 1000000
       n += 1
-      ts = time.time()
       
-#      l,b = a.read_data(cant)
-      l,b = a.read_data(cant)
-      print time.time() - ts
-      print a.data_count_available()
-
+      c = a.data_available()
+      l,b = a.read_data(c)
       fb.write(l)
 #      for i in range(b/2):
 #        f.write(str(l[i]) + ' ')
@@ -179,7 +190,8 @@ if __name__ == '__main__':
     fb.close()
     a.close()
   except:
-    print "error"
+    e = sys.exc_info()[0]
+    print ("Error: %s" % e)
     f.close()
     fb.close()
     a.close()
