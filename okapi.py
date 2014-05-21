@@ -142,14 +142,19 @@ class OpalKelly():
     a = self._xem.GetWireOutValue(byteDataAvAddr)
     return a
 
-  def read_data(self,size=m_u32SegmentSize):
-    #datos = numpy.array([0 for i in range(size)],numpy.uint16)
-    #if self.is_data_ready() == True and size<4000:
-      datos = numpy.ndarray(size,numpy.uint16)
-      n = self._xem.ReadFromPipeOut(byteDataOutAddr, datos)
-      return datos,n
-    #datos = numpy.ndarray(0,numpy.uint16)
-    #return datos,0
+  #def read_data(self,size=m_u32SegmentSize):
+    ##datos = numpy.array([0 for i in range(size)],numpy.uint16)
+    ##if self.is_data_ready() == True and size<4000:
+      #datos = numpy.ndarray(size,numpy.uint16)
+      #n = self._xem.ReadFromPipeOut(byteDataOutAddr, datos)
+      #return datos,n
+    ##datos = numpy.ndarray(0,numpy.uint16)
+    ##return datos,0
+     
+  def read_data(self,datos):
+    n = self._xem.ReadFromPipeOut(byteDataOutAddr, datos)
+    return n
+    
 
   def read_block_data(self,size=m_u32SegmentSize):
     datos = numpy.ndarray(size,numpy.uint16)

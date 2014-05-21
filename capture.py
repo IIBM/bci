@@ -9,7 +9,7 @@ from multiprocess_config import *
 
 # Trama 
 # byte alto   byte bajo
-#      0xFF   Nro de canales
+# 0xFF        Nro de canales
 # H_contador  L_contador
 # config      config
 # config      config
@@ -108,41 +108,36 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
 
 def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSCAR FF Y ENGANCHARSE
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
-    LARGO_TRAMA=config.CANT_CANALES
-    CANT_TRAMA_FIJO=25
-    pedidos=config.PAQ_USB/CANT_TRAMA_FIJO
-    paq_data=LARGO_TRAMA*CANT_TRAMA_FIJO
+    LARGO_TRAMA=40
     save_data=False
     reg_files=file_handle(generic_file,LARGO_TRAMA)
-    lectura=np.ndarray([config.CANT_CANALES,config.PAQ_USB],np.uint16)
+    
+    data=np.ndarray(config.CANT_CANALES*config.PAQ_USB,np.int16) #deberia ser mas grande y mandar al okapy uno mas grande
+    channels=np.ndarray([config.CANT_CANALES,config.PAQ_USB],np.int16)
     dev.start(int(config.FS))
+    parser=Parser(LARGO_TRAMA,config.PAQ_USB)
     comando='normal'
     contador=0
     while(comando != EXIT_SIGNAL):
         while not com.poll(): #mientras no se recivan comandos leo
-            if (dev.is_data_ready() == True):
+            if (dev.data_available() >= 1000000):
                 # data es un array de numpy de uint16
                 # n es un entero que tiene la cantidad de palabras de 16 bits transmitidas
-                data,n = dev.read_data(paq_data) 
-                lectura[:,contador*CANT_TRAMA_FIJO:contador*CANT_TRAMA_FIJO+CANT_TRAMA_FIJO]=np.reshape(np.fromstring(data,np.uint16),[LARGO_TRAMA,CANT_TRAMA_FIJO],'F')
-                contador+=1
-                if contador == pedidos:
-
-                    contador=0
+                n = dev.read_data(data) #deberia ser N mas grande, si me faltan N tramas
+                parser.get_ch(data,channels)
+                #lectura[:,contador*CANT_TRAMA_FIJO:contador*CANT_TRAMA_FIJO+CANT_TRAMA_FIJO]=np.reshape(data,[LARGO_TRAMA,CANT_TRAMA_FIJO],'F')
+                try:
+                    cola.put(lectura,timeout=TIMEOUT_PUT)
+                except:
                     try:
-                        cola.put(lectura,timeout=TIMEOUT_PUT)
-
+                        send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
                     except:
-                        try:
-                            send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
-                        except:
-                            pass
-                
-                    if save_data:
-                        reg_files.save(lectura) 
+                        pass
+                if save_data:
+                    reg_files.save(lectura) 
 
-                else :
-                    time.sleep(2/config.FS)
+            else :
+                time.sleep(100/config.FS)
         comando=com.recv()
         save_data= (comando==START_SIGNAL)
 	reg_files.actions(comando)
@@ -189,16 +184,57 @@ class file_handle():
         except:
             pass
         
-        
-class data_in_parser():
-    def __init__(self):
-        self.data=data_in()
-        self.c=np.int()
-        self.desynchronized_flag=False
-        
+            
         
 class data_in():
     def __init__(self):
         self.data_loss_cuts=list()
         self.spikes=list()
         self.channels=ndarray([config.CANT_CANALES,config.PAQ_USB],np.uint16)
+        
+        
+class Parser():
+    def __init__(self,LARGO_TRAMA,CANT_TRAMA,CANT_CANALES):     
+        self.contador_old=0
+        self.FFplus=np.fromstring('\x23''\xff',np.int16)
+        self.LARGO_TRAMA=LARGO_TRAMA
+        self.CANT_TRAMA=CANT_TRAMA
+        self.CANT_CANALES=CANT_CANALES
+        
+    def get_ch(self,data,channels):
+        sinc=0
+        c_t=0
+        #primero sincroniza
+        while sinc < self.LARGO_TRAMA:
+            if (data[sinc] == FFplus and data[self.LARGO_TRAMA+sinc] == FFplus): #la segunda deberia ser el hash
+                channels[:,c_t]=data[c_t*40+4+sinc:c_t*40+39+sinc]
+                contador_old=(data[c_t*40+1+sinc:c_t*40+2+sinc])
+                break
+            sinc+=1    
+
+        c_t+=1
+        
+        while c_t < self.CANT_TRAMA:
+        #data_raw[c_t*40+1+sinc
+            if(data[c_t*40+sinc] != self.FFplus): #desincronizado
+            #sinc=incronizar(c_t*40+sinc)# esto cambia c_t y s
+                print "desincronizacion detectada"
+                break
+            if (True == True): #esto es cualca, solo para reemplarzar el xor
+                channels[:,trama_parseada]=data[c_t*40+4+sinc:c_t*40+39+sinc]
+                contador_old=contador
+                contador=data[c_t*40+1+sinc]
+                #comparo contadores aviso
+                if np.int16(contador_old+1) != contador:
+                    #guardo discontinuidad!!!
+                    print "perdida de datos contador"
+        
+        #if(trama_parseada is CANT_TRAMA):
+            ##envio a cola
+            #trama_parseada=0
+  
+            else:
+                print "dato erroneo detectado"
+                #ckea, elimina dato, avisar corte y error de transmision
+            c_t+=1
+        
