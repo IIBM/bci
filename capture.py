@@ -179,11 +179,13 @@ class Parser():
                     #fin del priner parseo
                     break
                 self.sinc+=1
+            if(self.sinc >0 ):
+                max_c_t=max_c_t-1
             if (self.sinc == comm.L_TRAMA):
                 print "se recorrio una trama y nunca se sincronizo"
                 self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
-            self.c_t = self.c_t + 1
-        
+            else:
+                self.c_t+=1
         #recorre hasta llenar tramas parseadas o parsear todo el bloque de datos crudos
         while self.tramas_parseadas < config.PAQ_USB and self.c_t < max_c_t:
             init_trama=self.c_t*comm.L_TRAMA+self.sinc

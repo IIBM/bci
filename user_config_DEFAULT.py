@@ -3,7 +3,7 @@
 #for user's configuration
 
 
-CANT_CANALES=35
+CANT_CANALES=36
 #CANT_CANALES=24
 FS=float(20000)
 PAQ_USB=6000
