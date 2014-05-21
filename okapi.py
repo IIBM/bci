@@ -97,7 +97,7 @@ class OpalKelly():
   def data_available(self):
     self._xem.UpdateWireOuts()
     a = self._xem.GetWireOutValue(byteControlOutAddr)
-    if a & (0x0001<<bit100M) :
+    if a & (0x0001<<bit60M) :
       if (a & 0x00FF) is not 0x00FF :
         print "error0"
       return 60000000
@@ -175,7 +175,8 @@ if __name__ == '__main__':
     f.close()
     a.close()
   except:
-    e = sys.exc_info()[0]
-    print ("Error: %s" % e)
+    print sys.exc_info()[0]
+    print sys.exc_info()[1]
+    print sys.exc_info()[2]
     f.close()
     a.close()
