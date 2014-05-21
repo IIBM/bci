@@ -5,8 +5,6 @@ import numpy
 SERIALNUM = "1328000677"
 BITFILENAME = 'fpga.bit'
 
-m_u32SegmentSize = 4096
-
 byteControlInAddr = 0x00
 bitReset = 0
 mascbitReset = 0x0001<<bitReset
@@ -44,7 +42,7 @@ bit128k = 3
 bit1M = 4
 bit5M = 5
 bit10M = 6
-bit100M = 7
+bit60M = 7
 
 byteDataAvAddr = 0x22
 
@@ -78,8 +76,6 @@ class OpalKelly():
     self._xem.UpdateWireIns()
     time.sleep(.1)
  
-    #print frec
-    #print frecValueDic[str(frec)]
     if not (str(frec) in frecValueDic) :
        raise 'frec not valid'
     self._byteControlIn = frecValueDic[str(frec)]
@@ -104,7 +100,7 @@ class OpalKelly():
     if a & (0x0001<<bit100M) :
       if (a & 0x00FF) is not 0x00FF :
         print "error0"
-      return 100000000
+      return 60000000
     if a & (0x0001<<bit10M) :
       if (a & 0x00FF) is not 0x007F :
         print "error1"
@@ -142,24 +138,14 @@ class OpalKelly():
     a = self._xem.GetWireOutValue(byteDataAvAddr)
     return a
 
-  #def read_data(self,size=m_u32SegmentSize):
-    ##datos = numpy.array([0 for i in range(size)],numpy.uint16)
-    ##if self.is_data_ready() == True and size<4000:
-      #datos = numpy.ndarray(size,numpy.uint16)
-      #n = self._xem.ReadFromPipeOut(byteDataOutAddr, datos)
-      #return datos,n
-    ##datos = numpy.ndarray(0,numpy.uint16)
-    ##return datos,0
-     
   def read_data(self,datos):
     n = self._xem.ReadFromPipeOut(byteDataOutAddr, datos)
     return n
     
 
-  def read_block_data(self,size=m_u32SegmentSize):
-    datos = numpy.ndarray(size,numpy.uint16)
-    n = self._xem.ReadFromBlockPipeOut(byteDataOutAddr, 512,datos)
-    return datos,n
+  def read_block_data(self,datos):
+    n = self._xem.ReadFromBlockPipeOut(byteDataOutAddr, 1024,datos)
+    return n
 
   def close(self):
     self.reset()
@@ -169,34 +155,27 @@ class OpalKelly():
 if __name__ == '__main__':
   import sys
   try:
+    l = numpy.ndarray(100000,numpy.int16)
     f = open('salida.txt','w')
-    fb = open('salidab.txt','w')
     a = OpalKelly()
     a.reset()
     time.sleep(.1)
-    a.start(30000)
+    a.start(10000)
     n = 0
     largo = 40
-    while n<5:
+    while n<10:
 
-      while (a.is_data_ready() == False):
+      while (a.data_available() < 100000):
         time.sleep(.01)
 
       n += 1
       
-      c = a.data_available()
-      l,b = a.read_data(c)
-      fb.write(l)
-#      for i in range(b/2):
-#        f.write(str(l[i]) + ' ')
-#        if i % largo == largo -1:
-#          f.write('\n')
+      b = a.read_data(l)
+      f.write(l)
     f.close()
-    fb.close()
     a.close()
   except:
     e = sys.exc_info()[0]
     print ("Error: %s" % e)
     f.close()
-    fb.close()
     a.close()
