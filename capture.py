@@ -5,24 +5,7 @@ import config
 import array
 #from pyqtgraph.Qt import QtGui
 from multiprocess_config import *
-
-
-# Trama 
-# byte alto   byte bajo
-# 0xFF        Nro de canales
-# H_contador  L_contador
-# config      config
-# config      config
-# C0_H        C0_L
-# ...         ...
-# C31_H       C31_L 
-# AUX1_H      AUX1_L
-# AUX2_H      AUX2_L
-# VCC_H       VCC_L
-# CRC_H       CRC_L
-
-
-
+import communication_config as comm
 
 def connect():
     import okapi
@@ -32,36 +15,10 @@ def connect():
     return dev
    
 
-def fake_obtener_datos(com,send_warnings,reg_files,cola,generic_file):
-    #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
-    
-    save_data=False
-    comando='normal'
-    while(comando != 'salir'):    
-        while not com.poll():           
-            lectura=array.array('B')
-            while len(lectura) < (LARGO_TRAMA*config.PAQ_USB):
-                lectura.append(205)
-            
-            #t1 = time.time()
-            try:
-            #cola.put_nowait(np.fromfile(file_input,'B',config.PAQ_USB*LARGO_TRAMA))
-                cola.put(lectura,timeout=TIMEOUT_PUT)
-            except:
-                send_warnings.send('Datos no mostrados')
-            #lectura_nueva=lectura
-            #print time.time()-t1 
-            if save_data:
-                reg_files.save(lectura) 
-            #agrega el largo del archivo
-        comando=com.recv()
-        save_data= comando=='guardar'   
-    filereg_files.close()   
-
 def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
     LARGO_TRAMA=2*config.CANT_CANALES+2    
-    reg_files=file_handle(generic_file,LARGO_TRAMA)
+    reg_files=file_handle(generic_file)
     file_input=open('data_test','rb')
     save_data=False
     #data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
@@ -107,34 +64,36 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
      
 
 def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSCAR FF Y ENGANCHARSE
-    #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
-    LARGO_TRAMA=40
+    #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer     
     save_data=False
-    reg_files=file_handle(generic_file,LARGO_TRAMA)
-    
-    data=np.ndarray(config.CANT_CANALES*config.PAQ_USB,np.int16) #deberia ser mas grande y mandar al okapy uno mas grande
-    channels=np.ndarray([config.CANT_CANALES,config.PAQ_USB],np.int16)
-    dev.start(int(config.FS))
-    parser=Parser(LARGO_TRAMA,config.PAQ_USB)
+    reg_files=file_handle(generic_file)
+    parser=Parser()
     comando='normal'
-    contador=0
+    extra_data=0
+    data=np.ndarray(comm.L_TRAMA*config.PAQ_USB*2,np.int16) #es el doble de grande que el que sera utilizado normalmente
+    dev.start(int(config.FS))
+
     while(comando != EXIT_SIGNAL):
         while not com.poll(): #mientras no se recivan comandos leo
             if (dev.data_available() >= 1000000):
                 # data es un array de numpy de uint16
                 # n es un entero que tiene la cantidad de palabras de 16 bits transmitidas
-                n = dev.read_data(data) #deberia ser N mas grande, si me faltan N tramas
-                parser.get_ch(data,channels)
-                #lectura[:,contador*CANT_TRAMA_FIJO:contador*CANT_TRAMA_FIJO+CANT_TRAMA_FIJO]=np.reshape(data,[LARGO_TRAMA,CANT_TRAMA_FIJO],'F')
-                try:
-                    cola.put(lectura,timeout=TIMEOUT_PUT)
-                except:
-                    try:
-                        send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
-                    except:
-                        pass
+                new_pack_data=(config.PAQ_USB+extra_data)*comm.L_TRAMA
+                n = dev.read_data(data[:new_pack_data]) #deberia ser N mas grande, si me faltan N tramas
                 if save_data:
-                    reg_files.save(lectura) 
+                    reg_files.save(data[:new_pack_data]) 
+                
+                extra_data=parser.update(data[:new_pack_data])
+                while parser.iscomplete==True:
+                    try:
+                        cola.put(parser.channels,timeout=TIMEOUT_PUT)
+                    except:
+                        try:
+                            send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
+                        except:
+                            pass
+                    if extra_data < 0: #osea sobraban datos
+                        extra_data=parser.update(data[:new_pack_data]) 
 
             else :
                 time.sleep(100/config.FS)
@@ -144,10 +103,10 @@ def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSC
     dev.close();
 
 class file_handle():
-    def __init__(self,generic_file,LARGO_TRAMA):
+    def __init__(self,generic_file):
         self.generic_file_name = generic_file
         #archivo cabecera
-        self.paqxfile=config.MAX_SIZE_FILE/LARGO_TRAMA/config.PAQ_USB
+        self.paqxfile=config.MAX_SIZE_FILE/comm.L_TRAMA/config.PAQ_USB
         self.num_registro=-1
         
     def new(self):
@@ -179,7 +138,7 @@ class file_handle():
     def close(self):
         try:
             self.file_part.close()
-            file_head.write(str(config.FS) + ','+ str(LARGO_TRAMA)+','+str(time.asctime( time.localtime(time.time())))+','+str(self.paqxfile*config.PAQ_USB)+','+str(self.part)+'\n')
+            file_head.write(str(config.FS) + ','+ str(comm.L_TRAMA)+','+str(time.asctime( time.localtime(time.time())))+','+str(self.paqxfile*config.PAQ_USB)+','+str(self.part)+'\n')
             file_head.close()
         except:
             pass
@@ -194,47 +153,78 @@ class data_in():
         
         
 class Parser():
-    def __init__(self,LARGO_TRAMA,CANT_TRAMA,CANT_CANALES):     
-        self.contador_old=0
+    def __init__(self):     
+        self.contador=0 #el contador de la trama
         self.FFplus=np.fromstring('\x23''\xff',np.int16)
-        self.LARGO_TRAMA=LARGO_TRAMA
-        self.CANT_TRAMA=CANT_TRAMA
-        self.CANT_CANALES=CANT_CANALES
+        self.tramas_parseadas=0 #ubicacion en el bloque q se esta creando
+        self.channels=np.ndarray([config.CANT_CANALES,config.PAQ_USB],np.int16)
+        self.c_t=0#ubicacion en el bloque q se esta leyendo
+        self.iscomplete=False
+        self.sinc=0
+    def update(self,data):
+        max_c_t=data.size/comm.L_TRAMA
+        #si recien empieza con esos datos, primero sincroniza
+        if self.c_t==0 :
+            self.sinc=0
+            while self.sinc < comm.L_TRAMA:
+                if (data[self.sinc] == self.FFplus): #falta un and con el hash
+                    #parsea:
+                    self.channels[:,self.c_t]=data[comm.CHANNELS_POS+self.sinc:self.sinc+comm.CHANNELS_POS+config.CANT_CANALES]
+                    self.tramas_parseadas+=1
+                    contador_old=self.contador
+                    self.contador=(data[comm.COUNTER_POS+self.sinc])
+                    if np.int16(contador_old+1) != self.contador:
+                        #guardo discontinuidad!!!
+                        print "perdida de datos segun contador"
+                    #fin del priner parseo
+                    break
+                self.sinc+=1
+            if (self.sinc == comm.L_TRAMA):
+                print "se recorrio una trama y nunca se sincronizo"
+                self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
+            self.c_t = self.c_t + 1
         
-    def get_ch(self,data,channels):
-        sinc=0
-        c_t=0
-        #primero sincroniza
-        while sinc < self.LARGO_TRAMA:
-            if (data[sinc] == FFplus and data[self.LARGO_TRAMA+sinc] == FFplus): #la segunda deberia ser el hash
-                channels[:,c_t]=data[c_t*40+4+sinc:c_t*40+39+sinc]
-                contador_old=(data[c_t*40+1+sinc:c_t*40+2+sinc])
-                break
-            sinc+=1    
-
-        c_t+=1
-        
-        while c_t < self.CANT_TRAMA:
-        #data_raw[c_t*40+1+sinc
-            if(data[c_t*40+sinc] != self.FFplus): #desincronizado
+        #recorre hasta llenar tramas parseadas o parsear todo el bloque de datos crudos
+        while self.tramas_parseadas < config.PAQ_USB and self.c_t < max_c_t:
+            init_trama=self.c_t*comm.L_TRAMA+self.sinc
+            if(data[init_trama] != self.FFplus): #desincronizado
             #sinc=incronizar(c_t*40+sinc)# esto cambia c_t y s
                 print "desincronizacion detectada"
+                self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
                 break
             if (True == True): #esto es cualca, solo para reemplarzar el xor
-                channels[:,trama_parseada]=data[c_t*40+4+sinc:c_t*40+39+sinc]
-                contador_old=contador
-                contador=data[c_t*40+1+sinc]
+                #parsea:
+                self.channels[:,self.tramas_parseadas]=data[init_trama+comm.CHANNELS_POS:init_trama+comm.CHANNELS_POS+config.CANT_CANALES]
+                #ojo aca se tendria q parsear y guardar el resto de la informacion q viene en la trama                
+                self.tramas_parseadas+=1
+                contador_old=self.contador
+                self.contador=data[init_trama+comm.COUNTER_POS]
                 #comparo contadores aviso
-                if np.int16(contador_old+1) != contador:
+                if np.int16(contador_old+1) != self.contador:
                     #guardo discontinuidad!!!
-                    print "perdida de datos contador"
-        
-        #if(trama_parseada is CANT_TRAMA):
-            ##envio a cola
-            #trama_parseada=0
+                    print "perdida de datos segun contador"
+                #fin del parseo
   
             else:
                 print "dato erroneo detectado"
                 #ckea, elimina dato, avisar corte y error de transmision
-            c_t+=1
+            self.c_t+=1
+            
         
+        if self.tramas_parseadas == config.PAQ_USB:
+            self.iscomplete=True
+            self.tramas_parseadas=0
+            #retorno cuanto falta parsear del bloque crudo
+            if self.c_t == max_c_t:
+                self.c_t=0
+                return 0
+            else:
+                #me sobra data puedo volver a update
+                return -1
+
+        else:
+            #retorno cuanto le falta para terminar el bloque de canales
+            self.iscomplete=False
+            return config.PAQ_USB - self.tramas_parseadas
+    
+    
