@@ -84,7 +84,8 @@ def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSC
                     reg_files.save(data[:new_pack_data]) 
                 
                 extra_data=parser.update(data[:new_pack_data])
-                while parser.iscomplete==True:
+
+                while extra_data <=0: #estoy justo o me sobran datos
                     try:
                         cola.put(parser.channels,timeout=TIMEOUT_PUT)
                     except:
@@ -92,9 +93,10 @@ def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSC
                             send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
                         except:
                             pass
-                    if extra_data < 0: #osea sobraban datos
+                    if extra_data < 0: #sobraban datos
                         extra_data=parser.update(data[:new_pack_data]) 
-
+                    else:
+                        break
             else :
                 time.sleep(100/config.FS)
         comando=com.recv()
@@ -159,7 +161,6 @@ class Parser():
         self.tramas_parseadas=0 #ubicacion en el bloque q se esta creando
         self.channels=np.ndarray([config.CANT_CANALES,config.PAQ_USB],np.int16)
         self.c_t=0#ubicacion en el bloque q se esta leyendo
-        self.iscomplete=False
         self.sinc=0
     def update(self,data):
         max_c_t=data.size/comm.L_TRAMA
@@ -214,7 +215,6 @@ class Parser():
             
         
         if self.tramas_parseadas == config.PAQ_USB:
-            self.iscomplete=True
             self.tramas_parseadas=0
             #retorno cuanto falta parsear del bloque crudo
             if self.c_t == max_c_t:
@@ -226,7 +226,6 @@ class Parser():
 
         else:
             #retorno cuanto le falta para terminar el bloque de canales
-            self.iscomplete=False
             return config.PAQ_USB - self.tramas_parseadas
     
     
