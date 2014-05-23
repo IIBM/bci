@@ -11,7 +11,7 @@ FFT_L=8192*2 #largo del vector con el q se realiza fft
 FFT_N=4  #cantidad de ffts q se promedian
 FFT_L_PAQ=3 #cantidad de paqueques q se concatenan para fft
 ROWS_DISPLAY=3
-MESSAGE_TIME=5 #duration message display
+#MESSAGE_TIME=5 #duration message display
 TIME_SPIKE_COUNT=1 #ventana de tiempo donde se estima la frec de disparo.Aprox: secons 
 DISPLAY_LIMY=200
 

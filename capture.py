@@ -67,7 +67,7 @@ def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSC
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer     
     save_data=False
     reg_files=file_handle(generic_file)
-    parser=Parser()
+    parser=Parser(cola)
     comando='normal'
     extra_data=0
     data=np.ndarray(comm.L_TRAMA*config.PAQ_USB*2,np.int16) #es el doble de grande que el que sera utilizado normalmente
@@ -108,12 +108,10 @@ class file_handle():
     def __init__(self,generic_file):
         self.generic_file_name = generic_file
         #archivo cabecera
-        self.paqxfile=config.MAX_SIZE_FILE/comm.L_TRAMA/config.PAQ_USB
+        self.paqxfile=config.MAX_SIZE_FILE/comm.L_TRAMA/config.PAQ_USB/np.int16().nbytes #calculated in bytes
         self.num_registro=-1
         
     def new(self):
-	file_head=open(self.generic_file_name +'-'+str(self.num_registro) + '-0','w')
-        file_head.write("FS,LARGO_TRAMA,FECHA,LARGO_ARCHIVO,ARCHIVOS\n")
         self.part=1 #parte del registro todo corrido
         self.file_part=open(self.generic_file_name +'-'+str(self.num_registro) +'-' +str(self.part),'wb')
         self.paq_in_part=0
@@ -125,9 +123,11 @@ class file_handle():
             self.paq_in_part+=1
         else:
             self.file_part.close()
+            self.part+=1
             self.file_part=open(self.generic_file_name +'-'+str(self.num_registro) +'-' +str(self.part),'wb')
             data.tofile(self.file_part)
-            self.part=1
+            
+            self.paq_in_part=0
     
     def actions(self,signal):
         self.close()
@@ -138,13 +138,29 @@ class file_handle():
             self.close()
 
     def close(self):
-        try:
-            self.file_part.close()
-            file_head.write(str(config.FS) + ','+ str(comm.L_TRAMA)+','+str(time.asctime( time.localtime(time.time())))+','+str(self.paqxfile*config.PAQ_USB)+','+str(self.part)+'\n')
+        if self.num_registro >= 0:
+            from ConfigParser import ConfigParser
+            config_parser=ConfigParser()
+            newsection='GENERAL_CONFIGURATION'
+            config_parser.add_section(newsection)
+            config_parser.set(newsection,'FS',int(config.FS))
+            config_parser.set(newsection,'#CHANNELS',config.CANT_CANALES)
+            
+            newsection='SYSTEM_CONFIGURATION'
+            config_parser.add_section(newsection)
+            config_parser.set(newsection,'LARGO_TRAMA',comm.L_TRAMA)
+            config_parser.set(newsection,'CHANNELS_POS',comm.CHANNELS_POS)
+            config_parser.set(newsection,'COUNTER_POS',comm.COUNTER_POS)
+            config_parser.set(newsection,'HASH_POS',comm.HASH_POS)
+            
+            newsection='DATA_INFO'
+            config_parser.add_section(newsection)
+            config_parser.set(newsection,'#FILES',self.part)
+            config_parser.set(newsection,'DATE',time.asctime( time.localtime(time.time())))
+            file_head= open(self.generic_file_name +'-'+str(self.num_registro) + '-0','w')
+            config_parser.write(file_head)
             file_head.close()
-        except:
-            pass
-        
+            self.file_part.close()
             
         
 class data_in():
@@ -155,13 +171,15 @@ class data_in():
         
         
 class Parser():
-    def __init__(self):     
+    def __init__(self,send_warnings):     
         self.contador=0 #el contador de la trama
         self.FFplus=np.fromstring('\x23''\xff',np.int16)
         self.tramas_parseadas=0 #ubicacion en el bloque q se esta creando
         self.channels=np.ndarray([config.CANT_CANALES,config.PAQ_USB],np.int16)
         self.c_t=0#ubicacion en el bloque q se esta leyendo
         self.sinc=0
+        self.first_read=True
+        self.send_warnings=send_warnings
     def update(self,data):
         max_c_t=data.size/comm.L_TRAMA
         #si recien empieza con esos datos, primero sincroniza
@@ -174,16 +192,27 @@ class Parser():
                     self.tramas_parseadas+=1
                     contador_old=self.contador
                     self.contador=(data[comm.COUNTER_POS+self.sinc])
-                    if np.int16(contador_old+1) != self.contador:
+                    if np.int16(contador_old+1) != self.contador and self.first_read:
+                        self.first_read=False
                         #guardo discontinuidad!!!
-                        print "perdida de datos segun contador"
+                        #print "perdida de datos segun contador"
+                        try:
+                            self.send_warnings.put_nowait(COUNTER_ERROR)
+                        except:
+                            pass
                     #fin del priner parseo
                     break
                 self.sinc+=1
             if(self.sinc >0 ):
                 max_c_t=max_c_t-1
             if (self.sinc == comm.L_TRAMA):
-                print "se recorrio una trama y nunca se sincronizo"
+                #print "se recorrio una trama y nunca se sincronizo"
+                try:
+                    self.send_warnings.put_nowait(CANT_SYNCHRONIZE)
+                except:
+                    pass
+                
+                
                 self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
             else:
                 self.c_t+=1
@@ -192,7 +221,12 @@ class Parser():
             init_trama=self.c_t*comm.L_TRAMA+self.sinc
             if(data[init_trama] != self.FFplus): #desincronizado
             #sinc=incronizar(c_t*40+sinc)# esto cambia c_t y s
-                print "desincronizacion detectada"
+                #print "desincronizacion detectada"
+                try:
+                    self.send_warnings.put_nowait(DATA_NONSYNCHRONIZED)
+                except:
+                    pass
+                
                 self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
                 break
             if (True == True): #esto es cualca, solo para reemplarzar el xor
@@ -205,11 +239,21 @@ class Parser():
                 #comparo contadores aviso
                 if np.int16(contador_old+1) != self.contador:
                     #guardo discontinuidad!!!
-                    print "perdida de datos segun contador"
+                    #print "perdida de datos segun contador"
+                    try:
+                        self.send_warnings.put_nowait(COUNTER_ERROR)
+                    except:
+                        pass
+                    
+                    
                 #fin del parseo
   
             else:
-                print "dato erroneo detectado"
+                #print "dato erroneo detectado"
+                try:
+                    self.send_warnings.put_nowait(DATA_CORRUPTION)
+                except:
+                    pass
                 #ckea, elimina dato, avisar corte y error de transmision
             self.c_t+=1
             

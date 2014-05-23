@@ -44,8 +44,6 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.display_scale, QtCore.SIGNAL("valueChanged(int)"), self.matriz_tetrodos.change_Yrange)  
         QtCore.QObject.connect(self.paq_view, QtCore.SIGNAL("valueChanged(int)"), self.changeXrange)  
         QtCore.QObject.connect(self.active_channel_cb, QtCore.SIGNAL("clicked( bool)"),self.activate_channel)
-        self.get_data_warning_time=0
-        self.processing_process_warning_time=0
         self.processing_process_warning=False
         self.get_data_warning=False
         self.file_label.setText(NOT_SAVING_MESSAGE)
@@ -67,18 +65,16 @@ class MainWindow(QtGui.QMainWindow):
         except:
             return 1
         if (not self.get_data_process.warnings.empty()):
-            self.get_data_warning_time=time.time()
             self.get_data_warning=True
             self.warnings.setText(Errors_Messages[self.get_data_process.warnings.get(TIMEOUT_GET)])
-        elif(self.get_data_warning and time.time()-self.get_data_warning_time > MESSAGE_TIME):
+        elif(self.get_data_warning):
             self.warnings.setText("") 
             self.get_data_warning=False
         
         if (not self.processing_process.warnings.empty()):
-            self.processing_process_warning_time=time.time()
             self.processing_process_warning=True
             self.status.setText(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)])
-        elif(self.processing_process_warning and time.time()-self.processing_process_warning_time > MESSAGE_TIME):
+        elif(self.processing_process_warning):
                 self.status.setText("")                  
                 self.processing_process_warning=False
             
@@ -465,11 +461,9 @@ class  bci_data_handler():
         
         if self.paqdisplay >= self.paq_view:
             self.paqdisplay=0
-            
         for i in xrange(config.PAQ_USB):
             self.graph_data[:,self.paqdisplay*config.PAQ_USB+i]=self.data_new[:,i]
-        self.paqdisplay+=1
-        
+
     def change_paq_view(self,i):
         self.new_paq_view=i
         
