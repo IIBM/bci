@@ -12,7 +12,7 @@ if(Fmax < config.FS):
     filter_freq=[float(Fmin*2)/config.FS,float(Fmax*2)/config.FS]
 else:
     filter_freq=[float(Fmin*2)/config.FS]
-    
+    length_bandpass-=1
 filter_coef=signal.firwin(length_bandpass, filter_freq, width=None, window=window_type, pass_zero=False)
 group_delay=((length_bandpass-1)/2)*(length_bandpass%2)+(length_bandpass+1)%2*(length_bandpass/2)
 

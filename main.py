@@ -22,8 +22,8 @@ def main():
                 break
             except:
                 if(QtGui.QMessageBox.question(QtGui.QWidget(),'Error', "error: USB device not found, try again?", 
-                QtGui.QMessageBox.Ok |QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Cancel ):
-                    exit()
+                QtGui.QMessageBox.Ok |QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Cancel ):                   
+                    return
 
 # ## ## ## ## ## ## ## ## ## ## #
     generic_file=QtGui.QFileDialog.getSaveFileName()
