@@ -46,7 +46,7 @@ group_delay=((length_bandpass-1)/2)*(length_bandpass%2)+(length_bandpass+1)%2*(l
 def spikes_detect(x,umbral):
     new_spikes_times=list()
     #aux=[]
-    for i in range(config.CANT_CANALES):
+    for i in xrange(config.CANT_CANALES):
 #        if(umbral[i]>0):
 #            aux=np.nonzero(np.ediff1d(x[i,:]>umbral[i], to_end=None, to_begin=None)) 
 #        else:

@@ -1,7 +1,7 @@
 from pyqtgraph.Qt import QtCore #interfaz en general
 import pyqtgraph as pg #graphicos
 from PyQt4  import QtGui,uic
-from scipy import signal,fftpack
+from scipy import fftpack
 import numpy as np
 import config
 import time
@@ -29,15 +29,12 @@ class MainWindow(QtGui.QMainWindow):
         #self.dialogo=Dialog_Tet()
         #self.matriz_tetrodos=tets_display(self.espacio_pg)
         #for i in range((config.CANT_CANALES)/4):
-            #self.tet_plus_selec.addItem('T%s' % (i + 1))
+            #self.tet_plus_selec.addItem('T%s' % (i + 1))  Config_processing
         self.processing_process=processing_process
         self.get_data_process=get_data_process
-        self.signal_config=Config_processing(False,DISPLAY_LIMY/2*np.ones([config.CANT_CANALES,1])) #HARDCODE
-        self.active_channels=[False for j in range(config.CANT_CANALES)]
-        try:
-            processing_process.ui_config_queue.put(self.signal_config)
-        except:
-            pass
+        self.signal_config=Channels_Configuration(queue=self.processing_process.ui_config_queue)#HARDCODE
+        self.active_channels=[False for j in xrange(config.CANT_CANALES)]
+        self.signal_config.try_send()
         self.info_tetrodo=plus_display(self.plus_grid,self.plus_grid_fr,self.signal_config)
         self.matriz_tetrodos=general_display(self.espacio_pg,self.info_tetrodo)
         self.data_handler=bci_data_handler()
@@ -49,6 +46,8 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.active_channel_cb, QtCore.SIGNAL("clicked( bool)"),self.activate_channel)
         self.get_data_warning_time=0
         self.processing_process_warning_time=0
+        self.processing_process_warning=False
+        self.get_data_warning=False
         self.file_label.setText(NOT_SAVING_MESSAGE)
         self.contador_registro=-1
         self.timer = QtCore.QTimer()
@@ -62,36 +61,33 @@ class MainWindow(QtGui.QMainWindow):
     def update(self):
         #check if get_data process can send data
 
-        self.signal_config.filter_mode= self.filter_mode_button.isChecked()
-        
+        self.signal_config.change_filter_mode(self.filter_mode_button.isChecked())
         try:
-            self.data_handler.update(self.processing_process.new_data_queue.get(TIMEOUT_GET),self.signal_config.filter_mode)
+            self.data_handler.update(self.processing_process.new_data_queue.get(TIMEOUT_GET))
         except:
             return 1
         if (not self.get_data_process.warnings.empty()):
             self.get_data_warning_time=time.time()
+            self.get_data_warning=True
             self.warnings.setText(Errors_Messages[self.get_data_process.warnings.get(TIMEOUT_GET)])
-        else:
-            if(time.time()-self.get_data_warning_time > MESSAGE_TIME):
-                self.warnings.setText("") 
+        elif(self.get_data_warning and time.time()-self.get_data_warning_time > MESSAGE_TIME):
+            self.warnings.setText("") 
+            self.get_data_warning=False
         
         if (not self.processing_process.warnings.empty()):
             self.processing_process_warning_time=time.time()
+            self.processing_process_warning=True
             self.status.setText(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)])
-        else:
-            if(time.time()-self.processing_process_warning_time > MESSAGE_TIME):
+        elif(self.processing_process_warning and time.time()-self.processing_process_warning_time > MESSAGE_TIME):
                 self.status.setText("")                  
-            
+                self.processing_process_warning=False
             
         if self.beepbox.isChecked():
             t = threading.Thread(target=beep,args=[self.data_handler.spikes_times[self.info_tetrodo.channel]])
             t.start()    
                    
         self.update_graphicos()
-        try:
-            self.processing_process.ui_config_queue.put(self.signal_config)
-        except:
-            pass
+        self.signal_config.try_send()
         
     def update_graphicos(self):    
         #self.dialogo.update(self.data)
@@ -123,7 +119,9 @@ class MainWindow(QtGui.QMainWindow):
         self.contador_registro+=1
         self.file_label.setText(SAVING_MESSAGE + self.generic_file +'-'+str(self.contador_registro))
 
-
+    def change_filter_model(self, state):
+        self.signal_config.filter_mode=state
+        self.signal_config.changed=True
     #def set_autoRange(self):
         #if self.autoRange.isChecked():
             #self.matriz_tetrodos.setAutoRange(True)
@@ -198,8 +196,7 @@ class  plus_display():
         
         n_view=data_handler.n_view
         xtime=data_handler.xtime
-        
-        self.signal_config.thresholds[self.channel]=self.graph_umbral.value()
+        self.signal_config.change_th(self.channel,self.graph_umbral.value())
         self.max_xtime=xtime[n_view-1]
         #tasas=np.zeros([4])
         
@@ -224,13 +221,13 @@ class  plus_display():
             #self.VB.setXRange(0, xtime[n_view-1], padding=0, update=False)
             self.curve.setPen(ch_colors[self.channel%4])
             self.curve.setData(x=xtime[:n_view],y=data[self.channel,:n_view])
-        #elif self.mode is 1:  
+            #elif self.mode is 1:  
             #self.curve.setPen(ch_colors[self.selec_canal])
             ##self.VB.setXRange(0, xtime[n_view-1], padding=0, update=False)
             #self.curve.setData(x=xtime[:n_view],y=x[self.selec_canal,:n_view], _callSync='off')
             #if self.tmode_auto[self.selec_canal+4*self.selec_tet] is True:
                 #self.graph_umbral.setValue(umbral_calc[self.selec_canal])
-            
+       
         else:
             if( self.fft_l < FFT_L_PAQ):
                 self.data_fft_aux[self.fft_l*config.PAQ_USB:(1+self.fft_l)*config.PAQ_USB]=data_handler.data_new[self.channel,:]
@@ -309,7 +306,7 @@ class  bar_graph(pg.PlotItem):
         self.tasa_bars.append(self.plot(pen=ch_colors[3], fillLevel=0,brush=pg.mkBrush(ch_colors[3])))
 
     def update(self,spike_times):  
-            for i in range(4):
+            for i in xrange(4):
                 #self.tasas[self.npack,i]=(spike_times[i][0]).size
                 self.tasas[self.npack,i]=(np.greater(spike_times[i][0][1:]-spike_times[i][0][:-1],spike_duration_samples)).sum() + ((spike_times[i][0]).size > 0)
                 tasas_aux=self.tasas[:,i].sum()/FREQFIX_xSPIKE_COUNT  
@@ -343,7 +340,7 @@ class general_display():
             layout_graphicos_2=self.second_win.layout_graphicos
             self.second_win.show()
             
-        for i in range(config.CANT_CANALES):
+        for i in xrange(config.CANT_CANALES):
             vb=ViewBox_General_Display(i,info_tet)
             
             if (i < main_win_ch):
@@ -353,13 +350,13 @@ class general_display():
             
             graph.hideButtons()
             graph.setDownsampling(auto=True)
-            
             VB=graph.getViewBox()
+            
             VB.setXRange(0, config.PAQ_USB, padding=0, update=True) #HARDCODE
             VB.setYRange(DISPLAY_LIMY,-DISPLAY_LIMY, padding=0, update=True)
-            #self.vieboxs.append(VB)
+           #self.vieboxs.append(VB)
             if i%4 is 0:
-                graph.setTitle('Tetrodo ' + str(i/4+1))
+                graph.setTitle('Tetrode ' + str(i/4+1))
             #if i%4 != 3:
                 #graph.showAxis('bottom', show=False)
             graph.showAxis('bottom', show=False) 
@@ -377,13 +374,13 @@ class general_display():
         
     def change_Yrange(self,p):
         p=float(p)/10
-        for i in range(config.CANT_CANALES):
+        for i in xrange(config.CANT_CANALES):
            self.graphicos[i].setYRange(DISPLAY_LIMY*p,-1*DISPLAY_LIMY*p, padding=0, update=False)
     
     
     def changeXrange(self,i):
         max_x=i*config.PAQ_USB
-        for i in range(config.CANT_CANALES):
+        for i in xrange(config.CANT_CANALES):
             self.graphicos[i].setXRange(0,max_x, padding=0, update=False)
             
         
@@ -392,10 +389,9 @@ class general_display():
         #step=config.PAQ_USB/float(config.FS)/4
         #if self.casa >= 4:
         #n=np.arange(n_view)
-        for i in range(config.CANT_CANALES):
+        for i in xrange(config.CANT_CANALES):
             self.curv_canal[i].setData(y=data[i,:n_view])
-            #self.curv_canal[i].setData(x=n,y=data[i,:n_view])
-                           
+            #self.curv_canal[i].setData(x=n,y=data[i,:n_view])            
         #for i in range(config.CANT_CANALES):
            # self.vieboxs[i].setXRange(self.casa*step,(self.casa+1)*step, padding=0, update=False)
     #def setAutoRange(self,state):
@@ -454,7 +450,7 @@ class  bci_data_handler():
         self.xtime[:self.n_view]=np.linspace(0,self.n_view/float(config.FS),self.n_view)
         ####
     
-    def update(self,data_struct,is_filtered_signal):
+    def update(self,data_struct):
         
         self.data_new=data_struct.new_data
         
@@ -470,7 +466,7 @@ class  bci_data_handler():
         if self.paqdisplay >= self.paq_view:
             self.paqdisplay=0
             
-        for i in range(config.PAQ_USB):
+        for i in xrange(config.PAQ_USB):
             self.graph_data[:,self.paqdisplay*config.PAQ_USB+i]=self.data_new[:,i]
         self.paqdisplay+=1
         
@@ -489,58 +485,38 @@ def beep(sk_time):
     delay=int((one_pack_time*1000.0-spike_duration*sp)/sp)
     #os.system(beep_command + str(delay) + "-r" +str(sp))
     string=beep_command + str(delay)
-    for i in range(sp):
+    for i in xrange(sp):
 		os.system(string)
     return
-     
     
-    #sk_time=np.reshape(sk_time,sk_size,1)
-    #time.sleep(float(sk_time[0])/config.FS)
-
-    #i=0
-    #while i < sk_size:
-            
-        #x=sk_time[i]+spike_duration_samples
-        #ii=0
-        #while i+ii+1<sk_size and x>sk_time[i+ii+1]:
-            #ii+=1
-            #x=sk_time[i+ii]+spike_duration_samples
-        #if ii is 0:
-            #l=spike_duration
-        #else:
-            #l=int((sk_time[i+ii]-sk_time[i]+spike_duration_samples)*1000/config.FS)
-        #os.system("beep -f" + BEEP_FREQ + "-l " + str(l))
-        
-        #if i+ii+1 < sk_size:
-            #time.sleep(((sk_time[i+ii+1]-sk_time[i+ii]-spike_duration_samples)/config.FS))
-        #i+=ii+1
-    #return  
-        
-    #cadena_beep="beep -f" + BEEP_FREQ + "-l " + str(spike_duration)
-    #time.sleep(float(sk_time[0])/config.FS) 
-    #os.system(cadena_beep)
-    
-    #if sk_size is 1:
-        #return
-    #time.sleep(float(sk_time[1]-sk_time[0])/config.FS)   
-    #sp_aux=(np.greater(sk_time[1:]-sk_time[:-1],spike_duration_samples))
-    #sp=(sk_time[1:])[sp_aux]
-    #if sk_size is 1:
-        #return
-    
-    #time.sleep(float(sp[0]-sk_time[0])/config.FS) 
-    
-    #for i in range(sp.size-1):
-        #t1=time.time()
-        #os.system(cadena_beep)
-        #aux=float(sp[i+1]-sp[i])/config.FS-(time.time()-t1)
-        #if aux>0:
-            #time.sleep(aux) 
-        
-    #os.system(cadena_beep)
-    
-
 class Config_processing():
     def __init__(self,filter_mode,thresholds):
         self.filter_mode=filter_mode
-        self.thresholds=thresholds
+        self.thresholds=thresholds     
+
+class Channels_Configuration(Config_processing):
+    def __init__(self,queue,filter_mode=False,thresholds=DISPLAY_LIMY/2*np.ones([config.CANT_CANALES,1])):
+        Config_processing.__init__(self,filter_mode,thresholds)
+        self.queue=queue
+        self.changed=True
+        
+    def change_th(self,ch,value):
+        
+        if(self.thresholds[ch] != value):
+            self.thresholds[ch]=value
+            self.changed=True
+        
+        
+    def change_filter_mode(self,state):
+        if(self.filter_mode != state):
+            self.filter_mode=state
+            self.changed=True
+            
+    def try_send(self):
+        if self.changed==True:
+            try:
+                self.queue.put(Config_processing(self.filter_mode,self.thresholds))
+            except:
+                pass
+            self.changed=False
+            
