@@ -47,7 +47,7 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
                     send_warnings.put_nowait(SLOW_PROCESS_SIGNAL)
                 except:
                     pass    
-            time.sleep(config.PAQ_USB/config.FS)
+            time.sleep(config.PAQ_USB*0.9/config.FS)
             #print "graphicar pierde datos :("
             #while(j<config.PAQ_USB):
                 #data[:,j]=np.fromfile(file_input,np.int16, config.CANT_CANALES)
