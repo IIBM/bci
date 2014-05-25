@@ -14,5 +14,5 @@ MAX_PAQ_DISPLAY=8
 TIEMPO_DISPLAY=PAQ_USB/FS #minimo en ms.. 
 
 #esto podria ir aparte en conf file
-MAX_SIZE_FILE=40*2**20 #40MB
+SIZE_FILE=40 #en MB
 

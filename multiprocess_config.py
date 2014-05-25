@@ -9,7 +9,7 @@ TIMEOUT_PUT=int(config.PAQ_USB/config.FS)/10
 
 #--------
 GRAPH_DATA_BUFFER=15
-DATA_BUFFER=15
+DATA_BUFFER=20
 WARNIGNS_BUFFER =10
 
 #--------

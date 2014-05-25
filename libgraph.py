@@ -10,14 +10,27 @@ import copy
 from multiprocess_config import *
 from libgraph_config import *
 from spikes_config import spike_duration
-     
-spike_duration_samples=int(spike_duration/1000.0*config.FS)
+import os
+import logging
 
+logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
+
+BEEP_FREQ="700" #Hz (str) 
+spike_duration_samples=int(spike_duration/1000.0*config.FS)
+ch_colors=['r','y','g','c','p','w']
+NOT_SAVING_MESSAGE='without saving'
+SAVING_MESSAGE='writing in:'
 fft_frec= np.linspace(0, config.FS/2, FFT_L/2)
 one_pack_time=config.PAQ_USB/config.FS
 PACK_xSPIKE_COUNT=int(float(TIME_SPIKE_COUNT)/one_pack_time)
 FREQFIX_xSPIKE_COUNT=(float(PACK_xSPIKE_COUNT)*one_pack_time)
 beep_command="beep -f " + BEEP_FREQ + " -l " + str(spike_duration) + " -d "
+
+uifile=os.path.join(os.path.abspath(os.path.dirname(__file__)),'bciui.ui')
+
+if config.TWO_WINDOWS:
+    second_win_file = os.path.join(os.path.abspath(os.path.dirname(__file__)),'second_window.ui')
+
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self,processing_process,get_data_process,generic_file):
@@ -44,8 +57,6 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.display_scale, QtCore.SIGNAL("valueChanged(int)"), self.matriz_tetrodos.change_Yrange)  
         QtCore.QObject.connect(self.paq_view, QtCore.SIGNAL("valueChanged(int)"), self.changeXrange)  
         QtCore.QObject.connect(self.active_channel_cb, QtCore.SIGNAL("clicked( bool)"),self.activate_channel)
-        self.get_data_warning_time=0
-        self.processing_process_warning_time=0
         self.processing_process_warning=False
         self.get_data_warning=False
         self.file_label.setText(NOT_SAVING_MESSAGE)
@@ -69,16 +80,21 @@ class MainWindow(QtGui.QMainWindow):
         if (not self.get_data_process.warnings.empty()):
             self.get_data_warning_time=time.time()
             self.get_data_warning=True
-            self.warnings.setText(Errors_Messages[self.get_data_process.warnings.get(TIMEOUT_GET)])
-        elif(self.get_data_warning and time.time()-self.get_data_warning_time > MESSAGE_TIME):
+            error=Errors_Messages[self.get_data_process.warnings.get(TIMEOUT_GET)]
+            self.warnings.setText(error)
+            logging.error(error)
+            
+        elif(self.get_data_warning):
             self.warnings.setText("") 
             self.get_data_warning=False
         
         if (not self.processing_process.warnings.empty()):
             self.processing_process_warning_time=time.time()
             self.processing_process_warning=True
-            self.status.setText(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)])
-        elif(self.processing_process_warning and time.time()-self.processing_process_warning_time > MESSAGE_TIME):
+            warning=Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)]
+            self.status.setText(warning)
+            logging.warning(warning)
+        elif(self.processing_process_warning):
                 self.status.setText("")                  
                 self.processing_process_warning=False
             

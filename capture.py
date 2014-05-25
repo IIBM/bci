@@ -7,6 +7,8 @@ import array
 from multiprocess_config import *
 import communication_config as comm
 
+
+
 def connect():
     import okapi
     # find our device
@@ -65,7 +67,9 @@ def fake_file_obtener_datos(com,send_warnings,cola,generic_file):
 
 def obtener_datos(com,send_warnings,dev,cola,generic_file):#SINCRONIZAR!!!! BUSCAR FF Y ENGANCHARSE
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer     
+    import logging
     save_data=False
+    logging.basicConfig(filename='data_bci.log',level=logging.WARNING)
     reg_files=file_handle(generic_file)
     parser=Parser()
     comando='normal'
@@ -108,7 +112,7 @@ class file_handle():
     def __init__(self,generic_file):
         self.generic_file_name = generic_file
         #archivo cabecera
-        self.paqxfile=config.MAX_SIZE_FILE/comm.L_TRAMA/config.PAQ_USB
+        self.paqxfile=config.SIZE_FILE*2**20/comm.L_TRAMA/config.PAQ_USB
         self.num_registro=-1
         
     def new(self):
