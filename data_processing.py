@@ -8,7 +8,7 @@ from signal_processing_config import *
 
 
 
-if(Fmax < config.FS):
+if(Fmax < config.FS/2):
     filter_freq=[float(Fmin*2)/config.FS,float(Fmax*2)/config.FS]
 else:
     filter_freq=[float(Fmin*2)/config.FS]

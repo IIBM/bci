@@ -11,9 +11,9 @@ from multiprocess_config import *
 from libgraph_config import *
 from spikes_config import spike_duration
 import os
-import logging
+#import logging
 
-logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
+#logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
 
 BEEP_FREQ="700" #Hz (str) 
 spike_duration_samples=int(spike_duration/1000.0*config.FS)
@@ -78,22 +78,17 @@ class MainWindow(QtGui.QMainWindow):
         except:
             return 1
         if (not self.get_data_process.warnings.empty()):
-            self.get_data_warning_time=time.time()
             self.get_data_warning=True
-            error=Errors_Messages[self.get_data_process.warnings.get(TIMEOUT_GET)]
-            self.warnings.setText(error)
-            logging.error(error)
-            
+            self.warnings.setText(Errors_Messages[self.get_data_process.warnings.get(TIMEOUT_GET)])
+
         elif(self.get_data_warning):
             self.warnings.setText("") 
             self.get_data_warning=False
         
         if (not self.processing_process.warnings.empty()):
-            self.processing_process_warning_time=time.time()
             self.processing_process_warning=True
-            warning=Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)]
-            self.status.setText(warning)
-            logging.warning(warning)
+            self.status.setText(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)])
+
         elif(self.processing_process_warning):
                 self.status.setText("")                  
                 self.processing_process_warning=False
@@ -481,9 +476,8 @@ class  bci_data_handler():
         
         if self.paqdisplay >= self.paq_view:
             self.paqdisplay=0
-            
-        for i in xrange(config.PAQ_USB):
-            self.graph_data[:,self.paqdisplay*config.PAQ_USB+i]=self.data_new[:,i]
+        t1=time.time()
+        self.graph_data[:,self.paqdisplay*config.PAQ_USB:(self.paqdisplay+1)*config.PAQ_USB]=self.data_new
         self.paqdisplay+=1
         
     def change_paq_view(self,i):
