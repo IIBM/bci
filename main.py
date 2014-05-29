@@ -5,12 +5,12 @@ import time #hora local
 from libgraph import MainWindow
 
 from multi_process import init_process
-import config
+from configuration import general_config as config
 
 def main():
     app = QtGui.QApplication([])
     
-    if hasattr(config, 'FAKE_FILE') and config.FAKE_FILE is True:
+    if config.ONLINE_MODE is False:
         dev_usb=False
     else:
         from capture import connect

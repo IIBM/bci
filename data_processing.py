@@ -1,20 +1,19 @@
 from scipy import signal #proc de segnales
 import numpy as np #vectores, operaciones matematicas
 import time
-import config
+from configuration import general_config as config
 from multiprocess_config import *
-from signal_processing_config import *
 #[b_spike,a_spike]=signal.iirfilter(4,[float(300*2)/config.FS, float(6000*2)/config.FS], rp=None, rs=None, btype='band', analog=False, ftype='butter',output='ba')
+from configuration import signal_processing_config as sp_config
 
-
-
-if(Fmax < config.FS/2):
-    filter_freq=[float(Fmin*2)/config.FS,float(Fmax*2)/config.FS]
+if sp_config.HIGH_PASS is False:
+    filter_freq=[float(sp_config.FMIN*2)/config.FS,float(sp_config.FMAX*2)/config.FS]
 else:
-    filter_freq=[float(Fmin*2)/config.FS]
-    length_bandpass-=1
-filter_coef=signal.firwin(length_bandpass, filter_freq, width=None, window=window_type, pass_zero=False)
-group_delay=((length_bandpass-1)/2)*(length_bandpass%2)+(length_bandpass+1)%2*(length_bandpass/2)
+    filter_freq=[float(sp_config.FMIN*2)/config.FS]
+    sp_config.LENGTH_FILTER-=1
+
+filter_coef=signal.firwin(sp_config.LENGTH_FILTER, filter_freq, width=None, window= sp_config.WINDOW_TYPE, pass_zero=False)
+group_delay=((sp_config.LENGTH_FILTER-1)/2)*(sp_config.LENGTH_FILTER%2)+(sp_config.LENGTH_FILTER+1)%2*(sp_config.LENGTH_FILTER/2)
 
 
 #MEAN_L=5  #ESTO PODRIA PONERSE A BASE DE TIEMPO
@@ -77,7 +76,7 @@ def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_contr
 #    mean_calc=np.int16(np.zeros([config.CANT_CANALES,MEAN_L]))
 #    mean_l=0
 #    mean_aux=np.ndarray([config.CANT_CANALES,1])
-    new_data=np.ndarray([config.CANT_CANALES,config.PAQ_USB+length_bandpass-1])
+    new_data=np.ndarray([config.CANT_CANALES,config.PAQ_USB+sp_config.LENGTH_FILTER-1])
     while(control != EXIT_SIGNAL):
         while not proccesing_control.poll():
             if not ui_config_queue.empty():
@@ -86,21 +85,21 @@ def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_contr
                 except:
                     pass
             try:
-                new_data[:,length_bandpass-1:]=data_queue.get(TIMEOUT_GET)
+                new_data[:,sp_config.LENGTH_FILTER-1:]=data_queue.get(TIMEOUT_GET)
             except:
                 continue
             #filtar y enviar si filtro activo en conf o bien asi como esta
-#            np.mean(new_data[:,length_bandpass-1:],1,out=mean_calc[:,mean_l])
+#            np.mean(new_data[:,sp_config.LENGTH_FILTER-1:],1,out=mean_calc[:,mean_l])
 #            mean_l+=1
 #            if mean_l is MEAN_L :
 #                mean_l=0
 #            
 #            np.mean(mean_calc,1,out=mean_aux)
 #            #casa falta muucho 
-#            new_data[:,length_bandpass-1:]=new_data[:,length_bandpass-1:]-mean_aux
+#            new_data[:,sp_config.LENGTH_FILTER-1:]=new_data[:,sp_config.LENGTH_FILTER-1:]-mean_aux
             
             
-            filtered_data=signal.lfilter(filter_coef,1,new_data)[:,length_bandpass-1:] #casa terriblemente mal no tiene en cuenta nada
+            filtered_data=signal.lfilter(filter_coef,1,new_data)[:,sp_config.LENGTH_FILTER-1:] #casa terriblemente mal no tiene en cuenta nada
                 
             spikes_times=spikes_detect(filtered_data,ui_config.thresholds)
             #casa ojo la fase lineal q desplaza todo
@@ -112,7 +111,7 @@ def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_contr
                 graph_data.new_data=filtered_data
                 graph_data.filter_mode=True
             else:
-                graph_data.new_data=new_data[:,length_bandpass-1:]
+                graph_data.new_data=new_data[:,sp_config.LENGTH_FILTER-1:]
                 graph_data.filter_mode=False
             try:
                 graph_data_queue.put_nowait(graph_data)
@@ -121,7 +120,7 @@ def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_contr
                     warnings.put_nowait(SLOW_GRAPHICS_SIGNAL) 
                 except:
                     pass
-            new_data[:,:length_bandpass-1]=new_data[:,-length_bandpass+1:]
+            new_data[:,:sp_config.LENGTH_FILTER-1]=new_data[:,-sp_config.LENGTH_FILTER+1:]
         
         control=proccesing_control.recv()
         #FER falta la opcion iniciar sorting usando la pipe q hace q se cierre el proceso para transportar la info

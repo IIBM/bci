@@ -1,11 +1,11 @@
 import numpy as np #vectores, operaciones matematicas
 import time #hora local 
-import config
+from configuration import general_config as config
 #import os 
 import array
-#from pyqtgraph.Qt import QtGui
 from multiprocess_config import *
-import communication_config as comm
+from configuration import data_frame_config as comm
+from configuration import file_config
 
 
 
@@ -112,7 +112,7 @@ class file_handle():
     def __init__(self,generic_file):
         self.generic_file_name = generic_file
         #archivo cabecera
-        self.paqxfile=config.SIZE_FILE*2**20/comm.L_TRAMA/config.PAQ_USB/np.int16().nbytes
+        self.paqxfile=file_config.MAX_SIZE_FILE*2**20/comm.L_TRAMA/config.PAQ_USB/np.int16().nbytes
         self.num_registro=-1
         
     def new(self):

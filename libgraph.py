@@ -3,32 +3,34 @@ import pyqtgraph as pg #graphicos
 from PyQt4  import QtGui,uic
 from scipy import fftpack
 import numpy as np
-import config
+from configuration import general_config as config
 import time
 import threading
 import copy
 from multiprocess_config import *
-from libgraph_config import *
-from spikes_config import spike_duration
+
+from configuration import spikes_config
+from configuration import libgraph_config as lg_config
+
 import os
 #import logging
 
 #logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
 
-BEEP_FREQ="700" #Hz (str) 
-spike_duration_samples=int(spike_duration/1000.0*config.FS)
+
+spike_duration_samples=int(spikes_config.SPIKE_DURATION/1000.0*config.FS)
 ch_colors=['r','y','g','c','p','w']
 NOT_SAVING_MESSAGE='without saving'
 SAVING_MESSAGE='writing in:'
-fft_frec= np.linspace(0, config.FS/2, FFT_L/2)
+fft_frec= np.linspace(0, config.FS/2, lg_config.FFT_L/2)
 one_pack_time=config.PAQ_USB/config.FS
-PACK_xSPIKE_COUNT=int(float(TIME_SPIKE_COUNT)/one_pack_time)
+PACK_xSPIKE_COUNT=int(float(lg_config.TIME_SPIKE_COUNT)/one_pack_time)
 FREQFIX_xSPIKE_COUNT=(float(PACK_xSPIKE_COUNT)*one_pack_time)
-beep_command="beep -f " + BEEP_FREQ + " -l " + str(spike_duration) + " -d "
+beep_command="beep -f " + lg_config.BEEP_FREQ + " -l " + str(spikes_config.SPIKE_DURATION) + " -d "
 
 uifile=os.path.join(os.path.abspath(os.path.dirname(__file__)),'bciui.ui')
 
-if config.TWO_WINDOWS:
+if lg_config.TWO_WINDOWS:
     second_win_file = os.path.join(os.path.abspath(os.path.dirname(__file__)),'second_window.ui')
 
 
@@ -174,7 +176,7 @@ class  plus_display():
         self.graph = pg.PlotItem()
         self.VB=self.graph.getViewBox()
         self.VB.setXRange(0, config.PAQ_USB/float(config.FS), padding=0, update=True)
-        self.VB.setYRange(DISPLAY_LIMY,-DISPLAY_LIMY, padding=0, update=True)
+        self.VB.setYRange(lg_config.DISPLAY_LIMY,-lg_config.DISPLAY_LIMY, padding=0, update=True)
         self.graph.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
         self.graph.setDownsampling(auto=True)
         self.curve=self.graph.plot()
@@ -185,8 +187,8 @@ class  plus_display():
         self.fft_n=0
         self.data_fft=0
         self.fft_l=0
-        self.fft_aux=np.zeros([FFT_N,FFT_L/2])
-        self.data_fft_aux=np.zeros([config.PAQ_USB*FFT_L_PAQ])
+        self.fft_aux=np.zeros([lg_config.FFT_N,lg_config.FFT_L/2])
+        self.data_fft_aux=np.zeros([config.PAQ_USB*lg_config.FFT_L_PAQ])
         self.graph.addItem(self.graph_umbral)
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
         self.pause_mode=False
@@ -240,13 +242,13 @@ class  plus_display():
                 #self.graph_umbral.setValue(umbral_calc[self.selec_canal])
        
         else:
-            if( self.fft_l < FFT_L_PAQ):
+            if( self.fft_l < lg_config.FFT_L_PAQ):
                 self.data_fft_aux[self.fft_l*config.PAQ_USB:(1+self.fft_l)*config.PAQ_USB]=data_handler.data_new[self.channel,:]
                 self.fft_l+=1
             else:
                 self.fft_l=0
-                if (self.fft_n <FFT_N):
-                    self.fft_aux[self.fft_n,:]=abs(fftpack.fft(self.data_fft_aux,n=FFT_L)[:FFT_L/2])** 2. / float(FFT_L)
+                if (self.fft_n <lg_config.FFT_N):
+                    self.fft_aux[self.fft_n,:]=abs(fftpack.fft(self.data_fft_aux,n=lg_config.FFT_L)[:lg_config.FFT_L/2])** 2. / float(lg_config.FFT_L)
                     self.fft_n+=1
                 else:
                     self.fft_n=0
@@ -342,7 +344,7 @@ class general_display():
         #graphicos principales
         
         
-        if config.TWO_WINDOWS is False:
+        if lg_config.TWO_WINDOWS is False:
             main_win_ch=config.CANT_CANALES
     
         else:
@@ -355,16 +357,16 @@ class general_display():
             vb=ViewBox_General_Display(i,info_tet)
             
             if (i < main_win_ch):
-                graph = layout_graphicos.addPlot(viewBox=vb,row=int(i/4/ROWS_DISPLAY)*4+i%4, col=int(i/4)%ROWS_DISPLAY, rowspan=1, colspan=1)
+                graph = layout_graphicos.addPlot(viewBox=vb,row=int(i/4/lg_config.ROWS_DISPLAY)*4+i%4, col=int(i/4)%lg_config.ROWS_DISPLAY, rowspan=1, colspan=1)
             else:
-                graph = layout_graphicos_2.addPlot(viewBox=vb,row=int((i-main_win_ch)/4/ROWS_DISPLAY)*4+(i-main_win_ch)%4, col=int((i-main_win_ch)/4)%ROWS_DISPLAY, rowspan=1, colspan=1)
+                graph = layout_graphicos_2.addPlot(viewBox=vb,row=int((i-main_win_ch)/4/lg_config.ROWS_DISPLAY)*4+(i-main_win_ch)%4, col=int((i-main_win_ch)/4)%lg_config.ROWS_DISPLAY, rowspan=1, colspan=1)
             
             graph.hideButtons()
             graph.setDownsampling(auto=True)
             VB=graph.getViewBox()
             
             VB.setXRange(0, config.PAQ_USB, padding=0, update=True) #HARDCODE
-            VB.setYRange(DISPLAY_LIMY,-DISPLAY_LIMY, padding=0, update=True)
+            VB.setYRange(lg_config.DISPLAY_LIMY,-lg_config.DISPLAY_LIMY, padding=0, update=True)
            #self.vieboxs.append(VB)
             if i%4 is 0:
                 graph.setTitle('Tetrode ' + str(i/4+1))
@@ -386,7 +388,7 @@ class general_display():
     def change_Yrange(self,p):
         p=float(p)/10
         for i in xrange(config.CANT_CANALES):
-           self.graphicos[i].setYRange(DISPLAY_LIMY*p,-1*DISPLAY_LIMY*p, padding=0, update=False)
+           self.graphicos[i].setYRange(lg_config.DISPLAY_LIMY*p,-1*lg_config.DISPLAY_LIMY*p, padding=0, update=False)
     
     
     def changeXrange(self,i):
@@ -409,7 +411,7 @@ class general_display():
         #for graphico in self.graphicos:
             #graphico.enableAutoRange('xy', state)  
     def close(self):
-        if config.TWO_WINDOWS is True:
+        if lg_config.TWO_WINDOWS is True:
             self.second_win.Close()
             
 class ViewBox_General_Display(pg.ViewBox):
@@ -451,12 +453,12 @@ class  bci_data_handler():
         #self.graph_data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB])) 
         self.data_new=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
         self.spikes_times=0
-        self.graph_data=np.int16(np.zeros([config.CANT_CANALES,config.MAX_PAQ_DISPLAY*config.PAQ_USB]))
+        self.graph_data=np.int16(np.zeros([config.CANT_CANALES,lg_config.MAX_PAQ_DISPLAY*config.PAQ_USB]))
         self.paqdisplay=0
         self.paq_view=1
         self.new_paq_view=1
         self.n_view=self.paq_view*config.PAQ_USB
-        self.xtime=np.zeros([config.MAX_PAQ_DISPLAY*config.PAQ_USB])
+        self.xtime=np.zeros([lg_config.MAX_PAQ_DISPLAY*config.PAQ_USB])
         #self.xtime[:self.n_view]=np.linspace(0,config.MAX_PAQ_DISPLAY*config.PAQ_USB/float(config.FS),self.n_view)
         self.xtime[:self.n_view]=np.linspace(0,self.n_view/float(config.FS),self.n_view)
         ####
@@ -492,7 +494,7 @@ def beep(sk_time):
         return
     
     sp=(np.greater(sk_time[1:]-sk_time[:-1],spike_duration_samples)).sum()+1
-    delay=int((one_pack_time*1000.0-spike_duration*sp)/sp)
+    delay=int((one_pack_time*1000.0-spikes_config.SPIKE_DURATION*sp)/sp)
     #os.system(beep_command + str(delay) + "-r" +str(sp))
     string=beep_command + str(delay)
     for i in xrange(sp):
@@ -505,7 +507,7 @@ class Config_processing():
         self.thresholds=thresholds     
 
 class Channels_Configuration(Config_processing):
-    def __init__(self,queue,filter_mode=False,thresholds=DISPLAY_LIMY/2*np.ones([config.CANT_CANALES,1])):
+    def __init__(self,queue,filter_mode=False,thresholds=lg_config.DISPLAY_LIMY/2*np.ones([config.CANT_CANALES,1])):
         Config_processing.__init__(self,filter_mode,thresholds)
         self.queue=queue
         self.changed=True
