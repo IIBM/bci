@@ -1,6 +1,7 @@
 #!/usr/bin/python
 #Configurations for process communications
-import config
+#import config
+from configuration import general_config as config
 
 
 

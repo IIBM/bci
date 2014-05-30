@@ -190,7 +190,7 @@ class Parser():
         if self.c_t==0 :
             self.sinc=0
             while self.sinc < comm.L_TRAMA:
-                if (data[self.sinc] == self.FFplus): #falta un and con el hash
+                if (data[self.sinc] == self.FFplus) and (not reduce(lambda x,y: x^y, data[init_trama:init_trama+ comm.L_TRAMA])): #falta un and con el hash
                     #parsea:
                     self.channels[:,self.c_t]=data[comm.CHANNELS_POS+self.sinc:self.sinc+comm.CHANNELS_POS+config.CANT_CANALES]
                     self.tramas_parseadas+=1
@@ -236,7 +236,7 @@ class Parser():
                 
                 self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
                 break
-            if (True == True): #esto es cualca, solo para reemplarzar el xor
+            if (not reduce(lambda x,y: x^y, data[init_trama:init_trama+ comm.L_TRAMA])): #esto es cualca, solo para reemplarzar el xor
                 #parsea:
                 self.channels[:,self.tramas_parseadas]=data[init_trama+comm.CHANNELS_POS:init_trama+comm.CHANNELS_POS+config.CANT_CANALES]
                 #ojo aca se tendria q parsear y guardar el resto de la informacion q viene en la trama                
