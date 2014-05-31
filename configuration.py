@@ -11,7 +11,8 @@ class general_config():
 
 class file_config():   
     MAX_SIZE_FILE = config.getint('FILE','max_size_file')
-
+    GENERIC_FILE = config.get('FILE','generic_file')
+    
 class libgraph_config():
     BEEP_FREQ = config.get('GRAPHICS','beep_freq')  
     FFT_L =config.getint('GRAPHICS','fft_l')  

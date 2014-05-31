@@ -1,23 +1,23 @@
-import config
 from multiprocessing import Process, Pipe,Queue
 #from capture import  obtener_datos, fake_file_obtener_datos
 from data_processing import data_processing
 from multiprocess_config import *
+from configuration import general_config as config
 
 
-def init_process(head_file_name,dev_usb):
+def init_process(dev_usb):
         
     data_queue = Queue(maxsize=DATA_BUFFER)
     get_data_control, ui_get_data_control = Pipe(duplex = False)
     get_data_warnings = Queue(maxsize=WARNIGNS_BUFFER)
     
-    if not (hasattr(config, 'FAKE_FILE') or hasattr(config, 'FAKE')):
+    if config.ONLINE_MODE == True:
         from capture import  obtener_datos
-    	p_read_data = Process(target=obtener_datos, args=(get_data_control,get_data_warnings,dev_usb,data_queue,head_file_name))
+        p_read_data = Process(target=obtener_datos, args=(get_data_control,get_data_warnings,dev_usb,data_queue))
 
-    elif hasattr(config, 'FAKE_FILE'):
+    else:
         from capture import fake_file_obtener_datos
-        p_read_data = Process(target=fake_file_obtener_datos, args=(get_data_control,get_data_warnings,data_queue,head_file_name))
+        p_read_data = Process(target=fake_file_obtener_datos, args=(get_data_control,get_data_warnings,data_queue))
     
     get_data_process=Get_data_process_handle(p_read_data,get_data_warnings,ui_get_data_control)
              

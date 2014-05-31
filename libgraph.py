@@ -11,7 +11,7 @@ from multiprocess_config import *
 
 from configuration import spikes_config
 from configuration import libgraph_config as lg_config
-
+from configuration import file_config
 import os
 #import logging
 
@@ -35,10 +35,9 @@ if lg_config.TWO_WINDOWS:
 
 
 class MainWindow(QtGui.QMainWindow):
-    def __init__(self,processing_process,get_data_process,generic_file):
+    def __init__(self,processing_process,get_data_process):
         QtGui.QMainWindow.__init__(self)
         uic.loadUi(uifile, self)
-        self.generic_file=generic_file
         #self.tet_plus_selec
         #diagolo q da mas info del canal
         #self.dialogo=Dialog_Tet()
@@ -60,11 +59,10 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.paq_view, QtCore.SIGNAL("valueChanged(int)"), self.changeXrange)  
         QtCore.QObject.connect(self.active_channel_cb, QtCore.SIGNAL("clicked( bool)"),self.activate_channel)
         self.processing_process_warning=False
-        self.get_data_warning=False
         self.file_label.setText(NOT_SAVING_MESSAGE)
         self.contador_registro=-1
         self.timer = QtCore.QTimer()
-        
+        self.loss_data=0
         self.timer.timeout.connect(self.update)
         processing_process.process.start()
         get_data_process.process.start()
@@ -79,13 +77,15 @@ class MainWindow(QtGui.QMainWindow):
             self.data_handler.update(self.processing_process.new_data_queue.get(TIMEOUT_GET))
         except:
             return 1
+        
+        
         if (not self.get_data_process.warnings.empty()):
-            self.get_data_warning=True
-            self.warnings.setText(Errors_Messages[self.get_data_process.warnings.get(TIMEOUT_GET)])
-
-        elif(self.get_data_warning):
-            self.warnings.setText("") 
-            self.get_data_warning=False
+            new_mess=self.get_data_process.warnings.get(TIMEOUT_GET)       
+            if new_mess[0] != SLOW_PROCESS_SIGNAL:
+                self.loss_data+=new_mess[1]
+                self.warnings.setText("Loss data: " + str(self.loss_data))
+            else:
+                self.warnings.setText(Errors_Messages[new_mess[0]])
         
         if (not self.processing_process.warnings.empty()):
             self.processing_process_warning=True
@@ -95,6 +95,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.status.setText("")                  
                 self.processing_process_warning=False
             
+        
+        
         if self.beepbox.isChecked():
             t = threading.Thread(target=beep,args=[self.data_handler.spikes_times[self.info_tetrodo.channel]])
             t.start()    
@@ -130,7 +132,7 @@ class MainWindow(QtGui.QMainWindow):
     def on_actionNuevo(self):
         self.get_data_process.control.send(START_SIGNAL)
         self.contador_registro+=1
-        self.file_label.setText(SAVING_MESSAGE + self.generic_file +'-'+str(self.contador_registro))
+        self.file_label.setText(SAVING_MESSAGE + file_config.GENERIC_FILE +'-'+str(self.contador_registro))
 
     def change_filter_model(self, state):
         self.signal_config.filter_mode=state

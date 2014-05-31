@@ -85,7 +85,8 @@ def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_contr
                 except:
                     pass
             try:
-                new_data[:,sp_config.LENGTH_FILTER-1:]=data_queue.get(TIMEOUT_GET)
+                new_pure_data=data_queue.get(TIMEOUT_GET) #UN DESASTRE!!!!!
+                new_data[:,sp_config.LENGTH_FILTER-1:]=new_pure_data.channels
             except:
                 continue
             #filtar y enviar si filtro activo en conf o bien asi como esta

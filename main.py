@@ -26,13 +26,13 @@ def main():
                     return
 
 # ## ## ## ## ## ## ## ## ## ## #
-    generic_file=QtGui.QFileDialog.getSaveFileName()
-    processing_process,get_data_process=init_process(generic_file,dev_usb)
+    
+    processing_process,get_data_process=init_process(dev_usb)
     #processing_process,get_data_process=init_process(" ",0)
 # ## ## ## ## ## ## ## ## ## ## #   
     
 
-    window=MainWindow(processing_process,get_data_process,generic_file)
+    window=MainWindow(processing_process,get_data_process)
     window.show()
     app.exec_()
 

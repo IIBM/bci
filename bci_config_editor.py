@@ -23,8 +23,8 @@ else:
 uifile = os.path.join(
     os.path.abspath(
         os.path.dirname(__file__)),'bciui.ui')
-        
 
+app = QtGui.QApplication([])   
+config.set('FILE','generic_file',QtGui.QFileDialog.getSaveFileName())
 
-
-#config.write(USER_CONFIG_FILE)
+config.write(USER_CONFIG_FILE)
