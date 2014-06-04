@@ -154,20 +154,20 @@ class file_handle():
             config_parser=ConfigParser()
             newsection='GENERAL_CONFIGURATION'
             config_parser.add_section(newsection)
-            config_parser.set(newsection,'FS',int(config.FS))
-            config_parser.set(newsection,'#CHANNELS',config.CANT_CANALES)
+            config_parser.set(newsection,'fs',int(config.FS))
+            config_parser.set(newsection,'#channels',config.CANT_CANALES)
             
-            newsection='SYSTEM_CONFIGURATION'
+            newsection='DATA_FRAME'
             config_parser.add_section(newsection)
-            config_parser.set(newsection,'LARGO_TRAMA',comm.L_TRAMA)
-            config_parser.set(newsection,'CHANNELS_POS',comm.CHANNELS_POS)
-            config_parser.set(newsection,'COUNTER_POS',comm.COUNTER_POS)
-            config_parser.set(newsection,'HASH_POS',comm.HASH_POS)
+            config_parser.set(newsection,'largo_trama',comm.L_TRAMA)
+            config_parser.set(newsection,'channels_pos',comm.CHANNELS_POS)
+            config_parser.set(newsection,'counter_pos',comm.COUNTER_POS)
+            config_parser.set(newsection,'hash_pos',comm.HASH_POS)
             
             newsection='DATA_INFO'
             config_parser.add_section(newsection)
-            config_parser.set(newsection,'#FILES',self.part)
-            config_parser.set(newsection,'DATE',time.asctime( time.localtime(time.time())))
+            config_parser.set(newsection,'#files',self.part)
+            config_parser.set(newsection,'date',time.asctime( time.localtime(time.time())))
             file_head= open(file_config.GENERIC_FILE +'-'+str(self.num_registro) + '-0','w')
             config_parser.write(file_head)
             file_head.close()

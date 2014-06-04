@@ -1,7 +1,9 @@
 #!/usr/bin/python
 #Load onfiguration
 
-from bci_config_editor import config
+from bci_config_editor import config_editor,save_file
+
+config=config_editor()
 
 class general_config():
     ONLINE_MODE=config.getboolean('GENERAL','online_mode')
@@ -11,14 +13,15 @@ class general_config():
 
 class file_config():   
     MAX_SIZE_FILE = config.getint('FILE','max_size_file')
-    GENERIC_FILE = config.get('FILE','generic_file')
+    GENERIC_FILE = save_file
+    LOAD_FILE = config.get('FILE','load_file')
     
 class libgraph_config():
     BEEP_FREQ = config.get('GRAPHICS','beep_freq')  
     FFT_L =config.getint('GRAPHICS','fft_l')  
     FFT_N =config.getint('GRAPHICS','fft_n')  
     FFT_L_PAQ =config.getint('GRAPHICS','fft_l_paq')  
-    ROWS_DISPLAY =config.getint('GRAPHICS','rows_display')
+    ROWS_DISPLAY = config.getint('GRAPHICS','rows_display')
     TIME_SPIKE_COUNT=config.getint('GRAPHICS','time_spike_count')
     DISPLAY_LIMY=config.getint('GRAPHICS','display_limy')
     MAX_PAQ_DISPLAY=config.getint('GRAPHICS','max_paq_display')
@@ -26,7 +29,7 @@ class libgraph_config():
 
 
 class data_frame_config():
-    L_TRAMA = config.getint('DATA_FRAME','l_trama')
+    L_TRAMA = config.getint('DATA_FRAME','l_frame')
     COUNTER_POS = config.getint('DATA_FRAME','counter_pos')
     CHANNELS_POS = config.getint('DATA_FRAME','channels_pos')
     HASH_POS = config.getint('DATA_FRAME','hash_pos')

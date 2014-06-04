@@ -59,7 +59,7 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.paq_view, QtCore.SIGNAL("valueChanged(int)"), self.changeXrange)  
         QtCore.QObject.connect(self.active_channel_cb, QtCore.SIGNAL("clicked( bool)"),self.activate_channel)
         self.processing_process_warning=False
-        self.file_label.setText(NOT_SAVING_MESSAGE)
+        
         self.contador_registro=-1
         self.timer = QtCore.QTimer()
         self.loss_data=0
@@ -68,6 +68,16 @@ class MainWindow(QtGui.QMainWindow):
         get_data_process.process.start()
         self.timer.start(0) #si va demasiado lento deberia bajarse el tiempo
         self.t1 = time.time()
+        
+        self.file_label=QtGui.QLabel("")
+        self.statusBar.addWidget(self.file_label)
+        self.warnings=QtGui.QLabel("")
+        self.statusBar.addWidget(self.warnings)
+        self.status=QtGui.QLabel("")
+        self.statusBar.addWidget(self.status)
+        
+        
+        self.file_label.setText(NOT_SAVING_MESSAGE)
         
     def update(self):
         #check if get_data process can send data
