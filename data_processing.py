@@ -6,7 +6,7 @@ from multiprocess_config import *
 #[b_spike,a_spike]=signal.iirfilter(4,[float(300*2)/config.FS, float(6000*2)/config.FS], rp=None, rs=None, btype='band', analog=False, ftype='butter',output='ba')
 from configuration import signal_processing_config as sp_config
 
-if sp_config.HIGH_PASS is False:
+if sp_config.BAND_PASS is True:
     filter_freq=[float(sp_config.FMIN*2)/config.FS,float(sp_config.FMAX*2)/config.FS]
 else:
     filter_freq=[float(sp_config.FMIN*2)/config.FS]

@@ -7,13 +7,13 @@ bci
   
   capture: funciones relacionadas a la captura y parseo de los datos
   
-  libgraph: clases graficas modificadas. libgraph_config es su archivo de configuracion
+  libgraph: clases graficas modificadas.
+
+  bci_config_editor: editor de configuracion grafico.
   
-  config: configuraciones generales
+  configuration: carga las configuraciones utilizando 
   
   data_processing: manejo de datos y funciones accesorias. signal_config es su archivo de configuracion
-  
-  spike_config: hipotesis sobre la forma de los spikes
   
   multiprocess: crea y configura las colas, tuberias y procesos que se utilizaran. multiprocess_config es su archivo de configuracion
   
@@ -22,11 +22,6 @@ bci
   *.ui: diseño de menus, ventanas, etc
 
     
-**Notas:** 
-
-  al definir la variable FAKE o FAKE_FILE en config.py se simulan las entradas
-  al se iniciar pide el nombre del archivo donde se guardaran los datos
-
 **Dependencias:**
 
   * Python 2.7 

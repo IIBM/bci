@@ -38,7 +38,7 @@ class signal_processing_config():
     LENGTH_FILTER = config.getint('SIGNAL_PROCESSING','length_filter')
     FMIN = config.getfloat('SIGNAL_PROCESSING','fmin')  
     FMAX = config.getfloat('SIGNAL_PROCESSING','fmax')  
-    HIGH_PASS=config.getboolean('SIGNAL_PROCESSING','HIGH_PASS')
+    BAND_PASS=config.getboolean('SIGNAL_PROCESSING','BAND_PASS')
     WINDOW_TYPE = config.get('SIGNAL_PROCESSING','window_type')  
 
 class spikes_config():

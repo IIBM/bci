@@ -5,9 +5,12 @@ from PyQt4  import QtGui,uic
 import os
 from ConfigParser import ConfigParser
 import time 
+from scipy import signal
+
 
 USER_CONFIG_FILE=os.path.join(os.path.abspath(os.path.dirname(__file__)),"user_config.ini")
 freq_availables=[1,2.5,5,10,15,20,25,30] #in kHz
+win_availables=signal.windows.__all__[:-1]
 config=ConfigParser()
 save_file=time.asctime()
 
@@ -41,11 +44,17 @@ class Config_dialog(QtGui.QDialog):
             if freq_availables[i]*1000 == config.getint('GENERAL','fs'):
                 aux=i
             self.cb_freq.addItem(str(freq_availables[i])+'kHz')
-        self.cb_freq.setCurrentIndex(aux)
+        self.cb_freq.setCurrentIndex(aux)  
+         
+         
         self.channels_line.setText(config.get('GENERAL','channels'))
         self.channels_line.setValidator(QtGui.QIntValidator())
         self.data_pack_line.setText(config.get('GENERAL','data_package'))
         self.data_pack_line.setValidator(QtGui.QIntValidator())
+        self.data_pack_line.setText(config.get('GENERAL','data_package'))
+        self.data_pack_line.setValidator(QtGui.QIntValidator())
+        self.offline_mode_cb.setChecked(not config.getboolean('GENERAL','online_mode'))
+        self.change_mode(self.offline_mode_cb.isChecked())
         
         self.load_file=config.get('FILE','load_file')
         self.load_file_label.setText(self.load_file)
@@ -63,8 +72,25 @@ class Config_dialog(QtGui.QDialog):
         self.xor_pos.setText(config.get('DATA_FRAME','hash_pos'))
         self.xor_pos.setValidator(QtGui.QIntValidator())
         
+        for i in xrange(len(win_availables)):
+            if win_availables[i] == config.get('SIGNAL_PROCESSING','window_type'):
+                aux=i
+            self.cb_win.addItem(win_availables[i])   
+                
+        self.cb_win.setCurrentIndex(aux)
         
+        self.hp_line.setText(config.get('SIGNAL_PROCESSING','fmin'))
+        self.hp_line.setValidator(QtGui.QIntValidator())
+        self.filter_l_line.setText(config.get('SIGNAL_PROCESSING','length_filter'))
+        self.filter_l_line.setValidator(QtGui.QIntValidator())
         
+        self.lp_line.setText(config.get('SIGNAL_PROCESSING','fmax'))
+        self.lp_line.setValidator(QtGui.QIntValidator())
+        self.band_pass_cb.setChecked(config.getboolean('SIGNAL_PROCESSING','BAND_PASS'))
+        self.change_filter_mode(self.band_pass_cb.isChecked())
+
+
+
     def My_accept(self):
         if self.check():
             self.update_config()
@@ -88,15 +114,20 @@ class Config_dialog(QtGui.QDialog):
         config.set('DATA_FRAME','channels_pos',str(self.channels_pos.text()))
         config.set('DATA_FRAME','hash_pos',str(self.xor_pos.text()))
         
-        
-        
+        config.set('SIGNAL_PROCESSING','band_pass_cb',str(self.band_pass_cb.isChecked()))
+        config.set('SIGNAL_PROCESSING','fmin',str(self.hp_line.text()))
+        config.set('SIGNAL_PROCESSING','fmax',str(self.lp_line.text()))
+        config.set('SIGNAL_PROCESSING','length_filter',str(self.filter_l_line.text()))
+        config.set('SIGNAL_PROCESSING','window_type',str(win_availables[self.cb_win.currentIndex()]*1000))
         
     def check(self):
 
         if int(self.frame_l.text()) < (int(self.channels_line.text())  + int(self.channels_pos.text())):
             self.error.setText("Error: # channels/long frame/channel pos")
             return False
-        
+        if (not self.band_pass_cb.isChecked() and not (int(self.filter_l_line.text())&2)):
+            self.error.setText("Error: # High pass with <br>   even number of coefficients")
+            return False
         #config.set('DATA_FRAME','l_frame',str(self.frame_l.text()))
         #config.set('DATA_FRAME','counter_pos',str(self.counter_pos.text()))
         #config.set('DATA_FRAME','channels_pos',str(self.channels_pos.text()))
@@ -122,3 +153,5 @@ class Config_dialog(QtGui.QDialog):
         self.load_file=QtGui.QFileDialog.getSaveFileName()
         self.load_file_label.setText(self.load_file)
    
+    def change_filter_mode(self,pass_band):
+        self.lp_line.setEnabled(pass_band)

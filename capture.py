@@ -19,7 +19,7 @@ def connect():
 
 def fake_file_obtener_datos(com,send_warnings,cola):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer  
-    LARGO_TRAMA=2*config.CANT_CANALES+2    
+    LARGO_TRAMA=2*config.CANT_CANALES+2
     reg_files=file_handle()
     file_input=open('data_test','rb')
     save_data=False
@@ -167,6 +167,7 @@ class file_handle():
             newsection='DATA_INFO'
             config_parser.add_section(newsection)
             config_parser.set(newsection,'#files',self.part)
+            config_parser.set(newsection,'#tramas/files',self.paqxfile)
             config_parser.set(newsection,'date',time.asctime( time.localtime(time.time())))
             file_head= open(file_config.GENERIC_FILE +'-'+str(self.num_registro) + '-0','w')
             config_parser.write(file_head)
