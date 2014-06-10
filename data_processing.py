@@ -10,7 +10,7 @@ if sp_config.BAND_PASS is True:
     filter_freq=[float(sp_config.FMIN*2)/config.FS,float(sp_config.FMAX*2)/config.FS]
 else:
     filter_freq=[float(sp_config.FMIN*2)/config.FS]
-    sp_config.LENGTH_FILTER-=1
+
 
 filter_coef=signal.firwin(sp_config.LENGTH_FILTER, filter_freq, width=None, window= sp_config.WINDOW_TYPE, pass_zero=False)
 group_delay=((sp_config.LENGTH_FILTER-1)/2)*(sp_config.LENGTH_FILTER%2)+(sp_config.LENGTH_FILTER+1)%2*(sp_config.LENGTH_FILTER/2)

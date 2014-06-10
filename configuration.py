@@ -3,6 +3,7 @@
 
 from bci_config_editor import config_editor,save_file
 
+
 config=config_editor()
 
 class general_config():
@@ -38,7 +39,7 @@ class signal_processing_config():
     LENGTH_FILTER = config.getint('SIGNAL_PROCESSING','length_filter')
     FMIN = config.getfloat('SIGNAL_PROCESSING','fmin')  
     FMAX = config.getfloat('SIGNAL_PROCESSING','fmax')  
-    BAND_PASS=config.getboolean('SIGNAL_PROCESSING','BAND_PASS')
+    BAND_PASS=config.getboolean('SIGNAL_PROCESSING','band_pass')
     WINDOW_TYPE = config.get('SIGNAL_PROCESSING','window_type')  
 
 class spikes_config():

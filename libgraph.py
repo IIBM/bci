@@ -138,7 +138,8 @@ class MainWindow(QtGui.QMainWindow):
         self.get_data_process.process.terminate()
         self.matriz_tetrodos.close()
         self.close()
-       
+        exit()
+        
     def on_actionNuevo(self):
         self.get_data_process.control.send(START_SIGNAL)
         self.contador_registro+=1
@@ -390,7 +391,7 @@ class general_display():
             graph.showAxis('left', show=False)
             graph.showGrid(y=True)
             graph.setMenuEnabled(enableMenu=False,enableViewBoxMenu=False)
-            graph.setMouseEnabled(x=False, y=False)
+            graph.setMouseEnabled(x=False, y=True)
             self.curv_canal.append(graph.plot())
             self.curv_canal[-1].setPen(width=1,color=ch_colors[i%4])
             self.graphicos.append(graph)
@@ -434,9 +435,12 @@ class ViewBox_General_Display(pg.ViewBox):
     def mouseClickEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
             self.info_tet.change_channel(self.i)
-    def mouseDragEvent(self,event):
-        pass
-          
+    def mouseDragEvent(self,ev):
+        if ev.button() == QtCore.Qt.RightButton:
+            pg.ViewBox.mouseDragEvent(self, ev)
+        else:
+            ev.ignore()
+
 class Second_Display_Window(QtGui.QDialog):
     ##Ventana extra
     def __init__(self):

@@ -10,7 +10,7 @@ from scipy import signal
 
 USER_CONFIG_FILE=os.path.join(os.path.abspath(os.path.dirname(__file__)),"user_config.ini")
 freq_availables=[1,2.5,5,10,15,20,25,30] #in kHz
-win_availables=signal.windows.__all__[:-1]
+win_availables=['boxcar', 'triang', 'blackman', 'hamming', 'hann', 'bartlett', 'flattop', 'parzen', 'bohman', 'blackmanharris', 'nuttall', 'barthann']
 config=ConfigParser()
 save_file=time.asctime()
 
@@ -26,7 +26,7 @@ uifile = os.path.join(
         os.path.dirname(__file__)),'bciui_config.ui')
 
 def config_editor():    
-    app = QtGui.QApplication([])
+    #app = QtGui.QApplication([])
     #config.set('FILE','generic_file',QtGui.QFileDialog.getSaveFileName())
     dialog=Config_dialog()
     dialog.show()
@@ -86,7 +86,7 @@ class Config_dialog(QtGui.QDialog):
         
         self.lp_line.setText(config.get('SIGNAL_PROCESSING','fmax'))
         self.lp_line.setValidator(QtGui.QIntValidator())
-        self.band_pass_cb.setChecked(config.getboolean('SIGNAL_PROCESSING','BAND_PASS'))
+        self.band_pass_cb.setChecked(config.getboolean('SIGNAL_PROCESSING','band_pass'))
         self.change_filter_mode(self.band_pass_cb.isChecked())
 
 
@@ -114,26 +114,36 @@ class Config_dialog(QtGui.QDialog):
         config.set('DATA_FRAME','channels_pos',str(self.channels_pos.text()))
         config.set('DATA_FRAME','hash_pos',str(self.xor_pos.text()))
         
-        config.set('SIGNAL_PROCESSING','band_pass_cb',str(self.band_pass_cb.isChecked()))
+        config.set('SIGNAL_PROCESSING','band_pass',str(self.band_pass_cb.isChecked()))
         config.set('SIGNAL_PROCESSING','fmin',str(self.hp_line.text()))
         config.set('SIGNAL_PROCESSING','fmax',str(self.lp_line.text()))
         config.set('SIGNAL_PROCESSING','length_filter',str(self.filter_l_line.text()))
-        config.set('SIGNAL_PROCESSING','window_type',str(win_availables[self.cb_win.currentIndex()]*1000))
+        config.set('SIGNAL_PROCESSING','window_type',str(win_availables[self.cb_win.currentIndex()]))
         
     def check(self):
-
         if int(self.frame_l.text()) < (int(self.channels_line.text())  + int(self.channels_pos.text())):
             self.error.setText("Error: # channels/long frame/channel pos")
             return False
-        if (not self.band_pass_cb.isChecked() and not (int(self.filter_l_line.text())&2)):
-            self.error.setText("Error: # High pass with <br>   even number of coefficients")
-            return False
-        #config.set('DATA_FRAME','l_frame',str(self.frame_l.text()))
-        #config.set('DATA_FRAME','counter_pos',str(self.counter_pos.text()))
-        #config.set('DATA_FRAME','channels_pos',str(self.channels_pos.text()))
-        #config.set('DATA_FRAME','hash_pos',str(self.xor_pos.text()))
         
+        
+        if self.band_pass_cb.isChecked():
+            if int(self.hp_line.text()) >= int(self.lp_line.text()):
+                self.error.setText("Error: High pass freq > Low pass freq")
+                return False
+                
+            if freq_availables[self.cb_freq.currentIndex()]*1000 <= 2*int(self.lp_line.text()):
+                self.error.setText("Error: Low pass freq > Fs/2")
+                return False
             
+       
+        elif (int(self.filter_l_line.text())%2) == 0:
+            self.error.setText("Error: High pass with <br>   even number of coefficients")
+            return False
+            
+        if freq_availables[self.cb_freq.currentIndex()]*1000 <= 2*int(self.hp_line.text()):
+            self.error.setText("Error: High pass freq > Fs/2")
+            return False
+        
         return True        
     
     def change_save_file(self):
@@ -141,11 +151,11 @@ class Config_dialog(QtGui.QDialog):
         self.save_file_label.setText(save_file)
     
     def change_mode(self,offline):
-        if offline:
-            self.cb_freq.addItem("new FS!!!!!!!!!")
-            self.cb_freq.setCurrentIndex(self.cb_freq.count()-1)
-        else:
-            self.cb_freq.removeItem(self.cb_freq.count()-1)
+        #if offline:
+            #self.cb_freq.addItem("new FS!!!!!!!!!")
+            #self.cb_freq.setCurrentIndex(self.cb_freq.count()-1)
+        #else:
+            #self.cb_freq.removeItem(self.cb_freq.count()-1)
         self.channels_line.setEnabled(not offline)
         self.cb_freq.setEnabled(not offline)
         self.channels_line.setEnabled(not offline)

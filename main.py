@@ -1,14 +1,14 @@
 #!/usr/bin/python
-
 from pyqtgraph.Qt import QtGui #interfaz en general
+
+app = QtGui.QApplication([])
 import time #hora local 
 from libgraph import MainWindow
-
+import sys
 from multi_process import init_process
 from configuration import general_config as config
 
 def main():
-    app = QtGui.QApplication([])
     
     if config.ONLINE_MODE is False:
         dev_usb=False
@@ -35,6 +35,8 @@ def main():
     window=MainWindow(processing_process,get_data_process)
     window.show()
     app.exec_()
-
+    
+    
 if __name__ == '__main__':
     main()
+    
