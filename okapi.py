@@ -1,16 +1,20 @@
 import ok
 import time
 import numpy
+import logging
+logger = logging.getLogger('okapi')
 
 SERIALNUM = "1328000677"
 BITFILENAME = 'fpga.bit'
+AMPCOUNT = 1
 
 byteControlInAddr = 0x00
 bitReset = 0
-mascbitReset = 0x0001<<bitReset
-
+maskbitReset = 0x0001<<bitReset
+bitAmpCount = 8
+maskbitAmpCount = (AMPCOUNT-1)<<bitAmpCount
 bitTriggerFrec = 1
-mascbitTriggerFrec = 0x0001<<bitTriggerFrec
+maskbitTriggerFrec = 0x0001<<bitTriggerFrec
 
 byteDataInAddr = 0x03
 
@@ -34,7 +38,7 @@ frecValueDic = {'1000':0x0000,'2500':0x0001<<2,'5000':0x0002<<2,'10000':0x0003<<
 
 byteControlOutAddr = 0x21
 bitDatoDisponible = 0
-mascbitDatoDisponible = 0x0001<<bitDatoDisponible
+maskbitDatoDisponible = 0x0001<<bitDatoDisponible
 bit4k = 0
 bit16k = 1
 bit32k = 2
@@ -55,7 +59,7 @@ class OpalKelly():
     self._xem.OpenBySerial(SERIALNUM)
     self._xem.LoadDefaultPLLConfiguration()
     self._xem.ConfigureFPGA(BITFILENAME)
-    self._byteControlIn = 0
+    self._byteControlIn = maskbitAmpCount
     self._frecValue = 0
     msg = ('Device idVendor = ' + str(SERIALNUM) + ' not found')
     # was it found?
@@ -63,7 +67,8 @@ class OpalKelly():
         raise ValueError(msg)
 
   def reset(self):
-    self._byteControlIn =  mascbitReset
+    self._byteControlIn = self._byteControlIn | maskbitReset
+    logger.debug('reset ' + bin(self._byteControlIn) )
     self._xem.SetWireInValue(byteControlInAddr, self._byteControlIn)
     self._xem.UpdateWireIns()
 
@@ -71,28 +76,30 @@ class OpalKelly():
     self.reset()
     time.sleep(.1)
 
-    self._byteControlIn =  self._byteControlIn & ~mascbitReset
+    self._byteControlIn = self._byteControlIn & ~maskbitReset
+    logger.debug('start1 ' + bin(self._byteControlIn) )
     self._xem.SetWireInValue(byteControlInAddr, self._byteControlIn)
     self._xem.UpdateWireIns()
     time.sleep(.1)
  
     if not (str(frec) in frecValueDic) :
        raise 'frec not valid'
-    self._byteControlIn = frecValueDic[str(frec)]
-    self._byteControlIn =  self._byteControlIn | mascbitTriggerFrec
+    self._byteControlIn = self._byteControlIn | frecValueDic[str(frec)]
+    self._byteControlIn = self._byteControlIn | maskbitTriggerFrec
     self._xem.SetWireInValue(byteControlInAddr, self._byteControlIn)
     self._xem.UpdateWireIns()
     time.sleep(.1)
  
-    self._byteControlIn =  self._byteControlIn & ~mascbitTriggerFrec
+    self._byteControlIn =  self._byteControlIn & ~maskbitTriggerFrec
+    logger.debug('start3 ' + bin(self._byteControlIn) )
     self._xem.SetWireInValue(byteControlInAddr, self._byteControlIn)
     self._xem.UpdateWireIns()
     time.sleep(.1)
 
   def is_data_ready(self):
     self._xem.UpdateWireOuts()
-    a = self._xem.GetWireOutValue(byteControlOutAddr) & mascbitDatoDisponible
-    return (a==mascbitDatoDisponible)
+    a = self._xem.GetWireOutValue(byteControlOutAddr) & maskbitDatoDisponible
+    return (a==maskbitDatoDisponible)
 
   def data_available(self):
     self._xem.UpdateWireOuts()
@@ -154,6 +161,13 @@ class OpalKelly():
       
 if __name__ == '__main__':
   import sys
+  formatter = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  dateformat = '%Y/%m/%d %I:%M:%S %p'
+
+  logging.basicConfig(filename='logs/okapi.log', filemode='w',
+      level=logging.DEBUG, format=formatter, datefmt = dateformat)
+  logger.info('okapi test started')
+
   try:
     l = numpy.ndarray(100000,numpy.int16)
     f = open('salida.txt','w')
@@ -162,7 +176,6 @@ if __name__ == '__main__':
     time.sleep(.1)
     a.start(10000)
     n = 0
-    largo = 40
     while n<10:
 
       while (a.data_available() < 100000):
@@ -174,9 +187,9 @@ if __name__ == '__main__':
       f.write(l)
     f.close()
     a.close()
+    logger.info('okapi test ended')
   except:
-    print sys.exc_info()[0]
-    print sys.exc_info()[1]
-    print sys.exc_info()[2]
+    logger.error(str(sys.exc_info()[1]))
+    logger.info('Ended with errors')
     f.close()
     a.close()
