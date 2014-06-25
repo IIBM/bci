@@ -94,7 +94,7 @@ class Config_dialog(QtGui.QDialog):
     def My_accept(self):
         if self.check():
             self.update_config()
-            #config.write(open(USER_CONFIG_FILE,'w'))
+            config.write(open(USER_CONFIG_FILE,'w'))
             self.accept()
     
     def update_config(self):

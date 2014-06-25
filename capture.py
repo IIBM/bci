@@ -7,6 +7,8 @@ from multiprocess_config import *
 from configuration import data_frame_config as comm
 from configuration import file_config
 
+import logging
+logging.basicConfig(filename='data_bci.log',level=logging.WARNING)
 
 
 def connect():
@@ -69,12 +71,9 @@ def fake_file_obtener_datos(com,send_warnings,cola):
 
 def obtener_datos(com,send_warnings,dev,cola):#SINCRONIZAR!!!! BUSCAR FF Y ENGANCHARSE
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer     
-    import logging
-    
-    
     
     save_data=False
-    logging.basicConfig(filename='data_bci.log',level=logging.WARNING)
+    
     reg_files=file_handle()
     parser=Parser(cola)
     comando='normal'
@@ -184,8 +183,8 @@ class data_in():
         
 class Parser():
     def __init__(self,send_warnings):     
-        self.contador=0 #el contador de la trama
-        self.FFplus=np.fromstring('\x23''\xff',np.int16)
+        self.contador=-1 #el contador de la trama
+        self.FFplus=np.fromstring('\x46''\xff',np.int16)
         self.tramas_parseadas=0 #ubicacion en el bloque q se esta creando
         
         self.data=data_in()
@@ -193,20 +192,21 @@ class Parser():
         self.sinc=0
         self.first_read=True
         self.send_warnings=send_warnings
+        
     def update(self,data):
         max_c_t=data.size/comm.L_TRAMA
         #si recien empieza con esos datos, primero sincroniza
         if self.c_t==0 :
             self.sinc=0
             while self.sinc < comm.L_TRAMA:
-                if (data[self.sinc] == self.FFplus) and (not reduce(lambda x,y: x^y, data[init_trama:init_trama+ comm.L_TRAMA])): #falta un and con el hash
+                if (data[self.sinc] == self.FFplus) and (not reduce(lambda x,y: x^y, data[self.sinc:self.sinc+ comm.L_TRAMA])): #falta un and con el hash
                     #parsea:
                     self.data.channels[:,self.c_t]=data[comm.CHANNELS_POS+self.sinc:self.sinc+comm.CHANNELS_POS+config.CANT_CANALES]
                     self.tramas_parseadas+=1
                     contador_old=self.contador
                     self.contador=(data[comm.COUNTER_POS+self.sinc])
-                    if np.int16(contador_old+1) != self.contador and self.first_read:
-                        self.first_read=False
+                    if np.int16(contador_old+1) != self.contador: #and not self.first_read:
+                        #self.first_read=False
                         #guardo discontinuidad!!!
                         #print "perdida de datos segun contador"
                         logging.error(Errors_Messages[COUNTER_ERROR])
@@ -226,7 +226,7 @@ class Parser():
                     self.send_warnings.put_nowait([CANT_SYNCHRONIZE,config.PAQ_USB])
                 except:
                     pass
-                self.first_read=True
+                #self.first_read=True
                 
                 self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
             else:
@@ -242,7 +242,7 @@ class Parser():
                     self.send_warnings.put_nowait([DATA_NONSYNCHRONIZED,config.PAQ_USB-self.c_t])
                 except:
                     pass
-                self.first_read=True
+                #self.first_read=True
                 self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
                 break
             if (not reduce(lambda x,y: x^y, data[init_trama:init_trama+ comm.L_TRAMA])): #esto es cualca, solo para reemplarzar el xor
