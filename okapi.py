@@ -6,7 +6,7 @@ logger = logging.getLogger('okapi')
 
 SERIALNUM = "1328000677"
 BITFILENAME = 'fpga.bit'
-AMPCOUNT = 1
+AMPCOUNT = 2
 
 byteControlInAddr = 0x00
 bitReset = 0
@@ -106,38 +106,38 @@ class OpalKelly():
     a = self._xem.GetWireOutValue(byteControlOutAddr)
     if a & (0x0001<<bit60M) :
       if (a & 0x00FF) is not 0x00FF :
-        print "error0"
+        logger.error("Error a=" + str(a) + " and should be 0x00FF")
       return 60000000
     if a & (0x0001<<bit10M) :
       if (a & 0x00FF) is not 0x007F :
-        print "error1"
+        logger.error("Error a=" + str(a) + " and should be 0x007F")
       return 10000000
     if a & (0x0001<<bit5M) :
       if (a & 0x00FF) is not 0x003F :
-        print "error2"
+        logger.error("Error a=" + str(a) + " and should be 0x003F")
       return 5000000
     if a & (0x0001<<bit1M) :
       if (a & 0x00FF) is not 0x001F :
-        print "error3"
+        logger.error("Error a=" + str(a) + " and should be 0x001F")
       return 1000000
     if a & (0x0001<<bit128k) :
       if (a & 0x00FF) is not 0x000F :
-        print "error4"
+        logger.error("Error a=" + str(a) + " and should be 0x000F")
       return 128000
     if a & (0x0001<<bit32k) :
       if (a & 0x00FF) is not 0x0007 :
-        print "error5"
+        logger.error("Error a=" + str(a) + " and should be 0x0007")
       return 32000
     if a & (0x0001<<bit16k) :
       if (a & 0x00FF) is not 0x0003 :
-        print "error6"
+        logger.error("Error a=" + str(a) + " and should be 0x0003")
       return 16000
     if a & (0x0001<<bit4k) :
       if (a & 0x00FF) is not 0x0001 :
-        print "error7"
+        logger.error("Error a=" + str(a) + " and should be 0x0001")
       return 4000
     else:
-      print "error8"
+      logger.error("Error a=" + str(a) + " and should be 0x0003")
       return 0
 
   def data_count_available(self):
