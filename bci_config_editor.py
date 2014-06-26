@@ -9,10 +9,12 @@ from scipy import signal
 
 
 USER_CONFIG_FILE=os.path.join(os.path.abspath(os.path.dirname(__file__)),"user_config.ini")
+
+DEFAULT_FOLDER=os.path.expanduser('~')+"/bci_registros/"
 freq_availables=[1,2.5,5,10,15,20,25,30] #in kHz
 win_availables=['boxcar', 'triang', 'blackman', 'hamming', 'hann', 'bartlett', 'flattop', 'parzen', 'bohman', 'blackmanharris', 'nuttall', 'barthann']
 config=ConfigParser()
-save_file=time.asctime()
+save_file=DEFAULT_FOLDER+time.asctime()
 
 
 if os.path.isfile(USER_CONFIG_FILE):
@@ -45,7 +47,7 @@ class Config_dialog(QtGui.QDialog):
                 aux=i
             self.cb_freq.addItem(str(freq_availables[i])+'kHz')
         self.cb_freq.setCurrentIndex(aux)  
-         
+        self.default_files=True
          
         self.channels_line.setText(config.get('GENERAL','channels'))
         self.channels_line.setValidator(QtGui.QIntValidator())
@@ -71,6 +73,9 @@ class Config_dialog(QtGui.QDialog):
         self.channels_pos.setValidator(QtGui.QIntValidator())
         self.xor_pos.setText(config.get('DATA_FRAME','hash_pos'))
         self.xor_pos.setValidator(QtGui.QIntValidator())
+        self.ampcount.setText(config.get('DATA_FRAME','ampcount'))
+        self.ampcount.setValidator(QtGui.QIntValidator())
+        
         
         for i in xrange(len(win_availables)):
             if win_availables[i] == config.get('SIGNAL_PROCESSING','window_type'):
@@ -102,17 +107,23 @@ class Config_dialog(QtGui.QDialog):
         
         
         config.set('GENERAL','online_mode',str(not self.offline_mode_cb.isChecked()))
-        #config.set('GENERAL','fs',str(freq_availables[self.cb_freq.currentIndex()]*1000))
+        config.set('GENERAL','fs',str(freq_availables[self.cb_freq.currentIndex()]*1000))
         config.set('GENERAL','channels',str(self.channels_line.text()))
         config.set('GENERAL','data_package',str(self.data_pack_line.text()))
         
         config.set('GRAPHICS','rows_display',str(self.rows_cb.value()))
         config.set('GRAPHICS','two_windows',str(self.two_win_cb.isChecked()))
         
+        if self.default_files == True:
+            if not os.path.exists(DEFAULT_FOLDER):
+                os.makedirs(DEFAULT_FOLDER)
+        config.set('FILE','generic_file',str(self.save_file_label.text()))
+        
         config.set('DATA_FRAME','l_frame',str(self.frame_l.text()))
         config.set('DATA_FRAME','counter_pos',str(self.counter_pos.text()))
         config.set('DATA_FRAME','channels_pos',str(self.channels_pos.text()))
         config.set('DATA_FRAME','hash_pos',str(self.xor_pos.text()))
+        config.set('DATA_FRAME','ampcount',str(self.ampcount.text()))
         
         config.set('SIGNAL_PROCESSING','band_pass',str(self.band_pass_cb.isChecked()))
         config.set('SIGNAL_PROCESSING','fmin',str(self.hp_line.text()))
@@ -149,16 +160,18 @@ class Config_dialog(QtGui.QDialog):
     def change_save_file(self):
         save_file=QtGui.QFileDialog.getSaveFileName()
         self.save_file_label.setText(save_file)
-    
+        self.default_files=False
+        
     def change_mode(self,offline):
         #if offline:
-            #self.cb_freq.addItem("new FS!!!!!!!!!")
+            #self.cb_freq.addItem("new FS!!!!!!!!!") #cargar de archivo
             #self.cb_freq.setCurrentIndex(self.cb_freq.count()-1)
         #else:
             #self.cb_freq.removeItem(self.cb_freq.count()-1)
-        self.channels_line.setEnabled(not offline)
-        self.cb_freq.setEnabled(not offline)
-        self.channels_line.setEnabled(not offline)
+        #self.channels_line.setEnabled(not offline)
+        #self.cb_freq.setEnabled(not offline)
+        pass
+        
     def change_load_file(self):
         self.load_file=QtGui.QFileDialog.getSaveFileName()
         self.load_file_label.setText(self.load_file)

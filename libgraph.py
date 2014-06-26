@@ -69,13 +69,13 @@ class MainWindow(QtGui.QMainWindow):
         self.timer.start(0) #si va demasiado lento deberia bajarse el tiempo
         self.t1 = time.time()
         
-        self.file_label=QtGui.QLabel("")
-        self.statusBar.addWidget(self.file_label)
-        self.warnings=QtGui.QLabel("")
-        self.statusBar.addWidget(self.warnings)
-        self.status=QtGui.QLabel("")
-        self.statusBar.addWidget(self.status)
         
+        self.warnings=QtGui.QLabel("")
+        self.statusBar.addPermanentWidget(self.warnings)
+        self.status=QtGui.QLabel("")
+        self.statusBar.addPermanentWidget(self.status)
+        self.file_label=QtGui.QLabel("")
+        self.statusBar.addPermanentWidget(self.file_label)
         
         self.file_label.setText(NOT_SAVING_MESSAGE)
         
@@ -87,7 +87,6 @@ class MainWindow(QtGui.QMainWindow):
             self.data_handler.update(self.processing_process.new_data_queue.get(TIMEOUT_GET))
         except:
             return 1
-        
         
         if (not self.get_data_process.warnings.empty()):
             new_mess=self.get_data_process.warnings.get(TIMEOUT_GET)       

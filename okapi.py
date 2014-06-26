@@ -2,11 +2,13 @@ import ok
 import time
 import numpy
 import logging
+from configuration import data_frame_config as config
+
 logger = logging.getLogger('okapi')
 
 SERIALNUM = "1328000677"
 BITFILENAME = 'fpga.bit'
-AMPCOUNT = 2
+AMPCOUNT = config.ampcount
 
 byteControlInAddr = 0x00
 bitReset = 0

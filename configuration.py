@@ -34,6 +34,8 @@ class data_frame_config():
     COUNTER_POS = config.getint('DATA_FRAME','counter_pos')
     CHANNELS_POS = config.getint('DATA_FRAME','channels_pos')
     HASH_POS = config.getint('DATA_FRAME','hash_pos')
+    AMPCOUNT=config.getint('DATA_FRAME','ampcount')
+    
     
 class signal_processing_config():
     LENGTH_FILTER = config.getint('SIGNAL_PROCESSING','length_filter')

@@ -29,7 +29,7 @@ CANT_SYNCHRONIZE=10
 
 #--------
 Errors_Messages = {SLOW_PROCESS_SIGNAL: "Loss data in processing", 
-SLOW_GRAPHICS_SIGNAL: 'Loss data in graphics',
+SLOW_GRAPHICS_SIGNAL: 'Slow graphics',
 COUNTER_ERROR: 'Counter, data loss',
 CANT_SYNCHRONIZE: 'Cant synchronize',
 DATA_NONSYNCHRONIZED: 'data non-synchronized',

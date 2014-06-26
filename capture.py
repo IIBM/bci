@@ -100,7 +100,7 @@ def obtener_datos(com,send_warnings,dev,cola):#SINCRONIZAR!!!! BUSCAR FF Y ENGAN
                         try:
                             send_warnings.put_nowait([SLOW_PROCESS_SIGNAL])
                         except:
-                            pass
+                            logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                     if extra_data < 0: #sobraban datos
                         extra_data=parser.update(data[:new_pack_data]) 
                     else:
@@ -183,10 +183,12 @@ class data_in():
         
 class Parser():
     def __init__(self,send_warnings):     
-        self.contador=-1 #el contador de la trama
-        self.FFplus=np.fromstring('\x46''\xff',np.int16)
-        self.tramas_parseadas=0 #ubicacion en el bloque q se esta creando
+        dicc_aux={1:'\x23''\xFF',2:'\x46''\xFF'} #AUXILIAR
+
+        self.FFplus=np.fromstring(encabezado[comm.ampcount],np.int16)
         
+        self.contador=-1 #el contador de la trama
+        self.tramas_parseadas=0 #ubicacion en el bloque q se esta creando
         self.data=data_in()
         self.c_t=0#ubicacion en el bloque q se esta leyendo
         self.sinc=0
@@ -213,7 +215,7 @@ class Parser():
                         try:
                             self.send_warnings.put_nowait([COUNTER_ERROR,1])
                         except:
-                            pass
+                            logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                     #fin del priner parseo
                     break
                 self.sinc+=1
@@ -225,10 +227,11 @@ class Parser():
                 try:
                     self.send_warnings.put_nowait([CANT_SYNCHRONIZE,config.PAQ_USB])
                 except:
-                    pass
+                    logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                 #self.first_read=True
-                
-                self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
+                self.sinc =0
+                self.c_t=0 #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
+                return config.PAQ_USB - self.tramas_parseadas
             else:
                 self.c_t+=1
         #recorre hasta llenar tramas parseadas o parsear todo el bloque de datos crudos
@@ -241,7 +244,7 @@ class Parser():
                 try:
                     self.send_warnings.put_nowait([DATA_NONSYNCHRONIZED,config.PAQ_USB-self.c_t])
                 except:
-                    pass
+                    logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                 #self.first_read=True
                 self.c_t=max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
                 break
@@ -260,7 +263,7 @@ class Parser():
                     try:
                         self.send_warnings.put_nowait([COUNTER_ERROR,1])
                     except:
-                        pass
+                        logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                     
                     
                 #fin del parseo
@@ -271,7 +274,7 @@ class Parser():
                 try:
                     self.send_warnings.put_nowait([DATA_CORRUPTION,1])
                 except:
-                    pass
+                    logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                 #ckea, elimina dato, avisar corte y error de transmision
             self.c_t+=1
             
