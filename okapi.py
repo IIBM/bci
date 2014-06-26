@@ -8,7 +8,7 @@ logger = logging.getLogger('okapi')
 
 SERIALNUM = "1328000677"
 BITFILENAME = 'fpga.bit'
-AMPCOUNT = config.ampcount
+AMPCOUNT = config.AMPCOUNT
 
 byteControlInAddr = 0x00
 bitReset = 0

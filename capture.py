@@ -166,7 +166,7 @@ class file_handle():
             newsection='DATA_INFO'
             config_parser.add_section(newsection)
             config_parser.set(newsection,'#files',self.part)
-            config_parser.set(newsection,'#tramas/files',self.paqxfile)
+            config_parser.set(newsection,'#tramas4files',self.paqxfile)
             config_parser.set(newsection,'date',time.asctime( time.localtime(time.time())))
             file_head= open(file_config.GENERIC_FILE +'-'+str(self.num_registro) + '-0','w')
             config_parser.write(file_head)
