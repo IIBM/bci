@@ -185,7 +185,7 @@ class Parser():
     def __init__(self,send_warnings):     
         dicc_aux={1:'\x23''\xFF',2:'\x46''\xFF'} #AUXILIAR
 
-        self.FFplus=np.fromstring(encabezado[comm.ampcount],np.int16)
+        self.FFplus=np.fromstring(dicc_aux[comm.AMPCOUNT],np.int16)
         
         self.contador=-1 #el contador de la trama
         self.tramas_parseadas=0 #ubicacion en el bloque q se esta creando
