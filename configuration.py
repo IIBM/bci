@@ -11,12 +11,14 @@ class general_config():
     CANT_CANALES = config.getint('GENERAL','channels')
     FS = config.getfloat('GENERAL','fs')
     PAQ_USB= config.getint('GENERAL','data_package')
+    ADC_SCALE= config.getint('GENERAL','adc_scale')
 
 class file_config():   
     MAX_SIZE_FILE = config.getint('FILE','max_size_file')
     GENERIC_FILE = save_file
     LOAD_FILE = config.get('FILE','load_file')
     
+
 class libgraph_config():
     BEEP_FREQ = config.get('GRAPHICS','beep_freq')  
     FFT_L =config.getint('GRAPHICS','fft_l')  

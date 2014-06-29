@@ -186,6 +186,9 @@ class  plus_display():
         #layout_graphicos.addItem(self.tasas_bars,row=None, col=0, rowspan=1, colspan=1)
         #graph=layout_graphicos.addPlot(row=None, col=1, rowspan=1, colspan=3)
         self.graph = pg.PlotItem()
+        axis=self.graph.getAxis('left')
+        axis.setScale(scale=config.ADC_SCALE)
+        
         self.VB=self.graph.getViewBox()
         self.VB.setXRange(0, config.PAQ_USB/float(config.FS), padding=0, update=True)
         self.VB.setYRange(lg_config.DISPLAY_LIMY,-lg_config.DISPLAY_LIMY, padding=0, update=True)

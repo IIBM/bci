@@ -151,22 +151,23 @@ class file_handle():
         if self.num_registro >= 0:
             from ConfigParser import ConfigParser
             config_parser=ConfigParser()
-            newsection='GENERAL_CONFIGURATION'
+            newsection='GENERAL'
             config_parser.add_section(newsection)
             config_parser.set(newsection,'fs',int(config.FS))
-            config_parser.set(newsection,'#channels',config.CANT_CANALES)
+            config_parser.set(newsection,'channels',config.CANT_CANALES)
+            config_parser.set(newsection,'adc_scale',config.ADC_SCALE)
             
             newsection='DATA_FRAME'
             config_parser.add_section(newsection)
-            config_parser.set(newsection,'largo_trama',comm.L_TRAMA)
+            config_parser.set(newsection,'l_frame',comm.L_TRAMA)
             config_parser.set(newsection,'channels_pos',comm.CHANNELS_POS)
             config_parser.set(newsection,'counter_pos',comm.COUNTER_POS)
             config_parser.set(newsection,'hash_pos',comm.HASH_POS)
+            config_parser.set(newsection,'ampcount',comm.AMPCOUNT)
             
             newsection='DATA_INFO'
             config_parser.add_section(newsection)
-            config_parser.set(newsection,'#files',self.part)
-            config_parser.set(newsection,'#tramas4files',self.paqxfile)
+            config_parser.set(newsection,'files',self.part)
             config_parser.set(newsection,'date',time.asctime( time.localtime(time.time())))
             file_head= open(file_config.GENERIC_FILE +'-'+str(self.num_registro) + '-0','w')
             config_parser.write(file_head)

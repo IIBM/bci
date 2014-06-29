@@ -2,13 +2,19 @@ import ok
 import time
 import numpy
 import logging
-from configuration import data_frame_config as config
+
+if __name__ != '__main__':
+    from configuration import data_frame_config as config
+    AMPCOUNT = config.AMPCOUNT
+else:
+    from bci_config_editor import load_configuration
+    AMPCOUNT = load_configuration('DATA_FRAME','ampcount',int)
 
 logger = logging.getLogger('okapi')
 
 SERIALNUM = "1328000677"
 BITFILENAME = 'fpga.bit'
-AMPCOUNT = config.AMPCOUNT
+
 
 byteControlInAddr = 0x00
 bitReset = 0
