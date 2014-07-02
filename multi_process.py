@@ -1,5 +1,4 @@
 from multiprocessing import Process, Pipe,Queue
-#from capture import  obtener_datos, fake_file_obtener_datos
 from data_processing import data_processing
 from multiprocess_config import *
 from configuration import general_config as config
@@ -12,12 +11,12 @@ def init_process(dev_usb):
     get_data_warnings = Queue(maxsize=WARNIGNS_BUFFER)
     
     if config.ONLINE_MODE == True:
-        from capture import  obtener_datos
-        p_read_data = Process(target=obtener_datos, args=(get_data_control,get_data_warnings,dev_usb,data_queue))
+        from capture import  get_data
+        p_read_data = Process(target=get_data, args=(get_data_control,get_data_warnings,dev_usb,data_queue))
 
     else:
-        from capture import fake_file_obtener_datos
-        p_read_data = Process(target=fake_file_obtener_datos, args=(get_data_control,get_data_warnings,data_queue))
+        from capture import get_data_from_file
+        p_read_data = Process(target=get_data_from_file, args=(get_data_control,get_data_warnings,data_queue))
     
     get_data_process=Get_data_process_handle(p_read_data,get_data_warnings,ui_get_data_control)
              
