@@ -102,9 +102,6 @@ class Config_dialog(QtGui.QDialog):
         self.band_pass_cb.setChecked(config.getboolean('SIGNAL_PROCESSING','band_pass'))
         self.change_filter_mode(self.band_pass_cb.isChecked())
 
-        
-
-
     def My_accept(self):
         if self.check():
             self.update_config()

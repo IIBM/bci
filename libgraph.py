@@ -76,7 +76,7 @@ class MainWindow(QtGui.QMainWindow):
         self.statusBar.addPermanentWidget(self.status)
         self.file_label=QtGui.QLabel("")
         self.statusBar.addPermanentWidget(self.file_label)
-        
+        self.dockWidget.setTitleBarWidget(QtGui.QWidget())
         self.file_label.setText(NOT_SAVING_MESSAGE)
         
     def update(self):
@@ -334,7 +334,7 @@ class  bar_graph(pg.PlotItem):
         self.tasa_bars.append(self.plot(pen=ch_colors[3], fillLevel=0,brush=pg.mkBrush(ch_colors[3])))
 
     def update(self,spike_times):  
-            for i in xrange(4):
+            for i in xrange(len(spike_times)):
                 #self.tasas[self.npack,i]=(spike_times[i][0]).size
                 self.tasas[self.npack,i]=(np.greater(spike_times[i][0][1:]-spike_times[i][0][:-1],spike_duration_samples)).sum() + ((spike_times[i][0]).size > 0)
                 tasas_aux=self.tasas[:,i].sum()/FREQFIX_xSPIKE_COUNT  
