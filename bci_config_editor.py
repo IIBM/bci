@@ -173,11 +173,19 @@ class Config_dialog(QtGui.QDialog):
 
     def change_mode(self,offline):
         if offline:
+            conf_file=str(self.load_file_label.text())+'0'
+            
+            if not os.path.isfile(conf_file):
+               self.error.setText("Error: Can't find init_file.") 
+               self.offline_mode_cb.setChecked(False)
+               self.change_mode(False)
+               return
+            
             try :
-                self.load_config.read(str(self.load_file_label.text())+'0')
+                self.load_config.read(conf_file)
                 self.error.setText("") 
             except:
-                self.error.setText("Error: Can't load init_file ") 
+                self.error.setText("Error: Can't load init_file.") 
                 self.offline_mode_cb.setChecked(False)
                 return
                 
