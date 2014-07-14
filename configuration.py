@@ -1,50 +1,58 @@
 #!/usr/bin/python
-#Load onfiguration
-
-from bci_config_editor import config_editor,save_file
-
-
-config=config_editor()
-
-class general_config():
-    ONLINE_MODE=config.getboolean('GENERAL','online_mode')
-    CANT_CANALES = config.getint('GENERAL','channels')
-    FS = config.getfloat('GENERAL','fs')
-    PAQ_USB= config.getint('GENERAL','data_package')
-    ADC_SCALE= config.getint('GENERAL','adc_scale')
-
-class file_config():   
-    MAX_SIZE_FILE = config.getint('FILE','max_size_file')
-    GENERIC_FILE = save_file
-    LOAD_FILE = config.get('FILE','load_file')
-    
-
-class libgraph_config():
-    BEEP_FREQ = config.get('GRAPHICS','beep_freq')  
-    FFT_L =config.getint('GRAPHICS','fft_l')  
-    FFT_N =config.getint('GRAPHICS','fft_n')  
-    FFT_L_PAQ =config.getint('GRAPHICS','fft_l_paq')  
-    ROWS_DISPLAY = config.getint('GRAPHICS','rows_display')
-    TIME_SPIKE_COUNT=config.getint('GRAPHICS','time_spike_count')
-    DISPLAY_LIMY=config.getint('GRAPHICS','display_limy')
-    MAX_PAQ_DISPLAY=config.getint('GRAPHICS','max_paq_display')
-    TWO_WINDOWS =config.getboolean('GRAPHICS','two_windows')
+"""Load onfiguration
+Crea estructuras que luego seran cargadas especificamente 
+por otros modulos.
+"""
+from bci_config_editor import config_editor, save_file
 
 
-class data_frame_config():
-    L_TRAMA = config.getint('DATA_FRAME','l_frame')
-    COUNTER_POS = config.getint('DATA_FRAME','counter_pos')
-    CHANNELS_POS = config.getint('DATA_FRAME','channels_pos')
-    HASH_POS = config.getint('DATA_FRAME','hash_pos')
-    AMPCOUNT=config.getint('DATA_FRAME','ampcount')
-    
-    
-class signal_processing_config():
-    LENGTH_FILTER = config.getint('SIGNAL_PROCESSING','length_filter')
-    FMIN = config.getfloat('SIGNAL_PROCESSING','fmin')  
-    FMAX = config.getfloat('SIGNAL_PROCESSING','fmax')  
-    BAND_PASS=config.getboolean('SIGNAL_PROCESSING','band_pass')
-    WINDOW_TYPE = config.get('SIGNAL_PROCESSING','window_type')  
+CONFIG = config_editor()
 
-class spikes_config():
-    SPIKE_DURATION=config.getfloat('SPIKES','spike_duration')  
+GENERAL_CONFIG = {
+    'ONLINE_MODE' : CONFIG.getboolean('GENERAL', 'online_mode'),
+    'CANT_CANALES' : CONFIG.getint('GENERAL', 'channels'),
+    'FS' : CONFIG.getfloat('GENERAL', 'fs'),
+    'PAQ_USB' : CONFIG.getint('GENERAL', 'data_package'),
+    'ADC_SCALE' : CONFIG.getint('GENERAL', 'adc_scale')
+}
+
+FILE_CONFIG = {
+    'MAX_SIZE_FILE' : CONFIG.getint('FILE', 'max_size_file'),
+    'GENERIC_FILE' : save_file,
+    'LOAD_FILE' : CONFIG.get('FILE', 'load_file')
+}
+
+   
+LIBGRAPH_CONFIG = {
+    'BEEP_FREQ' : CONFIG.get('GRAPHICS', 'beep_freq'),
+    'FFT_L' : CONFIG.getint('GRAPHICS', 'fft_l'),
+    'FFT_N' : CONFIG.getint('GRAPHICS', 'fft_n'),
+    'FFT_L_PAQ' : CONFIG.getint('GRAPHICS', 'fft_l_paq'),
+    'ROWS_DISPLAY' : CONFIG.getint('GRAPHICS', 'rows_display'),
+    'TIME_SPIKE_COUNT' : CONFIG.getint('GRAPHICS', 'time_spike_count'),
+    'DISPLAY_LIMY' : CONFIG.getint('GRAPHICS', 'display_limy'),
+    'MAX_PAQ_DISPLAY' : CONFIG.getint('GRAPHICS', 'max_paq_display'),
+    'TWO_WINDOWS' : CONFIG.getboolean('GRAPHICS', 'two_windows')
+}
+
+DATA_FRAME_CONFIG =  {
+    'L_FRAME' : CONFIG.getint('DATA_FRAME', 'l_frame'),
+    'COUNTER_POS' : CONFIG.getint('DATA_FRAME', 'counter_pos'),
+    'CHANNELS_POS' : CONFIG.getint('DATA_FRAME', 'channels_pos'),
+    'HASH_POS' : CONFIG.getint('DATA_FRAME', 'hash_pos'),
+    'AMPCOUNT' : CONFIG.getint('DATA_FRAME', 'ampcount')
+}
+
+
+SIGNAL_PROCESSING_CONFIG = {
+    'LENGTH_FILTER' : CONFIG.getint('SIGNAL_PROCESSING', 'length_filter'),
+    'FMIN' : CONFIG.getfloat('SIGNAL_PROCESSING', 'fmin'),
+    'FMAX' : CONFIG.getfloat('SIGNAL_PROCESSING', 'fmax'),
+    'BAND_PASS' : CONFIG.getboolean('SIGNAL_PROCESSING', 'band_pass'),
+    'WINDOW_TYPE' : CONFIG.get('SIGNAL_PROCESSING', 'window_type')      
+}
+
+SPIKE_CONFIG = {
+    'SPIKE_DURATION' : CONFIG.getfloat('SPIKES', 'spike_duration') 
+}
+

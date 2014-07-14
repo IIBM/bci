@@ -1,30 +1,28 @@
 #!/usr/bin/python
 
 
-from PyQt4  import QtGui,uic
-import os
+from PyQt4  import QtGui, uic
+from os import makedirs, path
 from ConfigParser import ConfigParser
 import time 
-from scipy import signal
 
 
-USER_CONFIG_FILE=os.path.join(os.path.abspath(os.path.dirname(__file__)),"user_config.ini")
+USER_CONFIG_FILE = path.join(path.abspath(path.dirname(__file__)), "user_config.ini")
+DEFAULT_FOLDER = path.expanduser('~') + "/bci_registros/"
+freq_availables = [1,2.5,5,10,15,20,25,30] #in kHz
+win_availables = ['boxcar', 'triang', 'blackman', 'hamming', 'hann', 'bartlett', 'flattop', 'parzen', 'bohman', 'blackmanharris', 'nuttall', 'barthann']
+config = ConfigParser()
+save_file = DEFAULT_FOLDER + time.asctime()
 
-DEFAULT_FOLDER=os.path.expanduser('~')+"/bci_registros/"
-freq_availables=[1,2.5,5,10,15,20,25,30] #in kHz
-win_availables=['boxcar', 'triang', 'blackman', 'hamming', 'hann', 'bartlett', 'flattop', 'parzen', 'bohman', 'blackmanharris', 'nuttall', 'barthann']
-config=ConfigParser()
-save_file=DEFAULT_FOLDER+time.asctime()
 
-
-if os.path.isfile(USER_CONFIG_FILE):
+if path.isfile(USER_CONFIG_FILE):
     config.read(USER_CONFIG_FILE)
 else:
-    config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)),"user_config_DEFAULT.ini"))
+    config.read(path.join(path.abspath(path.dirname(__file__)),"user_config_DEFAULT.ini"))
 
-uifile = os.path.join(
-    os.path.abspath(
-        os.path.dirname(__file__)),'bciui_config.ui')
+uifile = path.join(
+    path.abspath(
+        path.dirname(__file__)),'bciui_config.ui')
 
 def load_configuration(seccion,field,datatype):
     return datatype(config.get(seccion,field))
@@ -46,10 +44,10 @@ class Config_dialog(QtGui.QDialog):
         uic.loadUi(uifile, self)
         for i in xrange(len(freq_availables)):
             if freq_availables[i]*1000 == config.getfloat('GENERAL','fs'):
-                aux=i
+                aux = i
             self.cb_freq.addItem(str(freq_availables[i]))
         self.cb_freq.setCurrentIndex(aux)  
-        self.default_files=True
+        self.default_files = True
          
         #self.channels_line.setText(config.get('GENERAL','channels'))
         self.channels_line.setValidator(QtGui.QIntValidator())
@@ -94,10 +92,10 @@ class Config_dialog(QtGui.QDialog):
         
         self.hp_line.setText(config.get('SIGNAL_PROCESSING','fmin'))
         self.hp_line.setValidator(QtGui.QIntValidator())
-        self.filter_l_line.setText(config.get('SIGNAL_PROCESSING','length_filter'))
+        self.filter_l_line.setText(config.get('SIGNAL_PROCESSING', 'length_filter'))
         self.filter_l_line.setValidator(QtGui.QIntValidator())
         
-        self.lp_line.setText(config.get('SIGNAL_PROCESSING','fmax'))
+        self.lp_line.setText(config.get('SIGNAL_PROCESSING', 'fmax'))
         self.lp_line.setValidator(QtGui.QIntValidator())
         self.band_pass_cb.setChecked(config.getboolean('SIGNAL_PROCESSING','band_pass'))
         self.change_filter_mode(self.band_pass_cb.isChecked())
@@ -109,36 +107,36 @@ class Config_dialog(QtGui.QDialog):
             self.accept()
     
     def update_config(self):
-        config.set('GENERAL','online_mode',str(not self.offline_mode_cb.isChecked()))
+        config.set('GENERAL', 'online_mode',str(not self.offline_mode_cb.isChecked()))
         
-        config.set('GENERAL','fs',str(float(self.cb_freq.currentText())*1000))
+        config.set('GENERAL', 'fs',str(float(self.cb_freq.currentText())*1000))
         
-        config.set('GENERAL','channels',str(self.channels_line.text()))
-        config.set('GENERAL','data_package',str(self.data_pack_line.text()))
-        config.set('GENERAL','adc_scale',str(self.adc_scale.text()))
+        config.set('GENERAL', 'channels', str(self.channels_line.text()))
+        config.set('GENERAL', 'data_package', str(self.data_pack_line.text()))
+        config.set('GENERAL', 'adc_scale', str(self.adc_scale.text()))
         
-        config.set('GRAPHICS','rows_display',str(self.rows_cb.value()))
-        config.set('GRAPHICS','two_windows',str(self.two_win_cb.isChecked()))
+        config.set('GRAPHICS', 'rows_display', str(self.rows_cb.value()))
+        config.set('GRAPHICS', 'two_windows', str(self.two_win_cb.isChecked()))
         
         if self.default_files == True:
-            if not os.path.exists(DEFAULT_FOLDER):
-                os.makedirs(DEFAULT_FOLDER)
-        config.set('FILE','generic_file',str(self.save_file_label.text()))
-        config.set('FILE','load_file',str(self.load_file_label.text()))
+            if not path.exists(DEFAULT_FOLDER):
+                makedirs(DEFAULT_FOLDER)
+        config.set('FILE', 'generic_file', str(self.save_file_label.text()))
+        config.set('FILE', 'load_file', str(self.load_file_label.text()))
         
         
-        config.set('DATA_FRAME','l_frame',str(self.frame_l.text()))
-        config.set('DATA_FRAME','counter_pos',str(self.counter_pos.text()))
-        config.set('DATA_FRAME','channels_pos',str(self.channels_pos.text()))
-        config.set('DATA_FRAME','hash_pos',str(self.xor_pos.text()))
-        config.set('DATA_FRAME','ampcount',str(self.ampcount.text()))
+        config.set('DATA_FRAME', 'l_frame', str(self.frame_l.text()))
+        config.set('DATA_FRAME', 'counter_pos', str(self.counter_pos.text()))
+        config.set('DATA_FRAME', 'channels_pos', str(self.channels_pos.text()))
+        config.set('DATA_FRAME', 'hash_pos', str(self.xor_pos.text()))
+        config.set('DATA_FRAME', 'ampcount', str(self.ampcount.text()))
         
         
-        config.set('SIGNAL_PROCESSING','band_pass',str(self.band_pass_cb.isChecked()))
-        config.set('SIGNAL_PROCESSING','fmin',str(self.hp_line.text()))
-        config.set('SIGNAL_PROCESSING','fmax',str(self.lp_line.text()))
-        config.set('SIGNAL_PROCESSING','length_filter',str(self.filter_l_line.text()))
-        config.set('SIGNAL_PROCESSING','window_type',str(win_availables[self.cb_win.currentIndex()]))
+        config.set('SIGNAL_PROCESSING', 'band_pass', str(self.band_pass_cb.isChecked()))
+        config.set('SIGNAL_PROCESSING', 'fmin', str(self.hp_line.text()))
+        config.set('SIGNAL_PROCESSING', 'fmax', str(self.lp_line.text()))
+        config.set('SIGNAL_PROCESSING', 'length_filter', str(self.filter_l_line.text()))
+        config.set('SIGNAL_PROCESSING', 'window_type', str(win_availables[self.cb_win.currentIndex()]))
         
     def check(self):
         if int(self.frame_l.text()) < (int(self.channels_line.text())  + int(self.channels_pos.text())):
@@ -167,19 +165,19 @@ class Config_dialog(QtGui.QDialog):
         return True        
     
     def change_save_file(self):
-        save_file=QtGui.QFileDialog.getSaveFileName()
+        save_file = QtGui.QFileDialog.getSaveFileName()
         self.save_file_label.setText(save_file)
-        self.default_files=False
+        self.default_files = False
 
-    def change_mode(self,offline):
+    def change_mode(self, offline):
         if offline:
-            conf_file=str(self.load_file_label.text())+'0'
+            conf_file =str(self.load_file_label.text()) + '0'
             
-            if not os.path.isfile(conf_file):
-               self.error.setText("Error: Can't find init_file.") 
-               self.offline_mode_cb.setChecked(False)
-               self.change_mode(False)
-               return
+            if not path.isfile(conf_file):
+                self.error.setText("Error: Can't find init_file.") 
+                self.offline_mode_cb.setChecked(False)
+                self.change_mode(False)
+                return
             
             try :
                 self.load_config.read(conf_file)
@@ -220,10 +218,10 @@ class Config_dialog(QtGui.QDialog):
 
         
     def change_load_file(self):
-        load_file=str(QtGui.QFileDialog.getOpenFileName())
+        load_file =str(QtGui.QFileDialog.getOpenFileName())
         
         while load_file[-1].isdigit(): 
-            load_file=load_file[:-1]
+            load_file =load_file[:-1]
         self.load_file_label.setText(load_file)
             
     def change_filter_mode(self,pass_band):
@@ -231,4 +229,5 @@ class Config_dialog(QtGui.QDialog):
         
 if __name__ == '__main__':
     app = QtGui.QApplication([])
-    config=config_editor()
+    config = config_editor()
+    

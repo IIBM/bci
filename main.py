@@ -1,17 +1,17 @@
-#!/usr/bin/python
+"""
+Archivo main
+"""
 from pyqtgraph.Qt import QtGui #interfaz en general
 
-app = QtGui.QApplication([])
-import time #hora local 
+APP = QtGui.QApplication([])
+from configuration import GENERAL_CONFIG as CONFIG
 from libgraph import MainWindow
-import sys
 from multi_process import init_process
-from configuration import general_config as config
 
 def main():
     
-    if config.ONLINE_MODE is False:
-        dev_usb=False
+    if CONFIG['ONLINE_MODE'] is False:
+        dev_usb = False
     else:
         from capture import connect
         while(True):
@@ -21,20 +21,23 @@ def main():
                 dev_usb = connect()
                 break
             except:
-                if(QtGui.QMessageBox.question(QtGui.QWidget(),'Error', "error: USB device not found, try again?", 
-                QtGui.QMessageBox.Ok |QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Cancel ):                   
+                if(QtGui.QMessageBox.question(
+                        QtGui.QWidget(), 'Error',
+                        "error: USB device not found, try again?", 
+                        QtGui.QMessageBox.Ok |QtGui.QMessageBox.Cancel, 
+                        QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Cancel):                   
                     return
 
 # ## ## ## ## ## ## ## ## ## ## #
     
-    processing_process,get_data_process=init_process(dev_usb)
+    processing_process, get_data_process = init_process(dev_usb)
     #processing_process,get_data_process=init_process(" ",0)
 # ## ## ## ## ## ## ## ## ## ## #   
     
 
-    window=MainWindow(processing_process,get_data_process)
+    window = MainWindow(processing_process, get_data_process)
     window.show()
-    app.exec_()
+    APP.exec_()
     
     
 if __name__ == '__main__':

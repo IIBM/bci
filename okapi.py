@@ -4,8 +4,8 @@ import numpy
 import logging
 
 if __name__ != '__main__':
-    from configuration import data_frame_config as config
-    AMPCOUNT = config.AMPCOUNT
+    from configuration import DATA_FRAME_CONFIG as CONFIG
+    AMPCOUNT = CONFIG['AMPCOUNT']
 else:
     from bci_config_editor import load_configuration
     AMPCOUNT = load_configuration('DATA_FRAME','ampcount',int)

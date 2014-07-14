@@ -3,35 +3,37 @@ import pyqtgraph as pg #graphicos
 from PyQt4  import QtGui,uic
 from scipy import fftpack
 import numpy as np
-from configuration import general_config as config
+from configuration import GENERAL_CONFIG as CONFIG
 import time
 import threading
 import copy
 from multiprocess_config import *
 
-from configuration import spikes_config
-from configuration import libgraph_config as lg_config
-from configuration import file_config
+from configuration import SPIKE_CONFIG
+from configuration import LIBGRAPH_CONFIG as LG_CONFIG
+from configuration import FILE_CONFIG
 import os
 #import logging
 
 #logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
 
 
-spike_duration_samples=int(spikes_config.SPIKE_DURATION/1000.0*config.FS)
+spike_duration_samples=int(SPIKE_CONFIG['SPIKE_DURATION']/1000.0*CONFIG['FS'])
 ch_colors=['r','y','g','c','p','w']
 NOT_SAVING_MESSAGE='without saving'
 SAVING_MESSAGE='writing in:'
-fft_frec= np.linspace(0, config.FS/2, lg_config.FFT_L/2)
-one_pack_time=config.PAQ_USB/config.FS
-PACK_xSPIKE_COUNT=int(float(lg_config.TIME_SPIKE_COUNT)/one_pack_time)
+fft_frec= np.linspace(0, CONFIG['FS']/2, LG_CONFIG['FFT_L']/2)
+one_pack_time=CONFIG['PAQ_USB']/CONFIG['FS']
+PACK_xSPIKE_COUNT=int(float(LG_CONFIG['TIME_SPIKE_COUNT'])/one_pack_time)
 FREQFIX_xSPIKE_COUNT=(float(PACK_xSPIKE_COUNT)*one_pack_time)
-beep_command="beep -f " + lg_config.BEEP_FREQ + " -l " + str(spikes_config.SPIKE_DURATION) + " -d "
+beep_command="beep -f " + LG_CONFIG['BEEP_FREQ'] + " -l " \
+                + str(SPIKE_CONFIG['SPIKE_DURATION']) + " -d "
 
 uifile=os.path.join(os.path.abspath(os.path.dirname(__file__)),'bciui.ui')
 
-if lg_config.TWO_WINDOWS:
-    second_win_file = os.path.join(os.path.abspath(os.path.dirname(__file__)),'second_window.ui')
+if LG_CONFIG['TWO_WINDOWS']:
+    second_win_file = os.path.join(os.path.abspath(
+                              os.path.dirname(__file__)),'second_window.ui')
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -42,12 +44,12 @@ class MainWindow(QtGui.QMainWindow):
         #diagolo q da mas info del canal
         #self.dialogo=Dialog_Tet()
         #self.matriz_tetrodos=tets_display(self.espacio_pg)
-        #for i in range((config.CANT_CANALES)/4):
+        #for i in range((CONFIG['CANT_CANALES'])/4):
             #self.tet_plus_selec.addItem('T%s' % (i + 1))  Config_processing
         self.processing_process=processing_process
         self.get_data_process=get_data_process
         self.signal_config=Channels_Configuration(queue=self.processing_process.ui_config_queue)#HARDCODE
-        self.active_channels=[False for j in xrange(config.CANT_CANALES)]
+        self.active_channels=[False for j in xrange(CONFIG['CANT_CANALES'])]
         self.signal_config.try_send()
         self.info_tetrodo=plus_display(self.plus_grid,self.plus_grid_fr,self.signal_config)
         self.matriz_tetrodos=general_display(self.espacio_pg,self.info_tetrodo)
@@ -142,7 +144,7 @@ class MainWindow(QtGui.QMainWindow):
     def on_actionNuevo(self):
         self.get_data_process.control.send(START_SIGNAL)
         self.contador_registro+=1
-        self.file_label.setText(SAVING_MESSAGE + file_config.GENERIC_FILE +'-'+str(self.contador_registro))
+        self.file_label.setText(SAVING_MESSAGE + FILE_CONFIG['GENERIC_FILE'] +'-'+str(self.contador_registro))
 
     def change_filter_model(self, state):
         self.signal_config.filter_mode=state
@@ -174,8 +176,8 @@ class MainWindow(QtGui.QMainWindow):
                 
 class  plus_display():
     def __init__(self,espacio_pg,plus_grid_fr,signal_config): 
-        #self.tmodes=np.ones(config.CANT_CANALES) #modos por defecto en 1, osea en auto
-        #self.tmode_auto=list([False for i in range(config.CANT_CANALES)]) #modos por defecto, en 2 es AUTO check
+        #self.tmodes=np.ones(CONFIG['CANT_CANALES']) #modos por defecto en 1, osea en auto
+        #self.tmode_auto=list([False for i in range(CONFIG['CANT_CANALES'])]) #modos por defecto, en 2 es AUTO check
         self.mode=0
         #self.c_auto_umbral=c_auto_umbral
         #self.c_manual_umbral=c_manual_umbral
@@ -187,11 +189,11 @@ class  plus_display():
         #graph=layout_graphicos.addPlot(row=None, col=1, rowspan=1, colspan=3)
         self.graph = pg.PlotItem()
         axis=self.graph.getAxis('left')
-        axis.setScale(scale=config.ADC_SCALE)
+        axis.setScale(scale=CONFIG['ADC_SCALE'])
         
         self.VB=self.graph.getViewBox()
-        self.VB.setXRange(0, config.PAQ_USB/float(config.FS), padding=0, update=True)
-        self.VB.setYRange(lg_config.DISPLAY_LIMY,-lg_config.DISPLAY_LIMY, padding=0, update=True)
+        self.VB.setXRange(0, CONFIG['PAQ_USB']/float(CONFIG['FS']), padding=0, update=True)
+        self.VB.setYRange(LG_CONFIG['DISPLAY_LIMY'],-LG_CONFIG['DISPLAY_LIMY'], padding=0, update=True)
         self.graph.setMenuEnabled(enableMenu=False,enableViewBoxMenu=None)
         self.graph.setDownsampling(auto=True)
         self.curve=self.graph.plot()
@@ -202,8 +204,8 @@ class  plus_display():
         self.fft_n=0
         self.data_fft=0
         self.fft_l=0
-        self.fft_aux=np.zeros([lg_config.FFT_N,lg_config.FFT_L/2])
-        self.data_fft_aux=np.zeros([config.PAQ_USB*lg_config.FFT_L_PAQ])
+        self.fft_aux=np.zeros([LG_CONFIG['FFT_N'],LG_CONFIG['FFT_L']/2])
+        self.data_fft_aux=np.zeros([CONFIG['PAQ_USB']*LG_CONFIG['FFT_L_PAQ']])
         self.graph.addItem(self.graph_umbral)
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
         self.pause_mode=False
@@ -257,13 +259,13 @@ class  plus_display():
                 #self.graph_umbral.setValue(umbral_calc[self.selec_canal])
        
         else:
-            if( self.fft_l < lg_config.FFT_L_PAQ):
-                self.data_fft_aux[self.fft_l*config.PAQ_USB:(1+self.fft_l)*config.PAQ_USB]=data_handler.data_new[self.channel,:]
+            if( self.fft_l < LG_CONFIG['FFT_L_PAQ']):
+                self.data_fft_aux[self.fft_l*CONFIG['PAQ_USB']:(1+self.fft_l)*CONFIG['PAQ_USB']]=data_handler.data_new[self.channel,:]
                 self.fft_l+=1
             else:
                 self.fft_l=0
-                if (self.fft_n <lg_config.FFT_N):
-                    self.fft_aux[self.fft_n,:]=abs(fftpack.fft(self.data_fft_aux,n=lg_config.FFT_L)[:lg_config.FFT_L/2])** 2. / float(lg_config.FFT_L)
+                if (self.fft_n <LG_CONFIG['FFT_N']):
+                    self.fft_aux[self.fft_n,:]=abs(fftpack.fft(self.data_fft_aux,n=LG_CONFIG['FFT_L'])[:LG_CONFIG['FFT_L']/2])** 2. / float(LG_CONFIG['FFT_L'])
                     self.fft_n+=1
                 else:
                     self.fft_n=0
@@ -291,7 +293,7 @@ class  plus_display():
 
         else: 
             #self.graph.setLogMode(x=True,y=True)
-            self.VB.setXRange(0, config.FS/2, padding=0, update=False)
+            self.VB.setXRange(0, CONFIG['FS']/2, padding=0, update=False)
             if(self.mode is 0):
                 self.graph.removeItem(self.graph_umbral)
             self.fft_l=0
@@ -334,15 +336,15 @@ class  bar_graph(pg.PlotItem):
         self.tasa_bars.append(self.plot(pen=ch_colors[3], fillLevel=0,brush=pg.mkBrush(ch_colors[3])))
 
     def update(self,spike_times):  
-            for i in xrange(len(spike_times)):
-                #self.tasas[self.npack,i]=(spike_times[i][0]).size
-                self.tasas[self.npack,i]=(np.greater(spike_times[i][0][1:]-spike_times[i][0][:-1],spike_duration_samples)).sum() + ((spike_times[i][0]).size > 0)
-                tasas_aux=self.tasas[:,i].sum()/FREQFIX_xSPIKE_COUNT  
-                    
-                self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas_aux,tasas_aux], _callSync='off')
-            self.npack+=1
-            if self.npack is PACK_xSPIKE_COUNT:
-               self.npack=0 
+        for i in xrange(len(spike_times)):
+            #self.tasas[self.npack,i]=(spike_times[i][0]).size
+            self.tasas[self.npack,i]=(np.greater(spike_times[i][0][1:]-spike_times[i][0][:-1],spike_duration_samples)).sum() + ((spike_times[i][0]).size > 0)
+            tasas_aux=self.tasas[:,i].sum()/FREQFIX_xSPIKE_COUNT  
+            self.tasa_bars[i].setData(x=[i%4-0.3,i%4+0.3],y=[tasas_aux,tasas_aux], _callSync='off')
+            
+        self.npack+=1
+        if self.npack is PACK_xSPIKE_COUNT:
+           self.npack=0 
 
     def tet_changed(self):
         self.npack=0
@@ -359,29 +361,29 @@ class general_display():
         #graphicos principales
         
         
-        if lg_config.TWO_WINDOWS is False:
-            main_win_ch=config.CANT_CANALES
+        if LG_CONFIG['TWO_WINDOWS'] is False:
+            main_win_ch=CONFIG['CANT_CANALES']
     
         else:
-            main_win_ch=int(config.CANT_CANALES*3/4/7)*4
+            main_win_ch=int(CONFIG['CANT_CANALES']*3/4/7)*4
             self.second_win=Second_Display_Window()            
             layout_graphicos_2=self.second_win.layout_graphicos
             self.second_win.show()
             
-        for i in xrange(config.CANT_CANALES):
+        for i in xrange(CONFIG['CANT_CANALES']):
             vb=ViewBox_General_Display(i,info_tet)
             
             if (i < main_win_ch):
-                graph = layout_graphicos.addPlot(viewBox=vb,row=int(i/4/lg_config.ROWS_DISPLAY)*4+i%4, col=int(i/4)%lg_config.ROWS_DISPLAY, rowspan=1, colspan=1)
+                graph = layout_graphicos.addPlot(viewBox=vb,row=int(i/4/LG_CONFIG['ROWS_DISPLAY'])*4+i%4, col=int(i/4)%LG_CONFIG['ROWS_DISPLAY'], rowspan=1, colspan=1)
             else:
-                graph = layout_graphicos_2.addPlot(viewBox=vb,row=int((i-main_win_ch)/4/lg_config.ROWS_DISPLAY)*4+(i-main_win_ch)%4, col=int((i-main_win_ch)/4)%lg_config.ROWS_DISPLAY, rowspan=1, colspan=1)
+                graph = layout_graphicos_2.addPlot(viewBox=vb,row=int((i-main_win_ch)/4/LG_CONFIG['ROWS_DISPLAY'])*4+(i-main_win_ch)%4, col=int((i-main_win_ch)/4)%LG_CONFIG['ROWS_DISPLAY'], rowspan=1, colspan=1)
             
             graph.hideButtons()
             graph.setDownsampling(auto=True)
             VB=graph.getViewBox()
             
-            VB.setXRange(0, config.PAQ_USB, padding=0, update=True) #HARDCODE
-            VB.setYRange(lg_config.DISPLAY_LIMY,-lg_config.DISPLAY_LIMY, padding=0, update=True)
+            VB.setXRange(0, CONFIG['PAQ_USB'], padding=0, update=True) #HARDCODE
+            VB.setYRange(LG_CONFIG['DISPLAY_LIMY'],-LG_CONFIG['DISPLAY_LIMY'], padding=0, update=True)
            #self.vieboxs.append(VB)
             if i%4 is 0:
                 graph.setTitle('Tetrode ' + str(i/4+1))
@@ -402,31 +404,31 @@ class general_display():
         
     def change_Yrange(self,p):
         p=float(p)/10
-        for i in xrange(config.CANT_CANALES):
-           self.graphicos[i].setYRange(lg_config.DISPLAY_LIMY*p,-1*lg_config.DISPLAY_LIMY*p, padding=0, update=False)
+        for i in xrange(CONFIG['CANT_CANALES']):
+           self.graphicos[i].setYRange(LG_CONFIG['DISPLAY_LIMY']*p,-1*LG_CONFIG['DISPLAY_LIMY']*p, padding=0, update=False)
     
     
     def changeXrange(self,i):
-        max_x=i*config.PAQ_USB
-        for i in xrange(config.CANT_CANALES):
+        max_x=i*CONFIG['PAQ_USB']
+        for i in xrange(CONFIG['CANT_CANALES']):
             self.graphicos[i].setXRange(0,max_x, padding=0, update=False)
             
         
     def update(self,data,n_view):
         #self.casa+=1
-        #step=config.PAQ_USB/float(config.FS)/4
+        #step=CONFIG['PAQ_USB']/float(CONFIG['FS'])/4
         #if self.casa >= 4:
         #n=np.arange(n_view)
-        for i in xrange(config.CANT_CANALES):
+        for i in xrange(CONFIG['CANT_CANALES']):
             self.curv_canal[i].setData(y=data[i,:n_view])
             #self.curv_canal[i].setData(x=n,y=data[i,:n_view])            
-        #for i in range(config.CANT_CANALES):
+        #for i in range(CONFIG['CANT_CANALES']):
            # self.vieboxs[i].setXRange(self.casa*step,(self.casa+1)*step, padding=0, update=False)
     #def setAutoRange(self,state):
         #for graphico in self.graphicos:
             #graphico.enableAutoRange('xy', state)  
     def close(self):
-        if lg_config.TWO_WINDOWS is True:
+        if LG_CONFIG['TWO_WINDOWS'] is True:
             self.second_win.Close()
             
 class ViewBox_General_Display(pg.ViewBox):
@@ -467,18 +469,18 @@ class  bci_data_handler():
     def __init__(self):
        
         #ojo aca!!!!1
-        #self.graph_data=np.uint16(np.zeros([config.CANT_CANALES,config.CANT_DISPLAY]))
-        #self.graph_data=np.uint16(np.zeros([config.CANT_CANALES,config.PAQ_USB])) 
-        self.data_new=np.int16(np.zeros([config.CANT_CANALES,config.PAQ_USB]))
+        #self.graph_data=np.uint16(np.zeros([CONFIG['CANT_CANALES'],config.CANT_DISPLAY]))
+        #self.graph_data=np.uint16(np.zeros([CONFIG['CANT_CANALES'],CONFIG['PAQ_USB']])) 
+        self.data_new=np.int16(np.zeros([CONFIG['CANT_CANALES'],CONFIG['PAQ_USB']]))
         self.spikes_times=0
-        self.graph_data=np.int16(np.zeros([config.CANT_CANALES,lg_config.MAX_PAQ_DISPLAY*config.PAQ_USB]))
+        self.graph_data=np.int16(np.zeros([CONFIG['CANT_CANALES'],LG_CONFIG['MAX_PAQ_DISPLAY']*CONFIG['PAQ_USB']]))
         self.paqdisplay=0
         self.paq_view=1
         self.new_paq_view=1
-        self.n_view=self.paq_view*config.PAQ_USB
-        self.xtime=np.zeros([lg_config.MAX_PAQ_DISPLAY*config.PAQ_USB])
-        #self.xtime[:self.n_view]=np.linspace(0,config.MAX_PAQ_DISPLAY*config.PAQ_USB/float(config.FS),self.n_view)
-        self.xtime[:self.n_view]=np.linspace(0,self.n_view/float(config.FS),self.n_view)
+        self.n_view=self.paq_view*CONFIG['PAQ_USB']
+        self.xtime=np.zeros([LG_CONFIG['MAX_PAQ_DISPLAY']*CONFIG['PAQ_USB']])
+        #self.xtime[:self.n_view]=np.linspace(0,config.MAX_PAQ_DISPLAY*CONFIG['PAQ_USB']/float(CONFIG['FS']),self.n_view)
+        self.xtime[:self.n_view]=np.linspace(0,self.n_view/float(CONFIG['FS']),self.n_view)
         ####
     
     def update(self,data_struct):
@@ -492,13 +494,13 @@ class  bci_data_handler():
         self.spikes_times=data_struct.spikes_times
         if(self.new_paq_view != self.paq_view):
             self.paq_view=self.new_paq_view
-            self.n_view=self.paq_view*config.PAQ_USB
-            self.xtime[:self.n_view]=np.linspace(0,self.n_view/float(config.FS),self.n_view)
+            self.n_view=self.paq_view*CONFIG['PAQ_USB']
+            self.xtime[:self.n_view]=np.linspace(0,self.n_view/float(CONFIG['FS']),self.n_view)
         
         if self.paqdisplay >= self.paq_view:
             self.paqdisplay=0
         t1=time.time()
-        self.graph_data[:,self.paqdisplay*config.PAQ_USB:(self.paqdisplay+1)*config.PAQ_USB]=self.data_new
+        self.graph_data[:,self.paqdisplay*CONFIG['PAQ_USB']:(self.paqdisplay+1)*CONFIG['PAQ_USB']]=self.data_new
         self.paqdisplay+=1
         
     def change_paq_view(self,i):
@@ -513,11 +515,11 @@ def beep(sk_time):
         return
     
     sp=(np.greater(sk_time[1:]-sk_time[:-1],spike_duration_samples)).sum()+1
-    delay=int((one_pack_time*1000.0-spikes_config.SPIKE_DURATION*sp)/sp)
+    delay=int((one_pack_time*1000.0-SPIKE_CONFIG['SPIKE_DURATION']*sp)/sp)
     #os.system(beep_command + str(delay) + "-r" +str(sp))
     string=beep_command + str(delay)
     for i in xrange(sp):
-		os.system(string)
+        os.system(string)
     return
     
 class Config_processing():
@@ -526,7 +528,7 @@ class Config_processing():
         self.thresholds=thresholds     
 
 class Channels_Configuration(Config_processing):
-    def __init__(self,queue,filter_mode=False,thresholds=lg_config.DISPLAY_LIMY/2*np.ones([config.CANT_CANALES,1])):
+    def __init__(self,queue,filter_mode=False,thresholds=LG_CONFIG['DISPLAY_LIMY']/2*np.ones([CONFIG['CANT_CANALES'],1])):
         Config_processing.__init__(self,filter_mode,thresholds)
         self.queue=queue
         self.changed=True

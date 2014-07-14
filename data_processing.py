@@ -1,20 +1,21 @@
 from scipy import signal #proc de segnales
 import numpy as np #vectores, operaciones matematicas
-import time
-from configuration import general_config as config
-from multiprocess_config import *
-#[b_spike,a_spike]=signal.iirfilter(4,[float(300*2)/config.FS, float(6000*2)/config.FS], rp=None, rs=None, btype='band', analog=False, ftype='butter',output='ba')
-from configuration import signal_processing_config as sp_config
+from configuration import GENERAL_CONFIG as CONFIG
+from multiprocess_config import (SLOW_GRAPHICS_SIGNAL, EXIT_SIGNAL, 
+                                 START_SIGNAL, STOP_SIGNAL, TIMEOUT_GET)
+from configuration import SIGNAL_PROCESSING_CONFIG as SP_CONFIG
 
-if sp_config.BAND_PASS is True:
-    filter_freq=[float(sp_config.FMIN*2)/config.FS,float(sp_config.FMAX*2)/config.FS]
+if SP_CONFIG['BAND_PASS'] is True:
+    FILTER_FREQ = [float(SP_CONFIG['FMIN']*2)/CONFIG['FS'],
+                   float(SP_CONFIG['FMAX']*2)/CONFIG['FS']]
 else:
-    filter_freq=[float(sp_config.FMIN*2)/config.FS]
+    FILTER_FREQ = [float(SP_CONFIG['FMIN']*2)/CONFIG['FS']]
 
 
-filter_coef=signal.firwin(sp_config.LENGTH_FILTER, filter_freq, width=None, window= sp_config.WINDOW_TYPE, pass_zero=False)
-group_delay=((sp_config.LENGTH_FILTER-1)/2)*(sp_config.LENGTH_FILTER%2)+(sp_config.LENGTH_FILTER+1)%2*(sp_config.LENGTH_FILTER/2)
+FILTER_COEF = signal.firwin(SP_CONFIG['LENGTH_FILTER'], FILTER_FREQ, width=None, 
+                          window= SP_CONFIG['WINDOW_TYPE'], pass_zero=False)
 
+EXTRA_SIGNAL=SP_CONFIG['LENGTH_FILTER']-1
 
 #MEAN_L=5  #ESTO PODRIA PONERSE A BASE DE TIEMPO
 
@@ -36,84 +37,69 @@ group_delay=((sp_config.LENGTH_FILTER-1)/2)*(sp_config.LENGTH_FILTER%2)+(sp_conf
 #    b=np.matrix(x*np.sign(umbral)>np.abs(umbral),np.int)        
 #    b=np.diff(b,1,1)
 #    aux=np.nonzero(b)
-#    new_spikes_times=list([[] for i in range(config.CANT_CANALES)])
+#    new_spikes_times=list([[] for i in range(CONFIG['CANT_CANALES'])])
 #    for i in range(aux[0].size):
 #        new_spikes_times[aux[0][0,i]].append(aux[1][0,i])
 #    
 #    return new_spikes_times
 #    
-def spikes_detect(x,umbral):
-    new_spikes_times=list()
+def spikes_detect(x, umbral):
+    new_spikes_times = list()
     #aux=[]
-    for i in xrange(config.CANT_CANALES):
-#        if(umbral[i]>0):
-#            aux=np.nonzero(np.ediff1d(x[i,:]>umbral[i], to_end=None, to_begin=None)) 
-#        else:
-#            aux=np.nonzero(np.ediff1d(x[i,:]<umbral[i], to_end=None, to_begin=None))
-#        new_spikes_times.append(aux)
+    for i in xrange(CONFIG['CANT_CANALES']):
         if(umbral[i]>0):
-                aux=np.less(x[i,:],umbral[i])
+            aux = np.less(x[i,:],umbral[i])
         else:
-                aux=np.greater(x[i,:],umbral[i])
+            aux = np.greater(x[i,:],umbral[i])
         new_spikes_times.append(np.nonzero(aux[1:].__and__(~aux[:-1])))    
-        
-        
-        #aux=[]
-#        if(umbral[i]>0):
-#            #aux=np.nonzero(np.ediff1d(x[i,:]>umbrales[i], to_end=None, to_begin=None)) 
-#            new_spikes_times.append(np.nonzero(np.ediff1d(np.sign(x[i,:]>umbral[i]), to_end=None, to_begin=None)>0) )
-#        else:
-#            new_spikes_times.append(np.nonzero(np.ediff1d(np.sign(x[i,:]<umbral[i]), to_end=None, to_begin=None)>0) )
-            #aux=np.nonzero(np.ediff1d(x[i,:]<umbrales[i], to_end=None, to_begin=None))
         
     
     return new_spikes_times
     
-def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_control,warnings):
+def data_processing(data_queue, ui_config_queue, graph_data_queue,
+                    proccesing_control, warnings):
     #import config
-    graph_data=Data_proc2ui()
-    control=''
-#    mean_calc=np.int16(np.zeros([config.CANT_CANALES,MEAN_L]))
+    graph_data = Data_proc2ui()
+    control = ''
+#    mean_calc=np.int16(np.zeros([CONFIG['CANT_CANALES'],MEAN_L]))
 #    mean_l=0
-#    mean_aux=np.ndarray([config.CANT_CANALES,1])
-    new_data=np.ndarray([config.CANT_CANALES,config.PAQ_USB+sp_config.LENGTH_FILTER-1])
+#    mean_aux=np.ndarray([CONFIG['CANT_CANALES'],1])
+#    new_data = np.ndarray([CONFIG['CANT_CANALES'],
+#                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL])
+    new_data = np.ndarray([CONFIG['CANT_CANALES'],
+                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL*2])                       
     while(control != EXIT_SIGNAL):
         while not proccesing_control.poll():
             if not ui_config_queue.empty():
                 try:
-                    ui_config=ui_config_queue.get(TIMEOUT_GET)
+                    ui_config = ui_config_queue.get(TIMEOUT_GET)
                 except:
                     pass
             try:
-                new_pure_data=data_queue.get(TIMEOUT_GET) #UN DESASTRE!!!!!
-                new_data[:,sp_config.LENGTH_FILTER-1:]=new_pure_data.channels
+                new_pure_data = data_queue.get(TIMEOUT_GET) #UN DESASTRE!!!!!
+                new_data[:,EXTRA_SIGNAL*2:] = new_pure_data.channels
             except:
                 continue
             #filtar y enviar si filtro activo en conf o bien asi como esta
-#            np.mean(new_data[:,sp_config.LENGTH_FILTER-1:],1,out=mean_calc[:,mean_l])
-#            mean_l+=1
-#            if mean_l is MEAN_L :
-#                mean_l=0
-#            
-#            np.mean(mean_calc,1,out=mean_aux)
-#            #casa falta muucho 
-#            new_data[:,sp_config.LENGTH_FILTER-1:]=new_data[:,sp_config.LENGTH_FILTER-1:]-mean_aux
+            #casa falta muucho 
+#            new_data[:,CONFIG['LENGTH_FILTER']-1:]=new_data[:,CONFIG['LENGTH_FILTER']-1:]-mean_aux
             
             
-            filtered_data=signal.lfilter(filter_coef,1,new_data)[:,sp_config.LENGTH_FILTER-1:] #casa terriblemente mal no tiene en cuenta nada
-                
-            spikes_times=spikes_detect(filtered_data,ui_config.thresholds)
+            #filtered_data = signal.lfilter(FILTER_COEF, 1, new_data)[:,EXTRA_SIGNAL:] 
+            #terriblemente mal no tiene en cuenta nada
+            filtered_data=signal.filtfilt(FILTER_COEF, [1], new_data,padtype=None)[:,EXTRA_SIGNAL:-EXTRA_SIGNAL]
+            spikes_times = spikes_detect(filtered_data, ui_config.thresholds)
             #casa ojo la fase lineal q desplaza todo
             
 
-            graph_data.spikes_times=spikes_times
+            graph_data.spikes_times = spikes_times
             
             if ui_config.filter_mode is True:
-                graph_data.new_data=filtered_data
-                graph_data.filter_mode=True
+                graph_data.new_data = filtered_data
+                graph_data.filter_mode = True
             else:
-                graph_data.new_data=new_data[:,sp_config.LENGTH_FILTER-1:]
-                graph_data.filter_mode=False
+                graph_data.new_data = new_data[:, EXTRA_SIGNAL*2:]
+                graph_data.filter_mode = False
             try:
                 graph_data_queue.put_nowait(graph_data)
             except:
@@ -121,16 +107,18 @@ def data_processing(data_queue,ui_config_queue,graph_data_queue,proccesing_contr
                     warnings.put_nowait(SLOW_GRAPHICS_SIGNAL) 
                 except:
                     pass
-            new_data[:,:sp_config.LENGTH_FILTER-1]=new_data[:,-sp_config.LENGTH_FILTER+1:]
-        
-        control=proccesing_control.recv()
-        #FER falta la opcion iniciar sorting usando la pipe q hace q se cierre el proceso para transportar la info
-       #numpy.where !!!
+            #new_data[:,:EXTRA_SIGNAL] = new_data[:, -EXTRA_SIGNAL:]
+            new_data[:, :EXTRA_SIGNAL*2] = new_data[:, -2*EXTRA_SIGNAL:]
+        control = proccesing_control.recv()
+        #falta la opcion iniciar sorting usando la pipe q hace q 
+        #se cierre el proceso para transportar la info
+
        
 
 class Data_proc2ui():
     def __init__(self):
-        self.new_data=0
-        self.spikes_times=np.zeros([0])
-        self.filter_mode=False
-        #aca podria cambiar de filtro con un aviso para el recalculo.. aunq afectaria el sorting
+        self.new_data = 0
+        self.spikes_times = np.zeros([0])
+        self.filter_mode = False
+        #aca podria cambiar de filtro con un aviso para el recalculo.. 
+        #aunq afectaria el sorting

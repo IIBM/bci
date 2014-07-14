@@ -1,12 +1,12 @@
 #!/usr/bin/python
 #Configurations for process communications
 #import config
-from configuration import general_config as config
+from configuration import GENERAL_CONFIG as CONFIG
 
 
 
-TIMEOUT_GET=int(config.PAQ_USB/config.FS)
-TIMEOUT_PUT=int(config.PAQ_USB/config.FS)/10
+TIMEOUT_GET=int(CONFIG['PAQ_USB']/CONFIG['FS'])
+TIMEOUT_PUT=int(CONFIG['PAQ_USB']/CONFIG['FS'])/10
 
 #--------
 GRAPH_DATA_BUFFER=15
