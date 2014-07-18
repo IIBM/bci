@@ -214,13 +214,13 @@ class Parser():
 
         self.FFplus=np.fromstring(dicc_aux[COMM['AMPCOUNT']],np.int16)
         
-        self.contador=-1 #el contador de la trama
-        self.tramas_parseadas=0 #ubicacion en el bloque q se esta creando
-        self.data=data_in()
-        self.c_t=0#ubicacion en el bloque q se esta leyendo
-        self.sinc=0
-        self.first_read=True
-        self.send_warnings=send_warnings
+        self.contador =- 1 #el contador de la trama
+        self.tramas_parseadas = 0 #ubicacion en el bloque q se esta creando
+        self.data = data_in()
+        self.c_t = 0#ubicacion en el bloque q se esta leyendo
+        self.sinc = 0
+        self.first_read = True
+        self.send_warnings = send_warnings
         
     def update(self,data):
         max_c_t=data.size/COMM['L_FRAME']
@@ -230,10 +230,10 @@ class Parser():
             while self.sinc < COMM['L_FRAME']:               
                 if (data[self.sinc] == self.FFplus) and not( reduce(lambda x,y: x^y, data[self.sinc:self.sinc+ COMM['L_FRAME']])):
                     #parsea:
-                    self.data.channels[:,self.tramas_parseadas]=data[COMM['CHANNELS_POS']+self.sinc:self.sinc+COMM['CHANNELS_POS']+CONFIG['CANT_CANALES']]
-                    self.tramas_parseadas+=1
-                    contador_old=self.contador
-                    self.contador=(data[COMM['COUNTER_POS']+self.sinc])
+                    self.data.channels[:,self.tramas_parseadas] = data[COMM['CHANNELS_POS']+self.sinc:self.sinc+COMM['CHANNELS_POS']+CONFIG['CANT_CANALES']]
+                    self.tramas_parseadas += 1
+                    contador_old = self.contador
+                    self.contador = (data[COMM['COUNTER_POS']+self.sinc])
                     if np.int16(contador_old+1) != self.contador: #and not self.first_read:
                         #self.first_read=False
                         #guardo discontinuidad!!!
