@@ -60,8 +60,10 @@ class MainWindow(QtGui.QMainWindow):
                                self.info_tetrodo.change_display_mode) 
         QtCore.QObject.connect(self.display_scale, QtCore.SIGNAL("valueChanged(int)"),
                                self.matriz_tetrodos.change_Yrange)  
+        QtCore.QObject.connect(self.filter_mode_button, QtCore.SIGNAL("clicked( bool)"), 
+                               self.change_filter_mode)  
         QtCore.QObject.connect(self.paq_view, QtCore.SIGNAL("valueChanged(int)"), 
-                               self.changeXrange)  
+                               self.changeXrange)                        
         QtCore.QObject.connect(self.active_channel_cb, QtCore.SIGNAL("clicked( bool)"),
                                self.activate_channel)
         self.processing_process_warning = False
@@ -84,11 +86,14 @@ class MainWindow(QtGui.QMainWindow):
         self.statusBar.addPermanentWidget(self.file_label)
         self.dockWidget.setTitleBarWidget(QtGui.QWidget())
         self.file_label.setText(NOT_SAVING_MESSAGE)
+        self.change_filter_mode(self.filter_mode_button.isChecked())
+        
+    def change_filter_mode(self,mode):
+         self.signal_config.change_filter_mode(mode)
+         self.info_tetrodo.show_line = mode
+         self.info_tetrodo.threshold_visible(mode)     
         
     def update(self):
-        #check if get_data process can send data
-
-        self.signal_config.change_filter_mode(self.filter_mode_button.isChecked())
         try:
             self.data_handler.update(self.processing_process.new_data_queue.get(TIMEOUT_GET))
         except:
@@ -109,18 +114,12 @@ class MainWindow(QtGui.QMainWindow):
         elif(self.processing_process_warning):
             self.status.setText("")                  
             self.processing_process_warning = False
-            
-        
         
         if self.beepbox.isChecked():
             t = threading.Thread(target = beep,
                                  args = [self.data_handler.spikes_times[self.info_tetrodo.channel]])
             t.start()    
-                   
-        self.update_graphicos()
-        self.signal_config.try_send()
-        
-    def update_graphicos(self):    
+                    
         #self.dialogo.update(self.data)
         #self.matriz_tasas.update(self.tasas_disparo)
         self.matriz_tetrodos.update(self.data_handler.graph_data, self.data_handler.n_view)
@@ -128,9 +127,11 @@ class MainWindow(QtGui.QMainWindow):
         self.info_label.setText('TET:'+str(int(self.info_tetrodo.channel/4)+1)
                                 +' C:'+str(self.info_tetrodo.channel%4+1))
         self.active_channel_cb.setChecked(self.active_channels[self.info_tetrodo.channel])
+        
+        self.signal_config.try_send()
     
     def on_actionDetener(self):
-        #detiene el guardado de datos
+        """detiene el guardado de datos"""
         self.get_data_process.control.send(STOP_SIGNAL)
         self.file_label.setText(NOT_SAVING_MESSAGE)
 
@@ -152,9 +153,12 @@ class MainWindow(QtGui.QMainWindow):
         self.contador_registro += 1
         self.file_label.setText(SAVING_MESSAGE + FILE_CONFIG['GENERIC_FILE'] +'-'+str(self.contador_registro))
 
-    def change_filter_model(self, state):
-        self.signal_config.filter_mode = state
-        self.signal_config.changed = True
+#    def change_filter_model(self, state):
+#        self.signal_config.filter_mode = state
+#        self.signal_config.changed = True
+#        
+#        self.info_tetodo.show_line = not state
+#        self.info_tetodo.threshold_visible(not state)
     #def set_autoRange(self):
         #if self.autoRange.isChecked():
             #self.matriz_tetrodos.setAutoRange(True)
@@ -183,8 +187,6 @@ class MainWindow(QtGui.QMainWindow):
 class  plus_display():
     def __init__(self, espacio_pg, plus_grid_fr, signal_config): 
         self.mode = 0 
-        #self.c_auto_umbral=c_auto_umbral
-        #self.c_manual_umbral=c_manual_umbral
         self.channel = 0
         self.signal_config = signal_config
         self.tasas_bars = bar_graph()
@@ -209,8 +211,9 @@ class  plus_display():
         self.fft_l = 0
         self.fft_aux = np.zeros([LG_CONFIG['FFT_N'], LG_CONFIG['FFT_L'] / 2])
         self.data_fft_aux = np.zeros([CONFIG['PAQ_USB']*LG_CONFIG['FFT_L_PAQ']])
-        self.graph.addItem(self.graph_umbral)
+        self.threshold_visible(True)
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
+        self.show_line = False
         self.pause_mode = False
         
         
@@ -229,38 +232,18 @@ class  plus_display():
         
         n_view = data_handler.n_view
         xtime = data_handler.xtime
-        self.signal_config.change_th(self.channel, self.graph_umbral.value())
+        
         self.max_xtime = xtime[n_view-1]
-        #tasas=np.zeros([4])
-        
-        #for i in range(4):
-            #if self.tmode_auto[4*self.selec_tet+i] is True:
-                #tasas[i]=calcular_tasa_disparo(x[i,:],umbral_calc[i])
-                
-            #else:       
-                #tasas[i]=calcular_tasa_disparo(x[i,:],self.umbrales_manuales[4*self.selec_tet+i])
-        
-        #for i in range(4):
-            #tasas[i]=calcular_tasa_disparo(data_new[i,:],self.umbrales_manuales[4*self.selec_tet+i])
-        
-        #if tasas[self.selec_canal] > 0 and self.beepbox.isChecked():
-            ##print '\a' 
-            #os.system("beep -f 700 -l 18 &")
         tet=int(self.channel/4)
+        
         self.tasas_bars.update(data_handler.spikes_times[tet*4:tet*4+4])
         
-        #self.curve.setPen(CH_COLORS[self.selec_canal])
+
         if self.mode is 0:
-            #self.VB.setXRange(0, xtime[n_view-1], padding=0, update=False)
             self.curve.setPen(CH_COLORS[self.channel%4])
             self.curve.setData(x = xtime[:n_view], y = data[self.channel, :n_view])
-            #elif self.mode is 1:  
-            #self.curve.setPen(CH_COLORS[self.selec_canal])
-            ##self.VB.setXRange(0, xtime[n_view-1], padding=0, update=False)
-            #self.curve.setData(x=xtime[:n_view],y=x[self.selec_canal,:n_view], _callSync='off')
-            #if self.tmode_auto[self.selec_canal+4*self.selec_tet] is True:
-                #self.graph_umbral.setValue(umbral_calc[self.selec_canal])
-       
+            self.signal_config.change_th(self.channel, self.graph_umbral.value())
+      
         else:
             if( self.fft_l < LG_CONFIG['FFT_L_PAQ']):
                 self.data_fft_aux[self.fft_l*CONFIG['PAQ_USB']:(1+self.fft_l)*CONFIG['PAQ_USB']] = data_handler.data_new[self.channel, :]
@@ -277,33 +260,40 @@ class  plus_display():
                     self.curve.setPen(CH_COLORS[self.channel%4])
                     self.curve.setData(x = fft_frec, y = np.mean(self.fft_aux,0))
                     
-            #aux=fftpack.fft(data[self.selec_tet*4+self.selec_canal,:],n=FFT_L) #/config.CANT_DISPLAY
-            #self.curve.setData(x=fft_frec,y=abs(aux[:np.size(aux)/2]))
-
+    def threshold_visible(self,visible):
+        if visible:
+            self.graph.addItem(self.graph_umbral)
+        else:
+            self.graph.removeItem(self.graph_umbral)
+            
+            
     def change_display_mode(self, new_mode):
+        if new_mode is None:
+            new_mode = self.mode
         
         if new_mode is 0:
-            self.graph.addItem(self.graph_umbral)
+            
             self.VB.setXRange(0, self.max_xtime, padding = 0, update = False)
             #self.graph.setLogMode(x=False,y=False)
-            
+            if self.show_line:
+                self.threshold_visible(True)
+            self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
         #elif new_mode is 1:
             #self.graph.addItem(self.graph_umbral)
             #self.VB.setXRange(0, self.max_xtime, padding=0, update=False)
             ##self.VB.setXRange(0, self_max_xtime, padding=0, update=False)
-            ##self.graph.setLogMode(x=False,y=False)
+            #self.graph.setLogMode(x=False,y=False)
             
-            self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
             #self.graph_umbral.setMovable(True)
 
         else: 
             #self.graph.setLogMode(x=True,y=True)
             self.VB.setXRange(0, CONFIG['FS']/2, padding=0, update=False)
-            if(self.mode is 0):
-                self.graph.removeItem(self.graph_umbral)
+            if(self.mode is 0 and self.show_line):
+                self.threshold_visible(False)
             self.fft_l = 0
             self.fft_n = 0    
-            #self.curve.setData(x=[0],y=[0])
+            
         self.mode = new_mode
         
         
@@ -314,10 +304,7 @@ class  plus_display():
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
         self.fft_l = 0
         self.fft_n = 0
-        
-    #def change_tmode(self,new_mode):
-        #self.tmode_auto[self.channel]=(new_mode is 2)
-        #self.change_line_mode()    
+
 
 
 class  bar_graph(pg.PlotItem):
@@ -433,9 +420,7 @@ class general_display():
             
         
     def update(self, data, n_view):
-        #self.casa+=1
         #step=CONFIG['PAQ_USB']/float(CONFIG['FS'])/4
-        #if self.casa >= 4:
         #n=np.arange(n_view)
         for i in xrange(CONFIG['CANT_CANALES']):
             self.curv_canal[i].setData(y = data[i, :n_view])
@@ -579,8 +564,8 @@ class Config_processing():
         self.thresholds = thresholds     
 
 class Channels_Configuration(Config_processing):
-    def __init__(self, queue, filter_mode = False,
-                 thresholds = LG_CONFIG['DISPLAY_LIMY']/2*np.ones([CONFIG['CANT_CANALES'],1])):
+    def __init__(self, queue, filter_mode = None,
+        thresholds = LG_CONFIG['DISPLAY_LIMY']/2*np.ones([CONFIG['CANT_CANALES'],1])):
         Config_processing.__init__(self, filter_mode, thresholds)
         self.queue = queue
         self.changed = True
@@ -596,7 +581,9 @@ class Channels_Configuration(Config_processing):
         if(self.filter_mode != state):
             self.filter_mode = state
             self.changed = True
-            
+        
+        
+        
     def try_send(self):
         if self.changed == True:
             try:
@@ -604,4 +591,3 @@ class Channels_Configuration(Config_processing):
             except:
                 pass
             self.changed = False
-            
