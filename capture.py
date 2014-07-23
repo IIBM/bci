@@ -48,10 +48,10 @@ def get_data_from_file(com, send_warnings, cola):
                 try:
                     time.sleep(CONFIG['PAQ_USB'] / CONFIG['FS'])
                     cola.put(parser.data, timeout = TIMEOUT_PUT)
-                except:
+                except Queue_Full:
                     try:
                         send_warnings.put_nowait([SLOW_PROCESS_SIGNAL])
-                    except:
+                    except Queue_Full:
                         logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
             
 #            try:
@@ -63,7 +63,7 @@ def get_data_from_file(com, send_warnings, cola):
         reg_files.actions(comando)
 
 
-def get_data(com, send_warnings, dev,cola):
+def get_data(com, send_warnings, dev, cola):
     #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer     
     
     save_data = False
@@ -72,7 +72,7 @@ def get_data(com, send_warnings, dev,cola):
     parser = Parser(cola)
     comando = 'normal'
     extra_data = 0
-    data = np.ndarray(COMM['L_FRAME'] * CONFIG['PAQ_USB'] * 2,np.int16) #es el doble de grande que el que sera utilizado normalmente
+    data = np.ndarray(COMM['L_FRAME'] * CONFIG['PAQ_USB'] * 2, np.int16) #es el doble de grande que el que sera utilizado normalmente
     dev.start(int(CONFIG['FS']))
 
     while(comando != EXIT_SIGNAL):
@@ -91,10 +91,10 @@ def get_data(com, send_warnings, dev,cola):
                 while extra_data <= 0: #estoy justo o me sobran datos
                     try:
                         cola.put(parser.data, timeout = TIMEOUT_PUT)
-                    except:
+                    except Queue_Full:
                         try:
                             send_warnings.put_nowait([SLOW_PROCESS_SIGNAL])
-                        except:
+                        except Queue_Full:
                             logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                     if extra_data < 0: #sobraban datos
                         extra_data = parser.update(data[:new_pack_data]) 
@@ -208,7 +208,7 @@ class Parser():
                         logging.error(Errors_Messages[COUNTER_ERROR])
                         try:
                             self.send_warnings.put_nowait([COUNTER_ERROR,1])
-                        except:
+                        except Queue_Full:
                             logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                     #fin del priner parseo
                     break
@@ -220,7 +220,7 @@ class Parser():
                 logging.error(Errors_Messages[CANT_SYNCHRONIZE])
                 try:
                     self.send_warnings.put_nowait([CANT_SYNCHRONIZE,CONFIG['PAQ_USB']])
-                except:
+                except Queue_Full:
                     logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                 #self.first_read=True
                 self.sinc =0
@@ -237,7 +237,7 @@ class Parser():
                 logging.error(Errors_Messages[DATA_NONSYNCHRONIZED])
                 try:
                     self.send_warnings.put_nowait([DATA_NONSYNCHRONIZED,CONFIG['PAQ_USB']-self.c_t])
-                except:
+                except Queue_Full:
                     logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                 #self.first_read=True
                 self.c_t = max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
@@ -256,7 +256,7 @@ class Parser():
                     logging.error(Errors_Messages[COUNTER_ERROR])
                     try:
                         self.send_warnings.put_nowait([COUNTER_ERROR,1])
-                    except:
+                    except Queue_Full:
                         logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                     
                     
@@ -267,7 +267,7 @@ class Parser():
                 logging.error(Errors_Messages[DATA_CORRUPTION])
                 try:
                     self.send_warnings.put_nowait([DATA_CORRUPTION, 1])
-                except:
+                except Queue_Full: 
                     logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                 #ckea, elimina dato, avisar corte y error de transmision
             self.c_t += 1

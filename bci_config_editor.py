@@ -5,7 +5,7 @@ from PyQt4  import QtGui, uic
 from os import makedirs, path
 from ConfigParser import ConfigParser
 import time 
-
+from PyQt4  import QtCore 
 
 USER_CONFIG_FILE = path.join(path.abspath(path.dirname(__file__)), "user_config.ini")
 DEFAULT_FOLDER = path.expanduser('~') + "/bci_registros/"
@@ -35,7 +35,7 @@ def config_editor():
     if dialog.exec_() == QtGui.QDialog.Accepted:
         return config
     else:
-        exit()
+        QtCore.QCoreApplication.instance().quit()
     
 
 class Config_dialog(QtGui.QDialog):

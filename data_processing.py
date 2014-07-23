@@ -1,8 +1,7 @@
 from scipy import signal #proc de segnales
 import numpy as np #vectores, operaciones matematicas
 from configuration import GENERAL_CONFIG as CONFIG
-from multiprocess_config import (SLOW_GRAPHICS_SIGNAL, EXIT_SIGNAL, 
-                                 START_SIGNAL, STOP_SIGNAL, TIMEOUT_GET)
+from multiprocess_config import *
 from configuration import SIGNAL_PROCESSING_CONFIG as SP_CONFIG
 
 if SP_CONFIG['BAND_PASS'] is True:
@@ -73,12 +72,15 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             if not ui_config_queue.empty():
                 try:
                     ui_config = ui_config_queue.get(TIMEOUT_GET)
-                except:
+                except Queue_Empty:
                     pass
+            
             try:
-                new_pure_data = data_queue.get(TIMEOUT_GET) #UN DESASTRE!!!!!
+                new_pure_data = data_queue.get(TIMEOUT_GET) #UN DESASTRE!!!!!   
                 new_data[:,EXTRA_SIGNAL*2:] = new_pure_data.channels
-            except:
+            except  Queue_Empty:
+                continue
+            except AttributeError: #no se porque, entre q no envia nada y empieza envia una lista(?) y pincha channels
                 continue
             #filtar y enviar si filtro activo en conf o bien asi como esta
             #casa falta muucho 
@@ -102,10 +104,10 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
                 graph_data.filter_mode = False
             try:
                 graph_data_queue.put_nowait(graph_data)
-            except:
-                try:
+            except Queue_Full:
+                try :
                     warnings.put_nowait(SLOW_GRAPHICS_SIGNAL) 
-                except:
+                except Queue_Full:
                     pass
             #new_data[:,:EXTRA_SIGNAL] = new_data[:, -EXTRA_SIGNAL:]
             new_data[:, :EXTRA_SIGNAL*2] = new_data[:, -2*EXTRA_SIGNAL:]

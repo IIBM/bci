@@ -96,7 +96,7 @@ class MainWindow(QtGui.QMainWindow):
     def update(self):
         try:
             self.data_handler.update(self.processing_process.new_data_queue.get(TIMEOUT_GET))
-        except:
+        except Queue_Empty:
             return 1
         
         if (not self.get_data_process.warnings.empty()):
@@ -146,7 +146,7 @@ class MainWindow(QtGui.QMainWindow):
         self.get_data_process.process.terminate()
         self.matriz_tetrodos.close()
         self.close()
-        exit()
+        QtCore.QCoreApplication.instance().quit()
         
     def on_actionNuevo(self):
         self.get_data_process.control.send(START_SIGNAL)
@@ -588,6 +588,6 @@ class Channels_Configuration(Config_processing):
         if self.changed == True:
             try:
                 self.queue.put(Config_processing(self.filter_mode, self.thresholds))
-            except:
+            except Queue_Full:
                 pass
             self.changed = False
