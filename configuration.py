@@ -10,7 +10,7 @@ CONFIG = config_editor()
 
 GENERAL_CONFIG = {
     'ONLINE_MODE' : CONFIG.getboolean('GENERAL', 'online_mode'),
-    'CANT_CANALES' : CONFIG.getint('GENERAL', 'channels'),
+    '#CHANNELS' : CONFIG.getint('GENERAL', 'channels'),
     'FS' : CONFIG.getfloat('GENERAL', 'fs'),
     'PAQ_USB' : CONFIG.getint('GENERAL', 'data_package'),
     'ADC_SCALE' : CONFIG.getint('GENERAL', 'adc_scale')

@@ -5,15 +5,14 @@ from PyQt4  import QtGui, uic
 from scipy import fftpack
 import numpy as np
 from configuration import GENERAL_CONFIG as CONFIG
-import time
-import threading
-import copy
+from threading import Thread
+from copy import copy
 from multiprocess_config import *
 
 from configuration import SPIKE_CONFIG
 from configuration import LIBGRAPH_CONFIG as LG_CONFIG
 from configuration import FILE_CONFIG
-import os
+from os import path, system
 #import logging
 
 #logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
@@ -30,27 +29,26 @@ FREQFIX_xSPIKE_COUNT = (float(PACK_xSPIKE_COUNT)*one_pack_time)
 beep_command = "beep -f " + LG_CONFIG['BEEP_FREQ'] + " -l " \
                 + str(SPIKE_CONFIG['SPIKE_DURATION']) + " -d "
 
-UIFILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'bciui.ui')
+UIFILE = path.join(path.abspath(path.dirname(__file__)), 'bciui.ui')
 
 if LG_CONFIG['TWO_WINDOWS']:
-    second_win_file = os.path.join(os.path.abspath(
-                              os.path.dirname(__file__)),'second_window.ui')
+    second_win_file = path.join(path.abspath(
+                              path.dirname(__file__)),'second_window.ui')
 
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, processing_process, get_data_process):
         QtGui.QMainWindow.__init__(self)
         uic.loadUi(UIFILE, self)
-        #self.tet_plus_selec
         #diagolo q da mas info del canal
         #self.dialogo=Dialog_Tet()
         #self.matriz_tetrodos=tets_display(self.espacio_pg)
-        #for i in range((CONFIG['CANT_CANALES'])/4):
+        #for i in range((CONFIG['#CHANNELS'])/4):
             #self.tet_plus_selec.addItem('T%s' % (i + 1))  Config_processing
         self.processing_process = processing_process
         self.get_data_process = get_data_process
         self.signal_config = Channels_Configuration(queue = self.processing_process.ui_config_queue)#HARDCODE
-        self.active_channels = [False] *CONFIG['CANT_CANALES']
+        self.active_channels = [False] *CONFIG['#CHANNELS']
         self.signal_config.try_send()
         self.info_tetrodo = plus_display(self.plus_grid,
                                          self.plus_grid_fr, self.signal_config)
@@ -59,7 +57,7 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.tet_plus_mode, QtCore.SIGNAL("currentIndexChanged(int)"), 
                                self.info_tetrodo.change_display_mode) 
         QtCore.QObject.connect(self.display_scale, QtCore.SIGNAL("valueChanged(int)"),
-                               self.matriz_tetrodos.change_Yrange)  
+                               self.matriz_tetrodos.changeYrange)  
         QtCore.QObject.connect(self.filter_mode_button, QtCore.SIGNAL("clicked( bool)"), 
                                self.change_filter_mode)  
         QtCore.QObject.connect(self.paq_view, QtCore.SIGNAL("valueChanged(int)"), 
@@ -75,7 +73,6 @@ class MainWindow(QtGui.QMainWindow):
         processing_process.process.start()
         get_data_process.process.start()
         self.timer.start(0) #si va demasiado lento deberia bajarse el tiempo
-        self.t1 = time.time()
         
         
         self.warnings = QtGui.QLabel("")
@@ -88,17 +85,24 @@ class MainWindow(QtGui.QMainWindow):
         self.file_label.setText(NOT_SAVING_MESSAGE)
         self.change_filter_mode(self.filter_mode_button.isChecked())
         
-    def change_filter_mode(self,mode):
-         self.signal_config.change_filter_mode(mode)
-         self.info_tetrodo.show_line = mode
-         self.info_tetrodo.threshold_visible(mode)     
+    def change_filter_mode(self, mode):
+        """"Define si se pide la segnial pura o la filtrada"""
+        self.signal_config.change_filter_mode(mode)
+        self.info_tetrodo.show_line = mode
+        self.info_tetrodo.threshold_visible(mode)     
         
     def update(self):
+        """"Loop que se ejecuta si llegan nuevos paquetes"""
         try:
             self.data_handler.update(self.processing_process.new_data_queue.get(TIMEOUT_GET))
         except Queue_Empty:
             return 1
         
+        if self.beepbox.isChecked():
+            t = Thread(target = beep,
+                                 args = [self.data_handler.spikes_times[self.info_tetrodo.channel]])
+            t.start()
+            
         if (not self.get_data_process.warnings.empty()):
             new_mess = self.get_data_process.warnings.get(TIMEOUT_GET)       
             if new_mess[0] != SLOW_PROCESS_SIGNAL:
@@ -108,17 +112,13 @@ class MainWindow(QtGui.QMainWindow):
                 self.warnings.setText(Errors_Messages[new_mess[0]])
         
         if (not self.processing_process.warnings.empty()):
-            self.processing_process_warning=True
+            self.processing_process_warning = True
             self.status.setText(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)])
 
         elif(self.processing_process_warning):
             self.status.setText("")                  
             self.processing_process_warning = False
-        
-        if self.beepbox.isChecked():
-            t = threading.Thread(target = beep,
-                                 args = [self.data_handler.spikes_times[self.info_tetrodo.channel]])
-            t.start()    
+          
                     
         #self.dialogo.update(self.data)
         #self.matriz_tasas.update(self.tasas_disparo)
@@ -136,19 +136,30 @@ class MainWindow(QtGui.QMainWindow):
         self.file_label.setText(NOT_SAVING_MESSAGE)
 
     def on_actionSalir(self):
+        """Pide verificacion, detiene procesos y termina de guardar archivos"""
+        if(QtGui.QMessageBox.question(
+                        QtGui.QWidget(), 'Exit',
+                        "Are you sure you want to exit the application?", 
+                        QtGui.QMessageBox.Yes |QtGui.QMessageBox.No, 
+                        QtGui.QMessageBox.No) == QtGui.QMessageBox.No):                   
+            return
         self.timer.stop()
         self.get_data_process.control.send(EXIT_SIGNAL)
         self.processing_process.control.send(EXIT_SIGNAL)
-        self.get_data_process.process.join(1)
+        self.get_data_process.process.join(3)
         self.processing_process.process.join(1)
-        self.get_data_process.process.join(1)
+        #self.get_data_process.process.join(1)
         self.processing_process.process.terminate()
         self.get_data_process.process.terminate()
         self.matriz_tetrodos.close()
-        self.close()
+        #self.close()
         QtCore.QCoreApplication.instance().quit()
-        
+        #exit()        
+        import sys
+        sys.exit()
+
     def on_actionNuevo(self):
+        """Nuevo archivo de registro"""
         self.get_data_process.control.send(START_SIGNAL)
         self.contador_registro += 1
         self.file_label.setText(SAVING_MESSAGE + FILE_CONFIG['GENERIC_FILE'] +'-'+str(self.contador_registro))
@@ -166,25 +177,28 @@ class MainWindow(QtGui.QMainWindow):
             #self.matriz_tetrodos.setAutoRange(False)
         
     def closeEvent(self, event):
+        u"""Redirige las senales que disparen ese evento al metodo on_actionSalir()"""
         self.on_actionSalir()
         
     def changeXrange(self, i):
+        """Modifica la cantidad de paquetes que se dibujan en los displays"""
         self.data_handler.change_paq_view(i)
         self.matriz_tetrodos.changeXrange(i)
     
     def activate_channel(self, i):
+        """Agrega el canal seleccionado a la lista de canales activos"""
         self.active_channels[self.info_tetrodo.channel] = i
         
     def on_actionInit_SP(self):
+        """Comienza el proceso de spike sorting en los canales activos"""
         self.active_channel_cb.setCheckable(False)
-        self.processing_process.control.send(active_channels)
+        self.processing_process.control.send(self.active_channels)
         #FER termina esto
     #@QtCore.pyqtSlot()          
-    #def on_s_canal1_valueChanged(self,int):
-        #print str(self.s_canal1.value())
 
                 
 class  plus_display():
+    """Clase que engloba el display inferior junto a los metodos que lo implican individualmente"""
     def __init__(self, espacio_pg, plus_grid_fr, signal_config): 
         self.mode = 0 
         self.channel = 0
@@ -217,10 +231,11 @@ class  plus_display():
         self.pause_mode = False
         
         
-    def update(self, data_handler,pause_mode):
+    def update(self, data_handler, pause_mode):
+        """Lo ejecutan al llegar nuevos paquetes"""
         if pause_mode != self.pause_mode:
             if self.pause_mode == False:
-                self.data_old = copy.copy(data_handler.graph_data)
+                self.data_old = copy(data_handler.graph_data)
                 self.pause_mode = pause_mode
             else:
                 self.pause_mode = pause_mode
@@ -234,7 +249,7 @@ class  plus_display():
         xtime = data_handler.xtime
         
         self.max_xtime = xtime[n_view-1]
-        tet=int(self.channel/4)
+        tet = int(self.channel / 4)
         
         self.tasas_bars.update(data_handler.spikes_times[tet*4:tet*4+4])
         
@@ -258,9 +273,10 @@ class  plus_display():
                 else:
                     self.fft_n = 0
                     self.curve.setPen(CH_COLORS[self.channel%4])
-                    self.curve.setData(x = fft_frec, y = np.mean(self.fft_aux,0))
+                    self.curve.setData(x = fft_frec, y = np.mean(self.fft_aux, 0))
                     
-    def threshold_visible(self,visible):
+    def threshold_visible(self, visible):
+        """Define si el umbral es visible o no"""
         if visible:
             self.graph.addItem(self.graph_umbral)
         else:
@@ -268,6 +284,7 @@ class  plus_display():
             
             
     def change_display_mode(self, new_mode):
+        """Define el modo del display. new_mode=0: raw data; new_mode=1: FFT"""
         if new_mode is None:
             new_mode = self.mode
         
@@ -298,6 +315,8 @@ class  plus_display():
         
         
     def change_channel(self, canal):
+        """Modifica el canal que se grafica actualmente, 
+        refrescando las barras de firing rate si pertenece a otro tetrodo"""
         if int(self.channel/4) != int(self.channel/4):
             self.tasas_bars.tet_changed()
         self.channel = canal
@@ -308,6 +327,7 @@ class  plus_display():
 
 
 class  bar_graph(pg.PlotItem):
+    """Barras con tasas de disparo"""
     def __init__(self):
         self.npack = 0
         self.tasa_bars = list()
@@ -333,9 +353,8 @@ class  bar_graph(pg.PlotItem):
 
     def update(self, spike_times):  
         for i in xrange(len(spike_times)):
-            #self.tasas[self.npack,i]=(spike_times[i][0]).size
-            self.tasas[self.npack, i] = (np.greater(spike_times[i][0][1:] - spike_times[i][0][:-1],
-                                                    spike_duration_samples)).sum() + ((spike_times[i][0]).size > 0)
+            self.tasas[self.npack, i] = (np.greater(spike_times[i][1:] - spike_times[i][:-1],
+                                                    spike_duration_samples)).sum() + ((spike_times[i]).size > 0)
             tasas_aux = self.tasas[:, i].sum() / FREQFIX_xSPIKE_COUNT  
             self.tasa_bars[i].setData(x = [i%4-0.3, i%4+0.3], 
                                    y = [tasas_aux,tasas_aux], _callSync='off')
@@ -350,9 +369,10 @@ class  bar_graph(pg.PlotItem):
         
 class general_display():
     def __init__(self, espacio_pg, info_tet):
-        layout_graphicos = pg.GraphicsLayout(border = (100, 0, 100)) #para ordenar los graphicos(items) asi como el simil con los widgets
+        layout_graphicos = pg.GraphicsLayout(border = (100, 0, 100)) 
+        #para ordenar los graphicos(items) asi como el simil con los widgets
         espacio_pg.setCentralItem(layout_graphicos)
-        #self.vieboxs=list()
+
         self.set_canales = list() #canales seleccionados para ser mostrados
         self.curv_canal = list() #curvas para dsp actualizar los datos
         self.graphicos = list() #graphicos, para dsp poder modificar su autorange
@@ -360,15 +380,15 @@ class general_display():
         
         
         if LG_CONFIG['TWO_WINDOWS'] is False:
-            main_win_ch = CONFIG['CANT_CANALES']
+            main_win_ch = CONFIG['#CHANNELS']
     
         else:
-            main_win_ch = int(CONFIG['CANT_CANALES']*3/4/7)*4
+            main_win_ch = int(CONFIG['#CHANNELS']*3/4/7)*4
             self.second_win = Second_Display_Window()            
             layout_graphicos_2 = self.second_win.layout_graphicos
             self.second_win.show()
             
-        for i in xrange(CONFIG['CANT_CANALES']):
+        for i in xrange(CONFIG['#CHANNELS']):
             vb = ViewBox_General_Display(i, info_tet)
             
             if (i < main_win_ch):
@@ -389,7 +409,7 @@ class general_display():
             VB.setXRange(0, CONFIG['PAQ_USB'], padding = 0, update = True) #HARDCODE
             VB.setYRange(LG_CONFIG['DISPLAY_LIMY'], -LG_CONFIG['DISPLAY_LIMY'],
                          padding = 0, update = True)
-           #self.vieboxs.append(VB)
+
             if i % 4 is 0:
                 graph.setTitle('Tetrode ' + str(i / 4 + 1))
             #if i%4 != 3:
@@ -407,29 +427,25 @@ class general_display():
 
         
         
-    def change_Yrange(self, p):
+    def changeYrange(self, p):
         p = float(p) / 10
-        for i in xrange(CONFIG['CANT_CANALES']):
+        for i in xrange(CONFIG['#CHANNELS']):
             self.graphicos[i].setYRange(LG_CONFIG['DISPLAY_LIMY'] * p, -1*LG_CONFIG['DISPLAY_LIMY']*p, padding=0, update=False)
     
     
     def changeXrange(self, i):
         max_x = i*CONFIG['PAQ_USB']
-        for i in xrange(CONFIG['CANT_CANALES']):
+        for i in xrange(CONFIG['#CHANNELS']):
             self.graphicos[i].setXRange(0, max_x, padding = 0, update = False)
             
         
     def update(self, data, n_view):
-        #step=CONFIG['PAQ_USB']/float(CONFIG['FS'])/4
-        #n=np.arange(n_view)
-        for i in xrange(CONFIG['CANT_CANALES']):
+        for i in xrange(CONFIG['#CHANNELS']):
             self.curv_canal[i].setData(y = data[i, :n_view])
-            #self.curv_canal[i].setData(x=n,y=data[i,:n_view])            
-        #for i in range(CONFIG['CANT_CANALES']):
-           # self.vieboxs[i].setXRange(self.casa*step,(self.casa+1)*step, padding=0, update=False)
     #def setAutoRange(self,state):
         #for graphico in self.graphicos:
             #graphico.enableAutoRange('xy', state)  
+            
     def close(self):
         if LG_CONFIG['TWO_WINDOWS'] is True:
             self.second_win.Close()
@@ -445,7 +461,7 @@ class ViewBox_General_Display(pg.ViewBox):
             self.info_tet.change_channel(self.i)
     
     def mouseDragEvent(self, ev, axis = None):
-        ## if axis is specified, event will only affect that axis.
+        """If axis is specified, event will only affect that axis."""
         ev.accept()  ## we accept all buttons
         
         pos = ev.pos()
@@ -502,14 +518,14 @@ class Second_Display_Window(QtGui.QDialog):
         
        
 class  bci_data_handler():
+    """Controla el alineado de datos, actualizaciones y configuracion 
+    de entrada, agregando una capa de abstraccion al resto de los metodos"""
+
     def __init__(self):
-       
-        #ojo aca!!!!1
-        #self.graph_data=np.uint16(np.zeros([CONFIG['CANT_CANALES'],config.CANT_DISPLAY]))
-        #self.graph_data=np.uint16(np.zeros([CONFIG['CANT_CANALES'],CONFIG['PAQ_USB']])) 
-        self.data_new = np.int16(np.zeros([CONFIG['CANT_CANALES'], CONFIG['PAQ_USB']]))
+
+        self.data_new = np.int16(np.zeros([CONFIG['#CHANNELS'], CONFIG['PAQ_USB']]))
         self.spikes_times = 0 
-        self.graph_data = np.int16(np.zeros([CONFIG['CANT_CANALES'],
+        self.graph_data = np.int16(np.zeros([CONFIG['#CHANNELS'],
                                              LG_CONFIG['MAX_PAQ_DISPLAY'] * CONFIG['PAQ_USB']]))
         self.paqdisplay = 0
         self.paq_view = 1
@@ -517,7 +533,6 @@ class  bci_data_handler():
         self.n_view = self.paq_view*CONFIG['PAQ_USB']
         self.xtime = np.zeros([LG_CONFIG['MAX_PAQ_DISPLAY']*CONFIG['PAQ_USB']])
         self.xtime[:self.n_view] = np.linspace(0, self.n_view / float(CONFIG['FS']), self.n_view)
-        ####
     
     def update(self, data_struct):
               
@@ -528,6 +543,7 @@ class  bci_data_handler():
             self.data_new = data_struct.new_data
             
         self.spikes_times = data_struct.spikes_times
+        
         if(self.new_paq_view != self.paq_view):
             self.paq_view = self.new_paq_view
             self.n_view = self.paq_view*CONFIG['PAQ_USB']
@@ -545,28 +561,22 @@ class  bci_data_handler():
         
         
 def beep(sk_time):
-    sk_time = sk_time[0]
-    sk_size = np.size(sk_time)
-    if not sk_size:
+    if not np.size(sk_time):
         return
-    
     sp = (np.greater(sk_time[1:] - sk_time[:-1], spike_duration_samples)).sum() + 1
-    delay = int((one_pack_time * 1000.0 - SPIKE_CONFIG['SPIKE_DURATION'] * sp) / sp)
-    #os.system(beep_command + str(delay) + "-r" +str(sp))
-    string = beep_command + str(delay)
-    for i in xrange(sp):
-        os.system(string)
+    string = beep_command + str(
+        int((one_pack_time * 1000.0 - SPIKE_CONFIG['SPIKE_DURATION'] * sp) / sp))
+    for _ in xrange(sp):
+        system(string)
     return
     
-class Config_processing():
-    def __init__(self, filter_mode, thresholds):
-        self.filter_mode = filter_mode
-        self.thresholds = thresholds     
 
-class Channels_Configuration(Config_processing):
+class Channels_Configuration():
     def __init__(self, queue, filter_mode = None,
-        thresholds = LG_CONFIG['DISPLAY_LIMY']/2*np.ones([CONFIG['CANT_CANALES'],1])):
-        Config_processing.__init__(self, filter_mode, thresholds)
+        thresholds = LG_CONFIG['DISPLAY_LIMY']/2*np.ones([CONFIG['#CHANNELS'],1])):
+        
+        self.thresholds =thresholds
+        self.filter_mode = filter_mode
         self.queue = queue
         self.changed = True
         
@@ -583,11 +593,10 @@ class Channels_Configuration(Config_processing):
             self.changed = True
         
         
-        
     def try_send(self):
         if self.changed == True:
             try:
-                self.queue.put(Config_processing(self.filter_mode, self.thresholds))
+                self.queue.put((self.filter_mode, self.thresholds))
             except Queue_Full:
                 pass
             self.changed = False

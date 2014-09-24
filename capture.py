@@ -2,7 +2,6 @@ import numpy as np #vectores, operaciones matematicas
 import time #hora local 
 from configuration import GENERAL_CONFIG as CONFIG
 #import os 
-#import array
 from multiprocess_config import *
 from configuration import DATA_FRAME_CONFIG as COMM
 from configuration import FILE_CONFIG
@@ -12,6 +11,7 @@ logging.basicConfig(filename = 'data_bci.log', level = logging.WARNING)
 
 
 def connect():
+    """Retorna el dispositivo o una excepcion si falla"""
     import okapi
     # find our device
     dev = okapi.OpalKelly()
@@ -19,6 +19,7 @@ def connect():
     return dev
    
 def get_data_from_file(com, send_warnings, cola):
+    """Lee archivos y los envia al resto de los programas simulando ser online"""
     save_data = False
     reg_files = FileHandle()
     parser = Parser(cola)
@@ -64,7 +65,8 @@ def get_data_from_file(com, send_warnings, cola):
 
 
 def get_data(com, send_warnings, dev, cola):
-    #lee datos del USB los guarda en un archivo si lo hay, los ordena en un vector y lo envia por el buffer     
+    """lee datos del USB, los reagrupa en una matriz de muestras y los envia por el buffer.
+    Si se le envia la segnal los guarda"""
     
     save_data = False
     
@@ -108,9 +110,12 @@ def get_data(com, send_warnings, dev, cola):
     dev.close();
 
 class FileHandle():
+    """Simplifica el guardado de archivos"""
     def __init__(self):
         #archivo cabecera
-        self.paqxfile = FILE_CONFIG['MAX_SIZE_FILE']*2**20/COMM['L_FRAME']/CONFIG['PAQ_USB']/np.int16().nbytes
+        self.paqxfile = FILE_CONFIG['MAX_SIZE_FILE']*2**20 /(
+                        COMM['L_FRAME']*CONFIG['PAQ_USB']*np.int16().nbytes
+                        )
         
         self.num_registro = -1
 
@@ -133,6 +138,7 @@ class FileHandle():
             self.paq_in_part = 0
     
     def actions(self, signal):
+        """Interfaz para facilitar el envio de segniales"""
         self.close()
         if signal is START_SIGNAL:
             self.num_registro += 1
@@ -141,13 +147,15 @@ class FileHandle():
             self.close()
 
     def close(self):
+        """Cierra el ultimo archivo y guarda configuraciones.
+        Puede seguir guardando luego, solo que se modifica el numero de registro"""
         if self.num_registro >= 0:
             from ConfigParser import ConfigParser
             config_parser=ConfigParser()
             newsection = 'GENERAL'
             config_parser.add_section(newsection)
             config_parser.set(newsection, 'fs', int(CONFIG['FS']))
-            config_parser.set(newsection, 'channels', CONFIG['CANT_CANALES'])
+            config_parser.set(newsection, 'channels', CONFIG['#CHANNELS'])
             config_parser.set(newsection, 'adc_scale', CONFIG['ADC_SCALE'])
             
             newsection = 'DATA_FRAME'
@@ -169,14 +177,18 @@ class FileHandle():
             
         
 class data_in():
+    """Estructua que se envia al siguiente proceso"""
+    #tambien se podria implementar con un diccionario
     def __init__(self):
         self.data_loss_cuts = list()
         self.spikes = list()
-        self.channels = np.ndarray([CONFIG['CANT_CANALES'], CONFIG['PAQ_USB']],np.uint16) #estan sin signo!
+        self.channels = np.ndarray([CONFIG['#CHANNELS'], CONFIG['PAQ_USB']],np.uint16) #estan sin signo!
         
         
 class Parser():
+    """Une secciones de datos raw y crea la matriz que se pasara al siguiente proceso"""
     def __init__(self,send_warnings):     
+        #define como sera el inicio de la trama en funcion de la cantidad de canales
         dicc_aux = {1:'\x23''\xFF', 2:'\x46''\xFF'} #AUXILIAR
 
         self.FFplus = np.fromstring(dicc_aux[COMM['AMPCOUNT']], np.int16)
@@ -190,6 +202,8 @@ class Parser():
         self.send_warnings = send_warnings
         
     def update(self, data):
+        """Recibe datos, los parsea. Si llena una trama fija retorna 0, 
+        si faltan mas datos retorna cuantos, si sobran retorna -1"""
         max_c_t = data.size / COMM['L_FRAME']
         #si recien empieza con esos datos, primero sincroniza
         if self.c_t == 0 :
@@ -197,14 +211,11 @@ class Parser():
             while self.sinc < COMM['L_FRAME']:               
                 if (data[self.sinc] == self.FFplus) and not( reduce(lambda x,y: x^y, data[self.sinc:self.sinc+ COMM['L_FRAME']])):
                     #parsea:
-                    self.data.channels[:, self.tramas_parseadas] = data[COMM['CHANNELS_POS'] + self.sinc:self.sinc+COMM['CHANNELS_POS'] + CONFIG['CANT_CANALES']]
+                    self.data.channels[:, self.tramas_parseadas] = data[COMM['CHANNELS_POS'] + self.sinc:self.sinc+COMM['CHANNELS_POS'] + CONFIG['#CHANNELS']]
                     self.tramas_parseadas += 1
                     contador_old = self.contador
                     self.contador = (data[COMM['COUNTER_POS'] + self.sinc])
-                    if np.int16(contador_old+1) != self.contador: #and not self.first_read:
-                        #self.first_read=False
-                        #guardo discontinuidad!!!
-                        #print "perdida de datos segun contador"
+                    if np.int16(contador_old+1) != self.contador:
                         logging.error(Errors_Messages[COUNTER_ERROR])
                         try:
                             self.send_warnings.put_nowait([COUNTER_ERROR,1])
@@ -216,13 +227,11 @@ class Parser():
             if(self.sinc >0 ):
                 max_c_t = max_c_t-1
             if (self.sinc == COMM['L_FRAME']):
-                #print "se recorrio una trama y nunca se sincronizo"
                 logging.error(Errors_Messages[CANT_SYNCHRONIZE])
                 try:
                     self.send_warnings.put_nowait([CANT_SYNCHRONIZE,CONFIG['PAQ_USB']])
                 except Queue_Full:
                     logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
-                #self.first_read=True
                 self.sinc =0
                 self.c_t=0 #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
                 return CONFIG['PAQ_USB'] - self.tramas_parseadas
@@ -239,12 +248,12 @@ class Parser():
                     self.send_warnings.put_nowait([DATA_NONSYNCHRONIZED,CONFIG['PAQ_USB']-self.c_t])
                 except Queue_Full:
                     logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
-                #self.first_read=True
+
                 self.c_t = max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
                 break
             if (not reduce(lambda x,y: x^y, data[init_trama:init_trama+ COMM['L_FRAME']])): #esto es cualca, solo para reemplarzar el xor
                 #parsea:
-                self.data.channels[:, self.tramas_parseadas] = data[init_trama + COMM['CHANNELS_POS']:init_trama + COMM['CHANNELS_POS'] + CONFIG['CANT_CANALES']]
+                self.data.channels[:, self.tramas_parseadas] = data[init_trama + COMM['CHANNELS_POS']:init_trama + COMM['CHANNELS_POS'] + CONFIG['#CHANNELS']]
                 #ojo aca se tendria q parsear y guardar el resto de la informacion q viene en la trama                
                 self.tramas_parseadas += 1
                 contador_old = self.contador
@@ -269,7 +278,7 @@ class Parser():
                     self.send_warnings.put_nowait([DATA_CORRUPTION, 1])
                 except Queue_Full: 
                     logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
-                #ckea, elimina dato, avisar corte y error de transmision
+                #chekea, elimina dato, avisar corte y error de transmision
             self.c_t += 1
             
         

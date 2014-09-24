@@ -25,8 +25,8 @@ def init_process(dev_usb):
     get_data_process = Get_data_process_handle(p_read_data, get_data_warnings,
                                                ui_get_data_control)
              
-    graph_data_queue = Queue(maxsize=GRAPH_DATA_BUFFER)
-    ui_config = Queue(maxsize=1)
+    graph_data_queue = Queue(maxsize = GRAPH_DATA_BUFFER)
+    ui_config = Queue(maxsize = 1)
     procesing_control, ui_procesing_control = Pipe(duplex = False)
     procesing_warnings = Queue(maxsize = WARNIGNS_BUFFER)
     p_procesing = Process(target = data_processing, 
@@ -41,10 +41,7 @@ def init_process(dev_usb):
     
     return processing_process, get_data_process
     
-    
-    
-    
-        
+          
         
 class Processing_process_handle():
     def __init__(self, process, proccesing_control, proccesing_warnings, 
@@ -55,6 +52,7 @@ class Processing_process_handle():
         self.ui_config_queue = ui_config_queue
         self.new_data_queue = graph_data_queue
         
+
 
 class Get_data_process_handle():
     def __init__(self, process, get_data_warnings, get_data_control):   
