@@ -64,8 +64,10 @@ class MainWindow(QtGui.QMainWindow):
                                self.changeXrange)                        
         QtCore.QObject.connect(self.active_channel_cb, QtCore.SIGNAL("clicked( bool)"),
                                self.activate_channel)
-        self.processing_process_warning = False
+        QtCore.QObject.connect(self.manual_thr_cb, QtCore.SIGNAL("clicked( bool)"),
+                               self.manual_thr)
         
+        self.processing_process_warning = False
         self.contador_registro = -1
         self.timer = QtCore.QTimer()
         self.loss_data = 0
@@ -127,8 +129,10 @@ class MainWindow(QtGui.QMainWindow):
         self.info_label.setText('TET:'+str(int(self.info_tetrodo.channel/4)+1)
                                 +' C:'+str(self.info_tetrodo.channel%4+1))
         self.active_channel_cb.setChecked(self.active_channels[self.info_tetrodo.channel])
+        self.manual_thr_cb.setChecked(self.signal_config.th_manual_modes[self.info_tetrodo.channel])
         
         self.signal_config.try_send()
+        
     
     def on_actionDetener(self):
         """detiene el guardado de datos"""
@@ -188,7 +192,12 @@ class MainWindow(QtGui.QMainWindow):
     def activate_channel(self, i):
         """Agrega el canal seleccionado a la lista de canales activos"""
         self.active_channels[self.info_tetrodo.channel] = i
-        
+    
+    def manual_thr(self, i):
+        """Agrega el canal seleccionado a la lista de canales activos"""
+        self.signal_config.change_th_mode(self.info_tetrodo.channel,i)
+
+       
     def on_actionInit_SP(self):
         """Comienza el proceso de spike sorting en los canales activos"""
         self.active_channel_cb.setCheckable(False)
@@ -536,13 +545,13 @@ class  bci_data_handler():
     
     def update(self, data_struct):
               
-        if data_struct.filter_mode is False:
-            mean = data_struct.new_data.mean(axis=1)
-            self.data_new = data_struct.new_data - mean[:, np.newaxis]
+        if data_struct["filter_mode"] is False:
+            mean = data_struct["new_data"].mean(axis=1)
+            self.data_new = data_struct["new_data"] - mean[:, np.newaxis]
         else:
-            self.data_new = data_struct.new_data
+            self.data_new = data_struct["new_data"]
             
-        self.spikes_times = data_struct.spikes_times
+        self.spikes_times = data_struct["spikes_times"]
         
         if(self.new_paq_view != self.paq_view):
             self.paq_view = self.new_paq_view
@@ -575,7 +584,9 @@ class Channels_Configuration():
     def __init__(self, queue, filter_mode = None,
         thresholds = LG_CONFIG['DISPLAY_LIMY']/2*np.ones([CONFIG['#CHANNELS'],1])):
         
+
         self.thresholds =thresholds
+        self.th_manual_modes = np.ones(CONFIG['#CHANNELS'])
         self.filter_mode = filter_mode
         self.queue = queue
         self.changed = True
@@ -585,7 +596,12 @@ class Channels_Configuration():
         if(self.thresholds[ch] != value):
             self.thresholds[ch] = value
             self.changed = True
+
+    def change_th_mode(self, ch, value):
         
+        if(self.th_manual_modes[ch] != value):
+            self.th_manual_modes[ch] = value
+            self.changed = True        
         
     def change_filter_mode(self, state):
         if(self.filter_mode != state):

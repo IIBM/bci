@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """
 Archivo main
 """
@@ -9,6 +10,9 @@ from libgraph import MainWindow
 from multi_process import init_process
 
 def main():
+    
+    if CONFIG == None:
+        return
     
     if CONFIG['ONLINE_MODE'] is False:
         dev_usb = False

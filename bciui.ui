@@ -151,21 +151,6 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0">
-      <widget class="QCheckBox" name="Thr_median">
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Manual Threshold</string>
-       </property>
-       <property name="checked">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
      <item row="3" column="0">
       <widget class="QTabWidget" name="tabWidget">
        <property name="sizePolicy">
@@ -374,6 +359,21 @@
          </item>
         </layout>
        </widget>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QCheckBox" name="manual_thr_cb">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Manual Threshold</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
     </layout>

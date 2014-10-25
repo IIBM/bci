@@ -17,7 +17,20 @@ FILTER_COEF = signal.firwin(SP_CONFIG['LENGTH_FILTER'], FILTER_FREQ, width=None,
 EXTRA_SIGNAL=SP_CONFIG['LENGTH_FILTER']-1
 
 
-N_STORAGE=3 #cantidad de paq q se van a usar para calcular medianas etc
+N_STORAGE = 3 #cantidad de paq q se van a usar para calcular medianas etc
+DEFAULT_rT = 4 #for detect
+
+
+class Signal_Parameters():
+    def __init__(self, data):
+
+        self.storage_channel = np.ndarray(CONFIG['PAQ_USB']*N_STORAGE)
+        self.std = data.std(1)
+        self.std_fd = np.diff(data).std(1)
+        self.rT = DEFAULT_rT * np.ones(CONFIG['#CHANNELS'],np.int16)
+    
+    def update(self,ch):
+        pass
 #MEAN_L=5  #ESTO PODRIA PONERSE A BASE DE TIEMPO
 
 #def calcular_umbral_disparo(data,canales):
@@ -44,7 +57,16 @@ def spikes_detect(x, umbral):
 def data_processing(data_queue, ui_config_queue, graph_data_queue,
                     proccesing_control, warnings):
     #import config
-    graph_data = Data_proc2ui()
+    graph_data = {
+        "new_data" : 0,
+        "spikes_times" : np.zeros([0]),
+        "filter_mode" : False,
+        "std" : np.zeros(CONFIG['#CHANNELS'],np.int16)
+    }
+
+    
+    
+    
     control = ''
 #    mean_calc=np.int16(np.zeros([CONFIG['CANT_CANALES'],MEAN_L]))
 #    mean_l=0
@@ -53,12 +75,12 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
 #                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL])
     new_data = np.ndarray([CONFIG['#CHANNELS'],
                            CONFIG['PAQ_USB'] + EXTRA_SIGNAL*2])
-    storage_channel = np.ndarray(CONFIG['PAQ_USB']*N_STORAGE)
+    
     while(control != EXIT_SIGNAL):
         while not proccesing_control.poll():
             if not ui_config_queue.empty():
                 try:
-                    ui_config = ui_config_queue.get(TIMEOUT_GET)
+                    ui_config = ui_config_queue.get(TIMEOUT_GET)#usar algun tipo de estructura
                 except Queue_Empty:
                     pass
             
@@ -74,17 +96,16 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             
             #terriblemente mal no tiene en cuenta los bordes y la deteccion de spikes
             filtered_data=signal.filtfilt(FILTER_COEF, [1], new_data,padtype=None)[:,EXTRA_SIGNAL:-EXTRA_SIGNAL]
-            spikes_times = spikes_detect(filtered_data, ui_config[1])
+            spikes_times = spikes_detect(filtered_data, ui_config[1]) 
             
-
-            graph_data.spikes_times = spikes_times
+            graph_data["spikes_times"] = spikes_times
             
             if ui_config[0] is True:
-                graph_data.new_data = filtered_data
-                graph_data.filter_mode = True
+                graph_data["new_data"] = filtered_data
+                graph_data["filter_mode"] = True
             else:
-                graph_data.new_data = new_data[:, EXTRA_SIGNAL*2:]
-                graph_data.filter_mode = False
+                graph_data["new_data"] = new_data[:, EXTRA_SIGNAL*2:]
+                graph_data["filter_mode"] = False
             try:
                 graph_data_queue.put_nowait(graph_data)
             except Queue_Full:
@@ -97,14 +118,3 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
         control = proccesing_control.recv()
         #falta la opcion iniciar sorting usando la pipe q hace q 
         #se cierre el proceso para transportar la info
-
-       
-
-class Data_proc2ui():
-    def __init__(self):
-        self.new_data = 0
-        self.spikes_times = np.zeros([0])
-        self.filter_mode = False
-        self.std = np.zeros(CONFIG['#CHANNELS'],np.int16)
-        #aca podria cambiar de filtro con un aviso para el recalculo.. 
-        #aunq afectaria el sorting
