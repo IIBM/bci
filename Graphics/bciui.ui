@@ -31,7 +31,7 @@
      <x>0</x>
      <y>0</y>
      <width>696</width>
-     <height>29</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">
@@ -162,12 +162,12 @@
        <property name="minimumSize">
         <size>
          <width>0</width>
-         <height>155</height>
+         <height>160</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>110</width>
+         <width>120</width>
          <height>400</height>
         </size>
        </property>
@@ -188,7 +188,7 @@
             </size>
            </property>
            <property name="text">
-            <string>Band-pass</string>
+            <string>Filter</string>
            </property>
            <property name="shortcut">
             <string notr="true">Space</string>

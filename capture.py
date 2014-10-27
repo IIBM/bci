@@ -7,7 +7,16 @@ from multiprocess_config import *
 from configuration import FILE_CONFIG
 from importlib import import_module
 import logging
-logging.basicConfig(filename = 'data_bci.log', level = logging.WARNING)
+from os import path
+from os import makedirs
+
+
+if not path.exists('Logs'):
+    makedirs('Logs')
+
+
+logging.basicConfig(filename = 'Logs/data_bci.log', level = logging.WARNING)
+
 
 
 def connect():
@@ -74,7 +83,7 @@ def get_data(com, send_warnings, dev, cola):
                 if save_data:
                     reg_files.save(data[:new_pack_data]) 
                 
-                extra_data = parser.update(data[:new_pack_data])
+                extra_data = parser.online_update(data[:new_pack_data])
 
                 while extra_data <= 0: #estoy justo o me sobran datos
                     try:
@@ -85,7 +94,7 @@ def get_data(com, send_warnings, dev, cola):
                         except Queue_Full:
                             logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                     if extra_data < 0: #sobraban datos
-                        extra_data = parser.update(data[:new_pack_data]) 
+                        extra_data = parser.online_update(data[:new_pack_data]) 
                     else:
                         break
             else :

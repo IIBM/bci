@@ -6,14 +6,16 @@ from pyqtgraph.Qt import QtGui #interfaz en general
 
 APP = QtGui.QApplication([])
 from configuration import GENERAL_CONFIG as CONFIG
-from libgraph import MainWindow
+if CONFIG == None:
+    import sys
+    sys.exit()
+
+
+from Graphics.libgraph import MainWindow
 from multi_process import init_process
 
 def main():
-    
-    if CONFIG == None:
-        return
-    
+
     if CONFIG['ONLINE_MODE'] is False:
         dev_usb = False
     else:

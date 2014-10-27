@@ -5,7 +5,7 @@ from ConfigParser import ConfigParser
 import time 
 from PyQt4  import QtCore 
 
-USER_CONFIG_FILE = path.join(path.abspath(path.dirname(__file__)), "user_config.ini")
+USER_CONFIG_FILE = path.join(path.dirname(path.abspath(path.dirname(__file__))), "user_config.ini")
 DEFAULT_FOLDER = path.expanduser('~') + "/bci_registros/"
 freq_availables = [1,2.5,5,10,15,20,25,30] #in kHz
 win_availables = ['boxcar', 'triang', 'blackman', 'hamming', 'hann', 'bartlett', 'flattop', 'parzen', 'bohman', 'blackmanharris', 'nuttall', 'barthann']
@@ -15,7 +15,7 @@ load_file_folder = path.expanduser('~') + "/bci_registros/"
 if path.isfile(USER_CONFIG_FILE):
     config.read(USER_CONFIG_FILE)
 else:
-    config.read(path.join(path.abspath(path.dirname(__file__)),"user_config_DEFAULT.ini"))
+    config.read(path.join(path.dirname(path.abspath(path.dirname(__file__))),"user_config_DEFAULT.ini"))
 
 uifile = path.join(
     path.abspath(
@@ -102,6 +102,8 @@ class Config_dialog(QtGui.QDialog):
         config.set('GENERAL', 'channels', str(self.channels_line.text()))
         config.set('GENERAL', 'adc_scale', str(self.adc_scale.text()))
         config.set('GENERAL', 'format',self.format_config.get('GENERAL','format') )
+        config.set('GENERAL', 'online',not self.offline_mode)
+
        #? online save in some place?
         config.set('GRAPHICS', 'rows_display', str(self.rows_cb.value()))
         config.set('GRAPHICS', 'two_windows', str(self.two_win_cb.isChecked()))
@@ -160,7 +162,7 @@ class Config_dialog(QtGui.QDialog):
         self.offline_mode = not self.format_config.getboolean('GENERAL','online')
         self.adc_scale.setText(self.format_config.get('GENERAL','adc_scale'))
         
-        self.change_mode(self.offline_mode)  
+        self.change_mode(self.offline_mode)
         global CONFIG_PARSER
         CONFIG_PARSER = Config2Dicc(self.format_config, path.dirname(format_config_file))
 

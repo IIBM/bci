@@ -3,7 +3,7 @@
 Crea estructuras que luego seran cargadas especificamente 
 por otros modulos.
 """
-from bci_config_editor import config_editor
+from Graphics.bci_config_editor import config_editor
 
 
 confi_tuple = config_editor()

@@ -7,7 +7,11 @@ bci
   
   capture: funciones relacionadas a la captura y parseo de los datos
   
-  libgraph: clases graficas modificadas.
+  Graphics/: diseño de la interfaz y clases asociadas.
+
+  Examples/: Datos de ejemplos e .ini deconfiguracion de formatos.
+
+  Parsers/: Carpeta de formatos de archivos.
 
   bci_config_editor: editor de configuracion grafico.
   
@@ -18,8 +22,7 @@ bci
   multiprocess: crea y configura las colas, tuberias y procesos que se utilizaran. multiprocess_config es su archivo de configuracion
   
   user_config_DEFAULT: Caracteristicas generales que un usuario tipo querria modificar. Si se encuentra el archivo user_config.py se utiliza este en su lugar
-  
-  *.ui: diseño de menus, ventanas, etc
+
 
     
 **Dependencias:**
@@ -27,8 +30,8 @@ bci
   * Python 2.7 
   * PyQt 4.8+
   * numpy 
-  * scipy 
-  * pyqtgraph-0.9.8
+  * scipy >= 0.10
+  * pyqtgraph >= 0.9.8
   * Beep (linux)
 
 

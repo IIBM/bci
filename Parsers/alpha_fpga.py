@@ -1,12 +1,13 @@
-    
-    DATA_FRAME_CONFIG =  {
-        'L_FRAME' : CONFIG.getint('DATA_FRAME', 'l_frame'),
-        'COUNTER_POS' : CONFIG.getint('DATA_FRAME', 'counter_pos'),
-        'CHANNELS_POS' : CONFIG.getint('DATA_FRAME', 'channels_pos'),
-        'HASH_POS' : CONFIG.getint('DATA_FRAME', 'hash_pos'),
-        'AMPCOUNT' : CONFIG.getint('DATA_FRAME', 'ampcount')
-    }
-    
+from configuration import GENERAL_CONFIG as CONFIG
+from multiprocess_config import *
+import numpy as np
+from configuration import CONFIG_PARSER
+
+
+COMM = {}
+for x in CONFIG_PARSER['FORMAT_CONFIG']:
+    COMM[x] = int(CONFIG_PARSER['FORMAT_CONFIG'][x])
+
     
 class Parser():
     """Une secciones de datos raw y crea la matriz que se pasara al siguiente proceso"""
@@ -24,7 +25,7 @@ class Parser():
         self.first_read = True
         self.send_warnings = send_warnings
         
-    def update(self, data):
+    def online_update(self, data):
         """Recibe datos, los parsea. Si llena una trama fija retorna 0, 
         si faltan mas datos retorna cuantos, si sobran retorna -1"""
         max_c_t = data.size / COMM['L_FRAME']

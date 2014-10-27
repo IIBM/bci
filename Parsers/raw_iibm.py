@@ -30,8 +30,8 @@ class Parser():
        
     def offline_update(self):
         try:
-            lectura_nueva = np.fromfile(self.file_input,'B',CONFIG['PAQ_USB']*LARGO_TRAMA)
-            data = np.fromstring(lectura_nueva, dtype='<i2')
+            new_read = np.fromfile(self.file_input,'B',CONFIG['PAQ_USB']*LARGO_TRAMA)
+            data = np.fromstring(new_read, dtype='<i2')
             self.data.channels = data.reshape([DATA_FRAME_L , CONFIG['PAQ_USB']],order='F')[:-1,:]
             return 0
         except:
