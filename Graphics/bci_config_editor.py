@@ -103,7 +103,8 @@ class Config_dialog(QtGui.QDialog):
         config.set('GENERAL', 'adc_scale', str(self.adc_scale.text()))
         config.set('GENERAL', 'format',self.format_config.get('GENERAL','format') )
         config.set('GENERAL', 'online',not self.offline_mode)
-
+        config.set('GENERAL', 'filtered',self.format_config.get('GENERAL','filtered') )
+        
        #? online save in some place?
         config.set('GRAPHICS', 'rows_display', str(self.rows_cb.value()))
         config.set('GRAPHICS', 'two_windows', str(self.two_win_cb.isChecked()))
@@ -154,7 +155,9 @@ class Config_dialog(QtGui.QDialog):
     def update_from_loadf_file(self,format_config_file):
         
         self.format_file_label.setText(format_config_file)
-        
+        f= open(format_config_file, 'r')
+        self.info_text.setText(f.read())
+        f.close()
         self.format_config.read(format_config_file)
     
         self.fs_line.setText(self.format_config.get('GENERAL','fs'))
@@ -168,7 +171,8 @@ class Config_dialog(QtGui.QDialog):
 
     def change_load_file(self):
         load_file =str(QtGui.QFileDialog.getOpenFileName())
-        self.update_from_loadf_file(load_file)
+        if (load_file !=  ''):
+            self.update_from_loadf_file(load_file)
         
         #Falta mostrar info
         

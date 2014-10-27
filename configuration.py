@@ -18,7 +18,8 @@ else:
         'FS' : CONFIG.getfloat('GENERAL', 'fs'),
         'PAQ_USB' : CONFIG.getint('GENERAL', 'data_package'),
         'ADC_SCALE' : CONFIG.getint('GENERAL', 'adc_scale'),
-        'FORMAT' : CONFIG.get('GENERAL', 'format')
+        'FORMAT' : CONFIG.get('GENERAL', 'format'),
+        'FILTERED' : CONFIG.getboolean('GENERAL', 'filtered')
     }
 
     FILE_CONFIG = {
