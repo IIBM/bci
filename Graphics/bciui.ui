@@ -31,7 +31,7 @@
      <x>0</x>
      <y>0</y>
      <width>696</width>
-     <height>25</height>
+     <height>29</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">
@@ -41,7 +41,7 @@
     <addaction name="separator"/>
     <addaction name="actionSalir"/>
    </widget>
-   <widget class="QMenu" name="menuGrabar">
+   <widget class="QMenu" name="menuSave">
     <property name="title">
      <string>Save</string>
     </property>
@@ -55,7 +55,7 @@
     <addaction name="actionInit_SP"/>
    </widget>
    <addaction name="menuMenu"/>
-   <addaction name="menuGrabar"/>
+   <addaction name="menuSave"/>
    <addaction name="menuExtras"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>

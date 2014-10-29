@@ -4,7 +4,7 @@ from configuration import GENERAL_CONFIG as CONFIG
 from multiprocess_config import *
 from configuration import SIGNAL_PROCESSING_CONFIG as SP_CONFIG
 
-if SP_CONFIG['BAND_PASS'] is True:
+if SP_CONFIG['BAND_PASS']:
     FILTER_FREQ = [float(SP_CONFIG['FMIN']*2)/CONFIG['FS'],
                    float(SP_CONFIG['FMAX']*2)/CONFIG['FS']]
 else:
@@ -31,7 +31,6 @@ class Signal_Parameters():
     
     def update(self,ch):
         pass
-#MEAN_L=5  #ESTO PODRIA PONERSE A BASE DE TIEMPO
 
 #def calcular_umbral_disparo(data,canales):
     #x=abs(signal.lfilter(b_spike,a_spike,data[canales,:]))
@@ -85,7 +84,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
                     pass
             
             try:
-                new_pure_data = data_queue.get(TIMEOUT_GET) #UN DESASTRE!!!!!   
+                new_pure_data = data_queue.get(TIMEOUT_GET)   
                 new_data[:,EXTRA_SIGNAL*2:] = new_pure_data.channels
             except  Queue_Empty:
                 continue

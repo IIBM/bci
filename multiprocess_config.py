@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #Configurations for process communications
-#import config
+
 from configuration import GENERAL_CONFIG as CONFIG
 from Queue import Full as Queue_Full
 from Queue import Empty as Queue_Empty

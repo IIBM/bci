@@ -21,7 +21,7 @@ logging.basicConfig(filename = 'Logs/data_bci.log', level = logging.WARNING)
 
 def connect():
     """Retorna el dispositivo o una excepcion si falla"""
-    import okapi
+    from ok import okapi
     # find our device
     dev = okapi.OpalKelly()
     dev.reset()
@@ -62,7 +62,7 @@ def get_data_from_file(com, send_warnings, cola):
 def get_data(com, send_warnings, dev, cola):
     """lee datos del USB, los reagrupa en una matriz de muestras y los envia por el buffer.
     Si se le envia la segnal los guarda"""
-    Parser = getattr(__import__ ('Parsers'),CONFIG.FORMAT).Parser
+    Parser =  getattr(import_module("Parsers."+CONFIG["FORMAT"]),"Parser")
     save_data = False
     
     reg_files = FileHandle()

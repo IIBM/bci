@@ -15,9 +15,9 @@ bci
 
   bci_config_editor: editor de configuracion grafico.
   
-  configuration: carga las configuraciones utilizando 
+  configuration: carga las configuraciones.
   
-  data_processing: manejo de datos y funciones accesorias. signal_config es su archivo de configuracion
+  Processing/: manejo de datos y funciones accesorias. signal_config es su archivo de configuracion
   
   multiprocess: crea y configura las colas, tuberias y procesos que se utilizaran. multiprocess_config es su archivo de configuracion
   
@@ -33,7 +33,4 @@ bci
   * scipy >= 0.10
   * pyqtgraph >= 0.9.8
   * Beep (linux)
-
-
-
 

@@ -1,5 +1,5 @@
 from multiprocessing import Process, Pipe, Queue
-from data_processing import data_processing
+from Processing.data_processing import data_processing
 from multiprocess_config import DATA_BUFFER, WARNIGNS_BUFFER, GRAPH_DATA_BUFFER
 from configuration import GENERAL_CONFIG as CONFIG
 
