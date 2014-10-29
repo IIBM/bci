@@ -546,8 +546,8 @@ class  bci_data_handler():
     def update(self, data_struct):
               
         if data_struct["filter_mode"] is False:
-            mean = data_struct["new_data"].mean(axis=1)
-            self.data_new = data_struct["new_data"] - mean[:, np.newaxis]
+            #mean = data_struct["new_data"].mean(axis=1)
+            self.data_new = data_struct["new_data"] #- mean[:, np.newaxis]
         else:
             self.data_new = data_struct["new_data"]
             

@@ -4,11 +4,11 @@ import numpy
 import logging
 
 if __name__ != '__main__':
-    from configuration import DATA_FRAME_CONFIG as CONFIG
-    AMPCOUNT = CONFIG['AMPCOUNT']
+    from configuration import CONFIG_PARSER
+    AMPCOUNT = int(CONFIG_PARSER['FORMAT_CONFIG']['ampcount'])
 else:
-    from bci_config_editor import load_configuration
-    AMPCOUNT = load_configuration('DATA_FRAME','ampcount',int)
+    from Graphics.bci_config_editor import load_configuration
+    AMPCOUNT = 2
 
 logger = logging.getLogger('okapi')
 
