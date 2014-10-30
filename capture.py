@@ -66,9 +66,21 @@ def get_data(com, send_warnings, dev, cola):
     save_data = False
     
     reg_files = FileHandle()
-    parser = Parser(cola)
+    parser = Parser(cola,logging,data_in)
     comando = 'normal'
     extra_data = 0
+    
+    from configuration import CONFIG_PARSER
+    
+    COMM = {}
+    for x in CONFIG_PARSER['FORMAT_CONFIG']:
+        if CONFIG_PARSER['FORMAT_CONFIG'][x].isdigit():
+            COMM[x.upper()] = int(CONFIG_PARSER['FORMAT_CONFIG'][x])
+        else:
+            COMM[x.upper()] = CONFIG_PARSER['FORMAT_CONFIG'][x]
+        
+        
+    
     data = np.ndarray(COMM['L_FRAME'] * CONFIG['PAQ_USB'] * 2, np.int16) #es el doble de grande que el que sera utilizado normalmente
     dev.start(int(CONFIG['FS']))
 

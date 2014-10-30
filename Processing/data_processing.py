@@ -73,7 +73,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
 #    new_data = np.ndarray([CONFIG['CANT_CANALES'],
 #                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL])
     new_data = np.ndarray([CONFIG['#CHANNELS'],
-                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL*2])
+                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL*2],dtype=np.int16)
     
     while(control != EXIT_SIGNAL):
         while not proccesing_control.poll():
@@ -94,7 +94,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             #falta muucho x implementar     
             
             #terriblemente mal no tiene en cuenta los bordes y la deteccion de spikes
-            filtered_data=signal.filtfilt(FILTER_COEF, [1], new_data,padtype=None)[:,EXTRA_SIGNAL:-EXTRA_SIGNAL]
+            filtered_data = (signal.filtfilt(FILTER_COEF, [1], new_data,padtype=None)[:,EXTRA_SIGNAL:-EXTRA_SIGNAL])
             spikes_times = spikes_detect(filtered_data, ui_config[1]) 
             
             graph_data["spikes_times"] = spikes_times

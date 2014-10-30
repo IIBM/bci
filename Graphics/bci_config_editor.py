@@ -24,6 +24,7 @@ uifile = path.join(
 CONFIG_PARSER = {}
 save_file = DEFAULT_FOLDER + time.asctime()
 
+
 def config_editor():    
     #app = QtGui.QApplication([])
     #config.set('FILE','generic_file',QtGui.QFileDialog.getSaveFileName())
@@ -102,7 +103,7 @@ class Config_dialog(QtGui.QDialog):
         config.set('GENERAL', 'channels', str(self.channels_line.text()))
         config.set('GENERAL', 'adc_scale', str(self.adc_scale.text()))
         config.set('GENERAL', 'format',self.format_config.get('GENERAL','format') )
-        config.set('GENERAL', 'online',not self.offline_mode)
+        config.set('GENERAL', 'online_mode',str(not self.offline_mode))
         config.set('GENERAL', 'filtered',self.format_config.get('GENERAL','filtered') )
         
        #? online save in some place?
