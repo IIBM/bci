@@ -172,7 +172,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -329,7 +329,7 @@
             <string>Pause</string>
            </property>
            <property name="shortcut">
-            <string notr="true">Space</string>
+            <string notr="true">P</string>
            </property>
            <property name="checkable">
             <bool>true</bool>

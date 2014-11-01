@@ -26,7 +26,13 @@ class Parser():
         self.sinc = 0
         self.first_read = True
         self.send_warnings = send_warnings
-        
+        self.data = np.ndarray(COMM['L_FRAME'] * CONFIG['PAQ_USB'] * 2, np.int16) #es el doble de grande que el que sera utilizado normalmente
+
+    def get_raw(self,extra_data):
+        new_pack_data = (CONFIG['PAQ_USB'] + extra_data) * COMM['L_FRAME']
+        return self.data[:new_pack_data]  
+    
+    
     def online_update(self, data):
         """Recibe datos, los parsea. Si llena una trama fija retorna 0, 
         si faltan mas datos retorna cuantos, si sobran retorna -1"""

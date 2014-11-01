@@ -69,34 +69,18 @@ def get_data(com, send_warnings, dev, cola):
     parser = Parser(cola,logging,data_in)
     comando = 'normal'
     extra_data = 0
-    
-    from configuration import CONFIG_PARSER
-    
-    COMM = {}
-    for x in CONFIG_PARSER['FORMAT_CONFIG']:
-        if CONFIG_PARSER['FORMAT_CONFIG'][x].isdigit():
-            COMM[x.upper()] = int(CONFIG_PARSER['FORMAT_CONFIG'][x])
-        else:
-            COMM[x.upper()] = CONFIG_PARSER['FORMAT_CONFIG'][x]
-        
-        
-    
-    data = np.ndarray(COMM['L_FRAME'] * CONFIG['PAQ_USB'] * 2, np.int16) #es el doble de grande que el que sera utilizado normalmente
     dev.start(int(CONFIG['FS']))
-
+  
     while(comando != EXIT_SIGNAL):
         while not com.poll(): #mientras no se recivan comandos leo
             if (dev.data_available() >= 1000000):
-                # data es un array de numpy de uint16
-                # n es un entero que tiene la cantidad de palabras de 16 bits transmitidas
-                new_pack_data = (CONFIG['PAQ_USB'] + extra_data) * COMM['L_FRAME']
-                #puedo guardar lo q devuelve y se la cant de datos:                
-                dev.read_data(data[:new_pack_data]) #deberia ser N mas grande, si me faltan N tramas
+                new_data = get_raw(extra_data)
+                dev.read_data(new_data) #deberia ser N mas grande, si me faltan N tramas
                 if save_data:
-                    reg_files.save(data[:new_pack_data]) 
+                    reg_files.save(new_data) 
                 
-                extra_data = parser.online_update(data[:new_pack_data])
-
+                extra_data = parser.online_update(new_data)
+                new_data = get_raw(extra_data)
                 while extra_data <= 0: #estoy justo o me sobran datos
                     try:
                         cola.put(parser.data, timeout = TIMEOUT_PUT)
@@ -106,7 +90,8 @@ def get_data(com, send_warnings, dev, cola):
                         except Queue_Full:
                             logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                     if extra_data < 0: #sobraban datos
-                        extra_data = parser.online_update(data[:new_pack_data]) 
+                        extra_data = parser.online_update(new_data) 
+                        new_data = get_raw(extra_data)
                     else:
                         break
             else :
@@ -165,13 +150,13 @@ class FileHandle():
             config_parser.set(newsection, 'channels', CONFIG['#CHANNELS'])
             config_parser.set(newsection, 'adc_scale', CONFIG['ADC_SCALE'])
             
-            newsection = 'DATA_FRAME'
-            config_parser.add_section(newsection)
-            config_parser.set(newsection, 'l_frame', COMM['L_FRAME'])
-            config_parser.set(newsection, 'channels_pos', COMM['CHANNELS_POS'])
-            config_parser.set(newsection, 'counter_pos', COMM['COUNTER_POS'])
-            config_parser.set(newsection, 'hash_pos', COMM['HASH_POS'])
-            config_parser.set(newsection, 'ampcount', COMM['AMPCOUNT'])
+#            newsection = 'DATA_FRAME'
+#            config_parser.add_section(newsection)
+#            config_parser.set(newsection, 'l_frame', COMM['L_FRAME'])
+#            config_parser.set(newsection, 'channels_pos', COMM['CHANNELS_POS'])
+#            config_parser.set(newsection, 'counter_pos', COMM['COUNTER_POS'])
+#            config_parser.set(newsection, 'hash_pos', COMM['HASH_POS'])
+#            config_parser.set(newsection, 'ampcount', COMM['AMPCOUNT'])
             
             newsection = 'DATA_INFO'
             config_parser.add_section(newsection)
@@ -185,7 +170,7 @@ class FileHandle():
         
 class data_in():
     """Estructua que se envia al siguiente proceso"""
-    #tambien se podria implementar con un diccionario
+    __slots__ = ['data_loss_cuts','spikes','channels']
     def __init__(self):
         self.data_loss_cuts = list()
         self.spikes = list()

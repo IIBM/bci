@@ -6,16 +6,17 @@ import time
 from PyQt4  import QtCore 
 
 USER_CONFIG_FILE = path.join(path.dirname(path.abspath(path.dirname(__file__))), "user_config.ini")
+DEFAULT_CONFIG_FILE = path.join(path.dirname(path.abspath(path.dirname(__file__))),"user_config_DEFAULT.ini")
 DEFAULT_FOLDER = path.expanduser('~') + "/bci_registros/"
 freq_availables = [1,2.5,5,10,15,20,25,30] #in kHz
 win_availables = ['boxcar', 'triang', 'blackman', 'hamming', 'hann', 'bartlett', 'flattop', 'parzen', 'bohman', 'blackmanharris', 'nuttall', 'barthann']
 config = ConfigParser()
 load_file_folder = path.expanduser('~') + "/bci_registros/"
 
-if path.isfile(USER_CONFIG_FILE):
+if path.isfile(USER_CONFIG_FILE) and  (path.getmtime(DEFAULT_CONFIG_FILE) < path.getmtime(USER_CONFIG_FILE)): 
     config.read(USER_CONFIG_FILE)
 else:
-    config.read(path.join(path.dirname(path.abspath(path.dirname(__file__))),"user_config_DEFAULT.ini"))
+    config.read(DEFAULT_CONFIG_FILE)
 
 uifile = path.join(
     path.abspath(
@@ -30,8 +31,9 @@ def config_editor():
     #config.set('FILE','generic_file',QtGui.QFileDialog.getSaveFileName())
 
     dialog = Config_dialog()
+    dialog.setWindowIcon(QtGui.QIcon('Graphics/icon_config.png'))
+
     dialog.show()
-    
     if dialog.exec_() == QtGui.QDialog.Accepted:
         return config, save_file, CONFIG_PARSER
     else:
@@ -195,4 +197,10 @@ def Config2Dicc(parser_config,dirname):
     
 if __name__ == '__main__':
     app = QtGui.QApplication([])
-    config = config_editor()
+    #app.setWindowIcon(QtGui.QIcon('icon_config.png'))
+    #config = config_editor()
+    dialog = Config_dialog()
+    dialog.setWindowIcon(QtGui.QIcon('icon_config.png'))
+    dialog.show()
+    dialog.exec_()
+

@@ -43,6 +43,7 @@ def main():
 
     window = MainWindow(processing_process, get_data_process)
     window.show()
+    APP.setWindowIcon(QtGui.QIcon('Graphics/icon.png'))
     APP.exec_()
     
     
