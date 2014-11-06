@@ -95,11 +95,11 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             
             #terriblemente mal no tiene en cuenta los bordes y la deteccion de spikes
             filtered_data = (signal.filtfilt(FILTER_COEF, [1], new_data,padtype=None)[:,EXTRA_SIGNAL:-EXTRA_SIGNAL])
-            spikes_times = spikes_detect(filtered_data, ui_config[1]) 
+            spikes_times = spikes_detect(filtered_data, ui_config.thresholds) 
             
             graph_data["spikes_times"] = spikes_times
             
-            if ui_config[0] is True:
+            if ui_config.filter_mode is True:
                 graph_data["new_data"] = filtered_data
                 graph_data["filter_mode"] = True
             else:

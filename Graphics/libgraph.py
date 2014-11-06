@@ -9,6 +9,7 @@ from threading import Thread
 from copy import copy
 from multiprocess_config import *
 
+from collections import namedtuple
 from configuration import SPIKE_CONFIG
 from configuration import LIBGRAPH_CONFIG as LG_CONFIG
 from configuration import FILE_CONFIG
@@ -22,7 +23,8 @@ spike_duration_samples = int(SPIKE_CONFIG['SPIKE_DURATION'] / 1000.0*CONFIG['FS'
 CH_COLORS = ['r', 'y', 'g', 'c', 'p', 'w']
 NOT_SAVING_MESSAGE = 'without saving'
 SAVING_MESSAGE = 'writing in:'
-fft_frec = np.linspace(0, CONFIG['FS'] / 2, LG_CONFIG['FFT_L']/2)
+FFT_SIZE = CONFIG['FS'] / LG_CONFIG['FFT_RESOLUTION']
+fft_frec = np.linspace(0, CONFIG['FS'] / 2, FFT_SIZE/2)
 one_pack_time = CONFIG['PAQ_USB'] / CONFIG['FS']
 PACK_xSPIKE_COUNT = int(float(LG_CONFIG['TIME_SPIKE_COUNT']) / one_pack_time)
 FREQFIX_xSPIKE_COUNT = (float(PACK_xSPIKE_COUNT)*one_pack_time)
@@ -35,6 +37,8 @@ if LG_CONFIG['TWO_WINDOWS']:
     second_win_file = path.join(path.abspath(
                               path.dirname(__file__)),'second_window.ui')
 
+
+UserOptions_t=namedtuple('UserOptions_t','filter_mode thresholds')
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, processing_process, get_data_process):
@@ -232,7 +236,7 @@ class  plus_display():
         self.fft_n = 0
         self.data_fft = 0
         self.fft_l = 0
-        self.fft_aux = np.zeros([LG_CONFIG['FFT_N'], LG_CONFIG['FFT_L'] / 2])
+        self.fft_aux = np.zeros([LG_CONFIG['FFT_N'], FFT_SIZE / 2])
         self.data_fft_aux = np.zeros([CONFIG['PAQ_USB']*LG_CONFIG['FFT_L_PAQ']])
         self.threshold_visible(True)
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
@@ -276,8 +280,8 @@ class  plus_display():
                 self.fft_l = 0
                 if (self.fft_n <LG_CONFIG['FFT_N']):
                     self.fft_aux[self.fft_n, :] = (abs(fftpack.fft(self.data_fft_aux,
-                            n = LG_CONFIG['FFT_L'])[:LG_CONFIG['FFT_L'] / 2])
-                                ** 2. / float(LG_CONFIG['FFT_L']))
+                            n = FFT_SIZE)[:FFT_SIZE / 2])
+                                ** 2. / float(FFT_SIZE))
                     self.fft_n += 1
                 else:
                     self.fft_n = 0
@@ -612,7 +616,7 @@ class Channels_Configuration():
     def try_send(self):
         if self.changed == True:
             try:
-                self.queue.put((self.filter_mode, self.thresholds))
+                self.queue.put(UserOptions_t(filter_mode=self.filter_mode, thresholds=self.thresholds))
             except Queue_Full:
                 pass
             self.changed = False

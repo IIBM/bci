@@ -30,7 +30,7 @@ else:
        
     LIBGRAPH_CONFIG = {
         'BEEP_FREQ' : CONFIG.get('GRAPHICS', 'beep_freq'),
-        'FFT_L' : CONFIG.getint('GRAPHICS', 'fft_l'),
+        'FFT_RESOLUTION' : CONFIG.getint('GRAPHICS', 'fft_resolution'),
         'FFT_N' : CONFIG.getint('GRAPHICS', 'fft_n'),
         'FFT_L_PAQ' : CONFIG.getint('GRAPHICS', 'fft_l_paq'),
         'ROWS_DISPLAY' : CONFIG.getint('GRAPHICS', 'rows_display'),
