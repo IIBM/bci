@@ -74,13 +74,13 @@ def get_data(com, send_warnings, dev, cola):
     while(comando != EXIT_SIGNAL):
         while not com.poll(): #mientras no se recivan comandos leo
             if (dev.data_available() >= 1000000):
-                new_data = get_raw(extra_data)
+                new_data = parser.get_raw(extra_data)
                 dev.read_data(new_data) #deberia ser N mas grande, si me faltan N tramas
                 if save_data:
                     reg_files.save(new_data) 
                 
                 extra_data = parser.online_update(new_data)
-                new_data = get_raw(extra_data)
+                new_data = parser.get_raw(extra_data)
                 while extra_data <= 0: #estoy justo o me sobran datos
                     try:
                         cola.put(parser.data, timeout = TIMEOUT_PUT)
@@ -90,8 +90,8 @@ def get_data(com, send_warnings, dev, cola):
                         except Queue_Full:
                             logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                     if extra_data < 0: #sobraban datos
-                        extra_data = parser.online_update(new_data) 
-                        new_data = get_raw(extra_data)
+                        extra_data = parser.online_update(new_data)
+                        new_data = parser.get_raw(extra_data)
                     else:
                         break
             else :
