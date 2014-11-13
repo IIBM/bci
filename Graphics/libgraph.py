@@ -33,12 +33,14 @@ beep_command = "beep -f " + LG_CONFIG['BEEP_FREQ'] + " -l " \
 
 UIFILE = path.join(path.abspath(path.dirname(__file__)), 'bciui.ui')
 
+SHOW_ERROR_TIME = 5000 #ms
+
 if LG_CONFIG['TWO_WINDOWS']:
     second_win_file = path.join(path.abspath(
                               path.dirname(__file__)),'second_window.ui')
 
 
-UserOptions_t=namedtuple('UserOptions_t','filter_mode thresholds')
+UserOptions_t=namedtuple('UserOptions_t','filter_mode thr_manual_mode thr_values ')
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, processing_process, get_data_process):
@@ -71,7 +73,6 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.manual_thr_cb, QtCore.SIGNAL("clicked( bool)"),
                                self.manual_thr)
         
-        self.processing_process_warning = False
         self.contador_registro = -1
         self.timer = QtCore.QTimer()
         self.loss_data = 0
@@ -81,10 +82,7 @@ class MainWindow(QtGui.QMainWindow):
         self.timer.start(0) #si va demasiado lento deberia bajarse el tiempo
         
         
-        self.warnings = QtGui.QLabel("")
-        self.statusBar.addPermanentWidget(self.warnings)
-        self.status = QtGui.QLabel("")
-        self.statusBar.addPermanentWidget(self.status)
+
         self.file_label = QtGui.QLabel("")
         self.statusBar.addPermanentWidget(self.file_label)
         self.dockWidget.setTitleBarWidget(QtGui.QWidget())
@@ -96,7 +94,7 @@ class MainWindow(QtGui.QMainWindow):
         self.signal_config.change_filter_mode(mode)
         self.info_tetrodo.show_line = mode
         self.info_tetrodo.threshold_visible(mode)     
-        
+
     def update(self):
         """"Loop que se ejecuta si llegan nuevos paquetes"""
         try:
@@ -113,17 +111,14 @@ class MainWindow(QtGui.QMainWindow):
             new_mess = self.get_data_process.warnings.get(TIMEOUT_GET)       
             if new_mess[0] != SLOW_PROCESS_SIGNAL:
                 self.loss_data += new_mess[1]
-                self.warnings.setText("Loss data: " + str(self.loss_data))
+                self.statusBar.showMessage("Loss data: " + str(self.loss_data),SHOW_ERROR_TIME)
+
             else:
-                self.warnings.setText(Errors_Messages[new_mess[0]])
+                self.statusBar.showMessage(Errors_Messages[new_mess[0]],SHOW_ERROR_TIME)
         
         if (not self.processing_process.warnings.empty()):
-            self.processing_process_warning = True
-            self.status.setText(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)])
+            self.statusBar.showMessage(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)],SHOW_ERROR_TIME)
 
-        elif(self.processing_process_warning):
-            self.status.setText("")                  
-            self.processing_process_warning = False
           
                     
         #self.dialogo.update(self.data)
@@ -527,9 +522,8 @@ class Second_Display_Window(QtGui.QDialog):
     def closeEvent(self, evnt):
         if self.closeable is False:
             evnt.ignore()
-            
-        
-       
+
+
 class  bci_data_handler():
     """Controla el alineado de datos, actualizaciones y configuracion 
     de entrada, agregando una capa de abstraccion al resto de los metodos"""
@@ -616,7 +610,9 @@ class Channels_Configuration():
     def try_send(self):
         if self.changed == True:
             try:
-                self.queue.put(UserOptions_t(filter_mode=self.filter_mode, thresholds=self.thresholds))
+                self.queue.put(UserOptions_t(filter_mode=self.filter_mode, 
+                                             thr_manual_mode = self.th_manual_modes,
+                                             thr_values =self.thresholds)) 
             except Queue_Full:
                 pass
             self.changed = False

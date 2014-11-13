@@ -18,16 +18,14 @@ EXTRA_SIGNAL=SP_CONFIG['LENGTH_FILTER']-1
 
 
 N_STORAGE = 3 #cantidad de paq q se van a usar para calcular medianas etc
-DEFAULT_rT = 4 #for detect
 
 
 class Signal_Parameters():
     def __init__(self, data):
 
         self.storage_channel = np.ndarray(CONFIG['PAQ_USB']*N_STORAGE)
-        self.std = data.std(1)
-        self.std_fd = np.diff(data).std(1)
-        self.rT = DEFAULT_rT * np.ones(CONFIG['#CHANNELS'],np.int16)
+        self.std = calc_std(data)
+        self.std_fd = np.ndarray(CONFIG['#CHANNELS'])
     
     def update(self,ch):
         pass
@@ -95,7 +93,8 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             
             #terriblemente mal no tiene en cuenta los bordes y la deteccion de spikes
             filtered_data = (signal.filtfilt(FILTER_COEF, [1], new_data,padtype=None)[:,EXTRA_SIGNAL:-EXTRA_SIGNAL])
-            spikes_times = spikes_detect(filtered_data, ui_config.thresholds) 
+            
+            spikes_times = spikes_detect(filtered_data, ui_config.thr_values) 
             
             graph_data["spikes_times"] = spikes_times
             
