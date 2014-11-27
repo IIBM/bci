@@ -31,7 +31,7 @@ def config_editor():
     #config.set('FILE','generic_file',QtGui.QFileDialog.getSaveFileName())
 
     dialog = Config_dialog()
-    dialog.setWindowIcon(QtGui.QIcon('Graphics/icon_config.png'))
+#    dialog.setWindowIcon(QtGui.QIcon('Graphics/icon_config.png'))
 
     dialog.show()
     if dialog.exec_() == QtGui.QDialog.Accepted:
@@ -44,6 +44,7 @@ class Config_dialog(QtGui.QDialog):
     def __init__(self):
         QtGui.QDialog.__init__(self)
         uic.loadUi(uifile, self)
+
         
         self.default_files = True
         
@@ -200,7 +201,13 @@ if __name__ == '__main__':
     #app.setWindowIcon(QtGui.QIcon('icon_config.png'))
     #config = config_editor()
     dialog = Config_dialog()
-    dialog.setWindowIcon(QtGui.QIcon('icon_config.png'))
+    
+#    c_icon = QtGui.QIcon()
+#    c_icon.addFile('icon_config.png',QtCore.QSize(64,64))
+#    dialog.setWindowIcon(c_icon)
+    
+    
+    
     dialog.show()
     dialog.exec_()
 

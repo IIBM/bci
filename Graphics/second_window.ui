@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Display 2</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon.svg</normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon.svg</iconset>
+  </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
     <widget class="GraphicsView" name="graphicsView"/>

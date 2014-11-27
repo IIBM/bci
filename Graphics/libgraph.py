@@ -40,26 +40,35 @@ if LG_CONFIG['TWO_WINDOWS']:
                               path.dirname(__file__)),'second_window.ui')
 
 
-UserOptions_t=namedtuple('UserOptions_t','filter_mode thr_manual_mode thr_values ')
+UserOptions_t=namedtuple('UserOptions_t','filter_mode thr_values ')
 
+variable='tetrode'
+
+if variable == 'Tetrode':
+    ELEC_GROUP=4
+    
+elif variable == 'Single':
+    ELEC_GROUP=1
+    
+    
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, processing_process, get_data_process):
         QtGui.QMainWindow.__init__(self)
         uic.loadUi(UIFILE, self)
-        #diagolo q da mas info del canal
-        #self.dialogo=Dialog_Tet()
-        #self.matriz_tetrodos=tets_display(self.espacio_pg)
-        #for i in range((CONFIG['#CHANNELS'])/4):
-            #self.tet_plus_selec.addItem('T%s' % (i + 1))  Config_processing
+
+
         self.processing_process = processing_process
         self.get_data_process = get_data_process
+        self.data_handler = bci_data_handler()
         self.signal_config = Channels_Configuration(queue = self.processing_process.ui_config_queue)#HARDCODE
         self.active_channels = [False] *CONFIG['#CHANNELS']
         self.signal_config.try_send()
         self.info_tetrodo = plus_display(self.plus_grid,
-                                         self.plus_grid_fr, self.signal_config)
+                                         self.plus_grid_fr, self.signal_config,
+                                         self.info_label.setText,self.thr_p.setText)
         self.matriz_tetrodos = general_display(self.espacio_pg, self.info_tetrodo)
-        self.data_handler = bci_data_handler()
+        
+        
         QtCore.QObject.connect(self.tet_plus_mode, QtCore.SIGNAL("currentIndexChanged(int)"), 
                                self.info_tetrodo.change_display_mode) 
         QtCore.QObject.connect(self.display_scale, QtCore.SIGNAL("valueChanged(int)"),
@@ -72,7 +81,8 @@ class MainWindow(QtGui.QMainWindow):
                                self.activate_channel)
         QtCore.QObject.connect(self.manual_thr_cb, QtCore.SIGNAL("clicked( bool)"),
                                self.manual_thr)
-        
+
+        self.thr_p.setValidator(QtGui.QDoubleValidator())
         self.contador_registro = -1
         self.timer = QtCore.QTimer()
         self.loss_data = 0
@@ -82,13 +92,20 @@ class MainWindow(QtGui.QMainWindow):
         self.timer.start(0) #si va demasiado lento deberia bajarse el tiempo
         
         
+        
 
         self.file_label = QtGui.QLabel("")
         self.statusBar.addPermanentWidget(self.file_label)
         self.dockWidget.setTitleBarWidget(QtGui.QWidget())
         self.file_label.setText(NOT_SAVING_MESSAGE)
         self.change_filter_mode(self.filter_mode_button.isChecked())
-        
+    
+    def about(self):
+        QtGui.QMessageBox.about(self, "About",
+        """Essentially, all expressions of human nature ever produced, from a caveman's paintings to Mozart's symphonies and Einstein's view of the universe, emerge from the same source: the relentless dynamic toil of large populations of interconnected neurons.
+        Miguel Nicolelis""")  
+     
+     
     def change_filter_mode(self, mode):
         """"Define si se pide la segnial pura o la filtrada"""
         self.signal_config.change_filter_mode(mode)
@@ -120,13 +137,10 @@ class MainWindow(QtGui.QMainWindow):
             self.statusBar.showMessage(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)],SHOW_ERROR_TIME)
 
           
-                    
         #self.dialogo.update(self.data)
         #self.matriz_tasas.update(self.tasas_disparo)
         self.matriz_tetrodos.update(self.data_handler.graph_data, self.data_handler.n_view)
         self.info_tetrodo.update(self.data_handler, self.pausa.isChecked())
-        self.info_label.setText('TET:'+str(int(self.info_tetrodo.channel/4)+1)
-                                +' C:'+str(self.info_tetrodo.channel%4+1))
         self.active_channel_cb.setChecked(self.active_channels[self.info_tetrodo.channel])
         self.manual_thr_cb.setChecked(self.signal_config.th_manual_modes[self.info_tetrodo.channel])
         
@@ -195,7 +209,7 @@ class MainWindow(QtGui.QMainWindow):
     def manual_thr(self, i):
         """Agrega el canal seleccionado a la lista de canales activos"""
         self.signal_config.change_th_mode(self.info_tetrodo.channel,i)
-
+        #self.info_tetrodo.change_th_mode(self.info_tetrodo.channel,i)
        
     def on_actionInit_SP(self):
         """Comienza el proceso de spike sorting en los canales activos"""
@@ -207,24 +221,29 @@ class MainWindow(QtGui.QMainWindow):
                 
 class  plus_display():
     """Clase que engloba el display inferior junto a los metodos que lo implican individualmente"""
-    def __init__(self, espacio_pg, plus_grid_fr, signal_config): 
+    def __init__(self, espacio_pg, plus_grid_fr, signal_config,set_label,thr_p_label): 
         self.mode = 0 
         self.channel = 0
         self.signal_config = signal_config
         self.tasas_bars = bar_graph()
+        self.set_label=set_label
+        self.thr_p_label=thr_p_label
         #layout_graphicos.addItem(self.tasas_bars,row=None, col=0, rowspan=1, colspan=1)
         #graph=layout_graphicos.addPlot(row=None, col=1, rowspan=1, colspan=3)
         self.graph = pg.PlotItem()
         axis = self.graph.getAxis('left')
         axis.setScale(scale = CONFIG['ADC_SCALE'])
-        
+        self.std = np.ndarray(CONFIG['#CHANNELS'])
         self.VB = self.graph.getViewBox()
         self.VB.setXRange(0, CONFIG['PAQ_USB']/float(CONFIG['FS']), padding=0, update=True)
         self.VB.setYRange(LG_CONFIG['DISPLAY_LIMY'], -LG_CONFIG['DISPLAY_LIMY'], padding=0, update=True)
         self.graph.setMenuEnabled(enableMenu = False, enableViewBoxMenu = None)
         self.graph.setDownsampling(auto = True)
         self.curve = self.graph.plot()
-        self.graph_umbral = pg.InfiniteLine(pen = 'b', angle = 0, movable = True)
+        self.graph_umbral = pg.InfiniteLine(pen = pg.mkPen('w', width=2), angle = 0, movable = True)
+        #QtCore.QObject.connect(self.graph_umbral, QtCore.SIGNAL("sigPositionChange()"), 
+                               #self.pepe)
+        self.graph_umbral.sigPositionChangeFinished.connect(self.thr_changed)
         self.graph.enableAutoRange('y', False)
         espacio_pg.setCentralItem(self.graph)
         plus_grid_fr.setCentralItem(self.tasas_bars)
@@ -237,8 +256,15 @@ class  plus_display():
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
         self.show_line = False
         self.pause_mode = False
-        
-        
+        self.change_channel(self.channel)
+    
+    def thr_changed(self):
+        if self.signal_config.th_manual_modes[self.channel]:
+            
+            self.signal_config.change_th(self.channel, self.graph_umbral.value())
+            
+            self.thr_p_label("{0:.1f}".format(self.graph_umbral.value()/self.std[self.channel]))
+
     def update(self, data_handler, pause_mode):
         """Lo ejecutan al llegar nuevos paquetes"""
         if pause_mode != self.pause_mode:
@@ -260,12 +286,11 @@ class  plus_display():
         tet = int(self.channel / 4)
         
         self.tasas_bars.update(data_handler.spikes_times[tet*4:tet*4+4])
-        
+        self.std = data_handler.std
 
         if self.mode is 0:
             self.curve.setPen(CH_COLORS[self.channel%4])
             self.curve.setData(x = xtime[:n_view], y = data[self.channel, :n_view])
-            self.signal_config.change_th(self.channel, self.graph_umbral.value())
       
         else:
             if( self.fft_l < LG_CONFIG['FFT_L_PAQ']):
@@ -325,13 +350,16 @@ class  plus_display():
     def change_channel(self, canal):
         """Modifica el canal que se grafica actualmente, 
         refrescando las barras de firing rate si pertenece a otro tetrodo"""
-        if int(self.channel/4) != int(self.channel/4):
+        if int(self.channel/4) != int(canal/4):
             self.tasas_bars.tet_changed()
         self.channel = canal
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
+        if self.signal_config.th_manual_modes[self.channel]:
+            self.graph_umbral.setMovable(True)
+            self.graph_umbral.setMovable(True)
         self.fft_l = 0
         self.fft_n = 0
-
+        self.set_label('TET:'+str(int(canal/4)+1) +' C:'+str(canal%4+1))
 
 
 class  bar_graph(pg.PlotItem):
@@ -540,6 +568,8 @@ class  bci_data_handler():
         self.n_view = self.paq_view*CONFIG['PAQ_USB']
         self.xtime = np.zeros([LG_CONFIG['MAX_PAQ_DISPLAY']*CONFIG['PAQ_USB']])
         self.xtime[:self.n_view] = np.linspace(0, self.n_view / float(CONFIG['FS']), self.n_view)
+        self.std = np.ndarray(CONFIG['#CHANNELS'])
+    
     
     def update(self, data_struct):
               
@@ -550,6 +580,8 @@ class  bci_data_handler():
             self.data_new = data_struct["new_data"]
             
         self.spikes_times = data_struct["spikes_times"]
+        
+        self.std = data_struct["std"]
         
         if(self.new_paq_view != self.paq_view):
             self.paq_view = self.new_paq_view
@@ -580,11 +612,13 @@ def beep(sk_time):
 
 class Channels_Configuration():
     def __init__(self, queue, filter_mode = None,
-        thresholds = LG_CONFIG['DISPLAY_LIMY']/2*np.ones([CONFIG['#CHANNELS'],1])):
+        thresholds = LG_CONFIG['DISPLAY_LIMY']/2*np.ones(CONFIG['#CHANNELS'])):
         
 
         self.thresholds =thresholds
-        self.th_manual_modes = np.ones(CONFIG['#CHANNELS'])
+        self.th_manual_modes = np.ones(CONFIG['#CHANNELS'],dtype=bool)
+        self.th_r_p = np.ndarray(CONFIG['#CHANNELS'])
+        
         self.filter_mode = filter_mode
         self.queue = queue
         self.changed = True
@@ -593,14 +627,17 @@ class Channels_Configuration():
         
         if(self.thresholds[ch] != value):
             self.thresholds[ch] = value
+            
             self.changed = True
 
     def change_th_mode(self, ch, value):
         
         if(self.th_manual_modes[ch] != value):
             self.th_manual_modes[ch] = value
-            self.changed = True        
-        
+            self.changed = True
+            
+            
+            
     def change_filter_mode(self, state):
         if(self.filter_mode != state):
             self.filter_mode = state
@@ -611,7 +648,6 @@ class Channels_Configuration():
         if self.changed == True:
             try:
                 self.queue.put(UserOptions_t(filter_mode=self.filter_mode, 
-                                             thr_manual_mode = self.th_manual_modes,
                                              thr_values =self.thresholds)) 
             except Queue_Full:
                 pass

@@ -21,24 +21,34 @@ N_STORAGE = 3 #cantidad de paq q se van a usar para calcular medianas etc
 
 
 class Signal_Parameters():
-    def __init__(self, data):
+    def __init__(self):
 
-        self.storage_channel = np.ndarray(CONFIG['PAQ_USB']*N_STORAGE)
-        self.std = calc_std(data)
+        self.std = np.ndarray(CONFIG['#CHANNELS'])
         self.std_fd = np.ndarray(CONFIG['#CHANNELS'])
+        self.std4upd = 0
     
-    def update(self,ch):
-        pass
+    def parcial_update(self,data): 
+        self.std[self.std4upd] = (calc_std(data[self.std4upd,:],0) + self.std[self.std4upd]) /2.
+        self.std_fd[self.std4upd] = (calc_std(np.diff(data[self.std4upd,:]),0)
+                                        + self.std_fd[self.std4upd]) /2.
+        
 
+    
+    def update(self,data): 
+        self.std= calc_std(data,1)
+        self.std= calc_std(np.diff(data),1)
+        #next time wil execute the parcial_update method                    
+        self.update = self.parcial_update   
+        
 #def calcular_umbral_disparo(data,canales):
     #x=abs(signal.lfilter(b_spike,a_spike,data[canales,:]))
     #umbrales=4*np.median(x/0.6745)
     #return x,umbrales
     
-def calc_std(x):
-    return np.median(np.abs(x)/0.6745,1)
+def calc_std(x,axis):
+    return np.median(np.abs(x)/0.6745,axis)
     
-def spikes_detect(x, umbral):    
+def spikes_detect(x, umbral):  
     new_spikes_times = list()
     #aux=[]
     for i in xrange(CONFIG['#CHANNELS']):
@@ -61,7 +71,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
         "std" : np.zeros(CONFIG['#CHANNELS'],np.int16)
     }
 
-    
+    params = Signal_Parameters()
     
     
     control = ''
@@ -94,16 +104,21 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             #terriblemente mal no tiene en cuenta los bordes y la deteccion de spikes
             filtered_data = (signal.filtfilt(FILTER_COEF, [1], new_data,padtype=None)[:,EXTRA_SIGNAL:-EXTRA_SIGNAL])
             
-            spikes_times = spikes_detect(filtered_data, ui_config.thr_values) 
             
+            params.update(filtered_data)
+            
+            spikes_times = spikes_detect(filtered_data, ui_config.thr_values)
+                   
             graph_data["spikes_times"] = spikes_times
+            graph_data["std"] = params.std
+            
+            graph_data["filter_mode"] = ui_config.filter_mode
             
             if ui_config.filter_mode is True:
                 graph_data["new_data"] = filtered_data
-                graph_data["filter_mode"] = True
             else:
                 graph_data["new_data"] = new_data[:, EXTRA_SIGNAL*2:]
-                graph_data["filter_mode"] = False
+                
             try:
                 graph_data_queue.put_nowait(graph_data)
             except Queue_Full:
@@ -112,7 +127,9 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
                 except Queue_Full:
                     pass
             #new_data[:,:EXTRA_SIGNAL] = new_data[:, -EXTRA_SIGNAL:]
+                    
             new_data[:, :EXTRA_SIGNAL*2] = new_data[:, -2*EXTRA_SIGNAL:]
+        
         control = proccesing_control.recv()
         #falta la opcion iniciar sorting usando la pipe q hace q 
         #se cierre el proceso para transportar la info
