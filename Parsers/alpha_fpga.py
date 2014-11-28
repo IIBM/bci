@@ -26,11 +26,11 @@ class Parser():
         self.sinc = 0
         self.first_read = True
         self.send_warnings = send_warnings
-        self.data = np.ndarray(COMM['l_frame'] * CONFIG['PAQ_USB'] * 2, np.int16) #es el doble de grande que el que sera utilizado normalmente
+        self.data_raw = np.ndarray(COMM['l_frame'] * CONFIG['PAQ_USB'] * 2, np.int16) #es el doble de grande que el que sera utilizado normalmente
 
     def get_raw(self,extra_data):
         new_pack_data = (CONFIG['PAQ_USB'] + extra_data) * COMM['l_frame']
-        return self.data[:new_pack_data]  
+        return self.data_raw[:new_pack_data]  
     
     
     def online_update(self, data):

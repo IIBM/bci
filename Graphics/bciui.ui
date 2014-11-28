@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>696</width>
-     <height>29</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">
@@ -261,7 +261,7 @@
             <string>Manual</string>
            </property>
            <property name="checked">
-            <bool>true</bool>
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -275,7 +275,7 @@
          <item row="6" column="0">
           <widget class="QLineEdit" name="thr_p">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="sizePolicy">
             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -515,34 +515,34 @@
  <resources/>
  <connections>
   <connection>
-   <sender>actionDetener</sender>
-   <signal>triggered()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>on_actionDetener()</slot>
+   <sender>manual_thr_cb</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>thr_p</receiver>
+   <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
+     <x>169</x>
+     <y>497</y>
     </hint>
     <hint type="destinationlabel">
-     <x>379</x>
-     <y>288</y>
+     <x>169</x>
+     <y>549</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>actionSalir</sender>
+   <sender>actionAbout</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>on_actionSalir()</slot>
+   <slot>about()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>379</x>
-     <y>288</y>
+     <x>347</x>
+     <y>294</y>
     </hint>
    </hints>
   </connection>
@@ -563,6 +563,38 @@
    </hints>
   </connection>
   <connection>
+   <sender>actionSalir</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>on_actionSalir()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>379</x>
+     <y>288</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDetener</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>on_actionDetener()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>379</x>
+     <y>288</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>actionInit_SP</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
@@ -575,38 +607,6 @@
     <hint type="destinationlabel">
      <x>347</x>
      <y>283</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>manual_thr_cb</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>thr_p</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>152</x>
-     <y>452</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>156</x>
-     <y>512</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>actionAbout</sender>
-   <signal>triggered()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>about()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>347</x>
-     <y>294</y>
     </hint>
    </hints>
   </connection>

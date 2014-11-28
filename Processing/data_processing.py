@@ -4,6 +4,7 @@ from configuration import GENERAL_CONFIG as CONFIG
 from multiprocess_config import *
 from configuration import SIGNAL_PROCESSING_CONFIG as SP_CONFIG
 
+
 if SP_CONFIG['BAND_PASS']:
     FILTER_FREQ = [float(SP_CONFIG['FMIN']*2)/CONFIG['FS'],
                    float(SP_CONFIG['FMAX']*2)/CONFIG['FS']]
@@ -87,7 +88,8 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
         while not proccesing_control.poll():
             if not ui_config_queue.empty():
                 try:
-                    ui_config = ui_config_queue.get(TIMEOUT_GET)#usar algun tipo de estructura
+                    #se lo tuvo q enviar antes sino pincha todo
+                    ui_config = ui_config_queue.get(TIMEOUT_GET)
                 except Queue_Empty:
                     pass
             
@@ -107,7 +109,9 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             
             params.update(filtered_data)
             
-            spikes_times = spikes_detect(filtered_data, ui_config.thr_values)
+            new_thr = ui_config.thr_values*(~ui_config.thr_manual_mode*params.std + ui_config.thr_manual_mode)
+            
+            spikes_times = spikes_detect(filtered_data, new_thr)
                    
             graph_data["spikes_times"] = spikes_times
             graph_data["std"] = params.std

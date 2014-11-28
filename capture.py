@@ -51,7 +51,7 @@ def get_data_from_file(com, send_warnings, cola):
                     except Queue_Full:
                         logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                 if save_data:
-                    reg_files.save(parser.data)
+                    reg_files.save(parser.new_data)
 
         comando = com.recv()
         save_data = (comando == START_SIGNAL)
