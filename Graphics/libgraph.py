@@ -20,7 +20,7 @@ from os import path, system
 
 
 spike_duration_samples = int(SPIKE_CONFIG['SPIKE_DURATION'] / 1000.0*CONFIG['FS'])
-CH_COLORS = ['r', 'y', 'g', 'c', 'p', 'w']
+CH_COLORS = ['r', 'y', 'g', 'c', 'p', 'm']
 NOT_SAVING_MESSAGE = 'without saving'
 SAVING_MESSAGE = 'writing in:'
 FFT_SIZE = CONFIG['FS'] / LG_CONFIG['FFT_RESOLUTION']
@@ -42,14 +42,16 @@ if LG_CONFIG['TWO_WINDOWS']:
 
 UserOptions_t=namedtuple('UserOptions_t','filter_mode thr_values thr_manual_mode')
 
-variable='tetrode'
-
-if variable == 'tetrode':
+if CONFIG['PROBES_CONFIG'] == 'tetrode':
     ELEC_GROUP = 4
+    PROBE_CONF_L = 'TeT'    
     
-elif variable == 'single':
-    ELEC_GROUP=1
-    
+elif CONFIG['PROBES_CONFIG'] == 'Stereotrode':
+    ELEC_GROUP = 2
+    PROBE_CONF_L = 'SteT' 
+else:
+    ELEC_GROUP = 1
+    PROBE_CONF_L = '' 
     
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, processing_process, get_data_process):
@@ -66,13 +68,13 @@ class MainWindow(QtGui.QMainWindow):
         self.info_tetrodo = plus_display(self.plus_grid,
                                          self.plus_grid_fr, self.signal_config,
                                          self.info_label.setText,self.thr_p.setText)
-        self.matriz_tetrodos = general_display(self.espacio_pg, self.info_tetrodo)
+        self.general_display = GeneralDisplay(self.espacio_pg, self.info_tetrodo)
         
         
         QtCore.QObject.connect(self.tet_plus_mode, QtCore.SIGNAL("currentIndexChanged(int)"), 
                                self.info_tetrodo.change_display_mode) 
         QtCore.QObject.connect(self.display_scale, QtCore.SIGNAL("valueChanged(int)"),
-                               self.matriz_tetrodos.changeYrange)  
+                               self.general_display.changeYrange)  
         QtCore.QObject.connect(self.filter_mode_button, QtCore.SIGNAL("clicked( bool)"), 
                                self.change_filter_mode)  
         QtCore.QObject.connect(self.paq_view, QtCore.SIGNAL("valueChanged(int)"), 
@@ -98,7 +100,7 @@ class MainWindow(QtGui.QMainWindow):
         
         self.file_label = QtGui.QLabel("")
         self.statusBar.addPermanentWidget(self.file_label)
-        self.dockWidget.setTitleBarWidget(QtGui.QWidget())
+        #self.dockWidget.setTitleBarWidget(QtGui.QWidget())
         self.file_label.setText(NOT_SAVING_MESSAGE)
         self.change_filter_mode(self.filter_mode_button.isChecked())
     
@@ -141,7 +143,7 @@ class MainWindow(QtGui.QMainWindow):
           
         #self.dialogo.update(self.data)
         #self.matriz_tasas.update(self.tasas_disparo)
-        self.matriz_tetrodos.update(self.data_handler.graph_data, self.data_handler.n_view)
+        self.general_display.update(self.data_handler.graph_data, self.data_handler.n_view)
         self.info_tetrodo.update(self.data_handler, self.pausa.isChecked())
         self.active_channel_cb.setChecked(self.active_channels[self.info_tetrodo.channel])
         self.manual_thr_cb.setChecked(self.signal_config.th_manual_modes[self.info_tetrodo.channel])
@@ -170,7 +172,7 @@ class MainWindow(QtGui.QMainWindow):
         #self.get_data_process.process.join(1)
         self.processing_process.process.terminate()
         self.get_data_process.process.terminate()
-        self.matriz_tetrodos.close()
+        self.general_display.close()
         #self.close()
         QtCore.QCoreApplication.instance().quit()
         #exit()        
@@ -183,16 +185,11 @@ class MainWindow(QtGui.QMainWindow):
         self.contador_registro += 1
         self.file_label.setText(SAVING_MESSAGE + FILE_CONFIG['GENERIC_FILE'] +'-'+str(self.contador_registro))
 
-#    def change_filter_model(self, state):
-#        self.signal_config.filter_mode = state
-#        self.signal_config.changed = True
-#        self.info_tetodo.show_line = not state
-#        self.info_tetodo.threshold_visible(not state)
     #def set_autoRange(self):
         #if self.autoRange.isChecked():
-            #self.matriz_tetrodos.setAutoRange(True)
+            #self.general_display.setAutoRange(True)
         #else:
-            #self.matriz_tetrodos.setAutoRange(False)
+            #self.general_display.setAutoRange(False)
         
     def closeEvent(self, event):
         u"""Redirige las senales que disparen ese evento al metodo on_actionSalir()"""
@@ -201,7 +198,7 @@ class MainWindow(QtGui.QMainWindow):
     def changeXrange(self, i):
         """Modifica la cantidad de paquetes que se dibujan en los displays"""
         self.data_handler.change_paq_view(i)
-        self.matriz_tetrodos.changeXrange(i)
+        self.general_display.changeXrange(i)
     
     def activate_channel(self, i):
         """Agrega el canal seleccionado a la lista de canales activos"""
@@ -212,7 +209,7 @@ class MainWindow(QtGui.QMainWindow):
         """Comienza el proceso de spike sorting en los canales activos"""
         self.active_channel_cb.setCheckable(False)
         self.processing_process.control.send(self.active_channels)
-        #FER termina esto
+        #implementacion pendiente
     #@QtCore.pyqtSlot()          
 
                 
@@ -223,8 +220,8 @@ class  plus_display():
         self.channel = 0
         self.signal_config = signal_config
         self.tasas_bars = bar_graph()
-        self.set_label=set_label
-        self.thr_p_label=thr_p_label
+        self.set_label = set_label
+        self.thr_p_label = thr_p_label
         #layout_graphicos.addItem(self.tasas_bars,row=None, col=0, rowspan=1, colspan=1)
         #graph=layout_graphicos.addPlot(row=None, col=1, rowspan=1, colspan=3)
         self.graph = pg.PlotItem()
@@ -237,18 +234,22 @@ class  plus_display():
         self.graph.setMenuEnabled(enableMenu = False, enableViewBoxMenu = None)
         self.graph.setDownsampling(auto = True)
         self.curve = self.graph.plot()
-        self.graph_umbral = pg.InfiniteLine(pen = pg.mkPen('w', width=2), angle = 0, movable = True)
         #QtCore.QObject.connect(self.graph_umbral, QtCore.SIGNAL("sigPositionChange()"), 
-                               #self.pepe)
-        self.graph_umbral.sigPositionChangeFinished.connect(self.thr_changed)
-        self.graph.enableAutoRange('y', False)
+        self.graph.enableAutoRange('y', False)                       #self.pepe)
+        
         espacio_pg.setCentralItem(self.graph)
         plus_grid_fr.setCentralItem(self.tasas_bars)
+        
+        self.graph_umbral = pg.InfiniteLine(pen = pg.mkPen('w', width=2), angle = 0, movable = True)
+        self.graph_umbral.sigPositionChangeFinished.connect(self.thr_changed)
+
+        
         self.fft_n = 0
-        self.data_fft = 0
+        #self.data_fft = 0
         self.fft_l = 0
         self.fft_aux = np.zeros([LG_CONFIG['FFT_N'], FFT_SIZE / 2])
         self.data_fft_aux = np.zeros([CONFIG['PAQ_USB']*LG_CONFIG['FFT_L_PAQ']])
+        
         self.threshold_visible(True)
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
         self.show_line = False
@@ -351,7 +352,7 @@ class  plus_display():
             new_mode = self.mode
         
         if new_mode is 0:
-            
+            self.thr_p_label.setEnabled(True)
             self.VB.setXRange(0, self.max_xtime, padding = 0, update = False)
             #self.graph.setLogMode(x=False,y=False)
             if self.show_line:
@@ -374,6 +375,7 @@ class  plus_display():
 
         else: 
             #self.graph.setLogMode(x=True,y=True)
+            self.thr_p_label.setEnabled(False)
             self.VB.setXRange(0, CONFIG['FS']/2, padding=0, update=False)
             if(self.mode is 0 and self.show_line):
                 self.threshold_visible(False)
@@ -412,7 +414,10 @@ class  plus_display():
             
         self.fft_l = 0
         self.fft_n = 0
-        self.set_label('TET:'+str(int(canal/ELEC_GROUP)+1) +' C:'+str(canal%ELEC_GROUP+1))
+        if PROBE_CONF_L:
+            self.set_label('{}:{} | C:{}'.format(PROBE_CONF_L,int(canal/ELEC_GROUP)+1,canal%ELEC_GROUP+1))
+        else:
+            self.set_label('Ch : {}'.format(canal))
 
 
 class  bar_graph(pg.PlotItem):
@@ -456,7 +461,7 @@ class  bar_graph(pg.PlotItem):
         self.npack = 0
         self.tasas = np.zeros([PACK_xSPIKE_COUNT, ELEC_GROUP])
         
-class general_display():
+class GeneralDisplay():
     def __init__(self, espacio_pg, info_tet):
         layout_graphicos = pg.GraphicsLayout(border = (100, 0, 100)) 
         #para ordenar los graphicos(items) asi como el simil con los widgets

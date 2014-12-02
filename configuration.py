@@ -19,7 +19,8 @@ else:
         'PAQ_USB' : CONFIG.getint('GENERAL', 'data_package'),
         'ADC_SCALE' : CONFIG.getint('GENERAL', 'adc_scale'),
         'FORMAT' : CONFIG.get('GENERAL', 'format'),
-        'FILTERED' : CONFIG.getboolean('GENERAL', 'filtered')
+        'FILTERED' : CONFIG.getboolean('GENERAL', 'filtered'),
+        'PROBES_CONFIG' : CONFIG.get('GENERAL', 'probes_config')
     }
 
     FILE_CONFIG = {

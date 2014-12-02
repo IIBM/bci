@@ -9,6 +9,8 @@ USER_CONFIG_FILE = path.join(path.dirname(path.abspath(path.dirname(__file__))),
 DEFAULT_CONFIG_FILE = path.join(path.dirname(path.abspath(path.dirname(__file__))),"user_config_DEFAULT.ini")
 DEFAULT_FOLDER = path.expanduser('~') + "/bci_registros/"
 freq_availables = [1,2.5,5,10,15,20,25,30] #in kHz
+pconfig_availables = ['Single', 'Stereotrode','Tetrode']
+
 win_availables = ['boxcar', 'triang', 'blackman', 'hamming', 'hann', 'bartlett', 'flattop', 'parzen', 'bohman', 'blackmanharris', 'nuttall', 'barthann']
 config = ConfigParser()
 load_file_folder = path.expanduser('~') + "/bci_registros/"
@@ -40,16 +42,30 @@ def config_editor():
         QtCore.QCoreApplication.instance().quit()
         return None
 
+class ConfigCBX(QtGui.QComboBox):
+    def set_conf(self,availables,section,item):
+        self.availables = availables
+        self.section = section
+        self.item = item
+        for l in range(len(availables)):
+            self.addItem(availables[l])
+            if config.get(section,item) == availables[l]:
+                self.setCurrentIndex(l)
+        self.currentIndexChanged.connect(self.update_conf)
+    
+    def update_conf(self,new_index):
+        config.set(self.section,self.item,self.availables[new_index])
+        
 class Config_dialog(QtGui.QDialog):
     def __init__(self):
         QtGui.QDialog.__init__(self)
         uic.loadUi(uifile, self)
 
+        self.prob_cong_cb.set_conf(pconfig_availables,'GENERAL','probes_config')
         
         self.default_files = True
-        
+
         self.fs_line.setValidator(QtGui.QIntValidator())
-         
         #self.channels_line.setText(config.get('GENERAL','channels'))
         self.channels_line.setValidator(QtGui.QIntValidator())
         
@@ -134,10 +150,13 @@ class Config_dialog(QtGui.QDialog):
                 self.error.setText("Error: High pass freq > Low pass freq")
                 return False
                 
-            if freq_availables[self.cb_freq.currentIndex()]*1000 <= 2*int(self.lp_line.text()):
+            if float(self.fs_line.text()) <= 2*float(self.lp_line.text()):
                 self.error.setText("Error: Low pass freq > Fs/2")
                 return False
             
+        elif float(self.fs_line.text()) <= 2*float(self.hp_line.text()):
+            self.error.setText("Error: high-pass freq > Fs/2")
+            return False
        
         elif (int(self.filter_l_line.text())%2) == 0:
             self.error.setText("Error: High pass with <br>   even number of coefficients")
@@ -197,9 +216,12 @@ def Config2Dicc(parser_config,dirname):
     return thedict
     
 if __name__ == '__main__':
+    from os import chdir
+    chdir('..')
     app = QtGui.QApplication([])
     #app.setWindowIcon(QtGui.QIcon('icon_config.png'))
     #config = config_editor()
+    
     dialog = Config_dialog()
     
 #    c_icon = QtGui.QIcon()
