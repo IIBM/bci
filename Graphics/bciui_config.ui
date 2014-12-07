@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon_config.svg</normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon_config.svg</iconset>
+    <normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon_config.png</normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon_config.png</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout_5">
    <item row="2" column="1">
@@ -76,12 +76,61 @@
        <string>General</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="0" column="0" colspan="2">
-        <widget class="QLabel" name="label_3">
+       <item row="1" column="3" colspan="2">
+        <widget class="ConfigLE" name="channels_line">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Sampling rate:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string/>
+         </property>
+         <property name="readOnly">
+          <bool>false</bool>
          </property>
         </widget>
+       </item>
+       <item row="4" column="3" colspan="2">
+        <widget class="ConfigLE" name="data_pack_line">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="readOnly">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="3">
+        <spacer name="verticalSpacer_12">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>56</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="10" column="0">
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>99</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item row="0" column="2">
         <spacer name="horizontalSpacer">
@@ -99,105 +148,20 @@
          </property>
         </spacer>
        </item>
-       <item row="0" column="3">
-        <widget class="QLineEdit" name="fs_line">
+       <item row="2" column="3" colspan="2">
+        <widget class="ConfigCBX" name="prob_cong_cb">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="font">
           <font>
            <pointsize>11</pointsize>
           </font>
          </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="readOnly">
-          <bool>false</bool>
-         </property>
         </widget>
-       </item>
-       <item row="0" column="4">
-        <widget class="QLabel" name="label_14">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;KHz&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;#Channels:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1" colspan="2">
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Minimum</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>10</width>
-           <height>10</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="1" column="3" colspan="2">
-        <widget class="QLineEdit" name="channels_line">
-         <property name="font">
-          <font>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="readOnly">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="2">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'DejaVu Sans'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Cantarell'; font-size:12pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;robe Configuration:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <spacer name="horizontalSpacer_8">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Minimum</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>10</width>
-           <height>10</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="3" column="3">
-        <spacer name="verticalSpacer_11">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>61</height>
-          </size>
-         </property>
-        </spacer>
        </item>
        <item row="4" column="0" colspan="2">
         <widget class="QLabel" name="label_6">
@@ -226,80 +190,60 @@ p, li { white-space: pre-wrap; }
          </property>
         </spacer>
        </item>
-       <item row="4" column="3" colspan="2">
-        <widget class="QLineEdit" name="data_pack_line">
-         <property name="font">
-          <font>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
+       <item row="2" column="0" colspan="2">
+        <widget class="QLabel" name="label_7">
          <property name="text">
-          <string/>
-         </property>
-         <property name="readOnly">
-          <bool>false</bool>
+          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'DejaVu Sans'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Cantarell'; font-size:12pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;robe Configuration:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="3">
-        <spacer name="verticalSpacer_12">
+       <item row="2" column="2">
+        <spacer name="horizontalSpacer_8">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Minimum</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>20</width>
-           <height>56</height>
+           <width>10</width>
+           <height>10</height>
           </size>
          </property>
         </spacer>
        </item>
-       <item row="6" column="0" colspan="4">
-        <widget class="Line" name="line_2">
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;#Channels:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1" colspan="2">
+        <spacer name="horizontalSpacer_2">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
-        </widget>
+         <property name="sizeType">
+          <enum>QSizePolicy::Minimum</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>10</width>
+           <height>10</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item row="7" column="0" colspan="2">
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Imput data config:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="format_file_label">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <spacer name="horizontalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>99</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="2" column="3" colspan="2">
-        <widget class="ConfigCBX" name="prob_cong_cb">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>11</pointsize>
-          </font>
          </property>
         </widget>
        </item>
@@ -313,6 +257,26 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Ubuntu'; font-size:11pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
+       </item>
+       <item row="6" column="0" colspan="4">
+        <widget class="Line" name="line_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="3">
+        <spacer name="verticalSpacer_11">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>61</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item row="10" column="3" colspan="2">
         <widget class="QPushButton" name="load_file_b">
@@ -336,6 +300,35 @@ p, li { white-space: pre-wrap; }
          </property>
          <property name="checked">
           <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Sampling rate[kHz]:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3" colspan="2">
+        <widget class="ConfigLE" name="fs_line">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="readOnly">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0" colspan="5">
+        <widget class="QLabel" name="format_file_label">
+         <property name="text">
+          <string/>
          </property>
         </widget>
        </item>
@@ -420,7 +413,7 @@ p, li { white-space: pre-wrap; }
         </spacer>
        </item>
        <item row="0" column="2">
-        <widget class="QLineEdit" name="adc_scale"/>
+        <widget class="ConfigLE" name="adc_scale"/>
        </item>
        <item row="0" column="3">
         <widget class="QLabel" name="label_17">
@@ -544,7 +537,7 @@ p, li { white-space: pre-wrap; }
         </spacer>
        </item>
        <item row="0" column="4">
-        <widget class="QLineEdit" name="hp_line">
+        <widget class="ConfigLE" name="hp_line">
          <property name="text">
           <string/>
          </property>
@@ -574,7 +567,7 @@ p, li { white-space: pre-wrap; }
         </spacer>
        </item>
        <item row="1" column="4">
-        <widget class="QComboBox" name="cb_win">
+        <widget class="ConfigCBX" name="win_confg_cb">
          <property name="editable">
           <bool>false</bool>
          </property>
@@ -604,7 +597,7 @@ p, li { white-space: pre-wrap; }
         </spacer>
        </item>
        <item row="3" column="4">
-        <widget class="QLineEdit" name="filter_l_line">
+        <widget class="ConfigLE" name="filter_l_line">
          <property name="text">
           <string/>
          </property>
@@ -668,7 +661,7 @@ p, li { white-space: pre-wrap; }
         </spacer>
        </item>
        <item row="7" column="4">
-        <widget class="QLineEdit" name="lp_line">
+        <widget class="ConfigLE" name="lp_line">
          <property name="text">
           <string/>
          </property>
@@ -700,6 +693,11 @@ p, li { white-space: pre-wrap; }
   <customwidget>
    <class>ConfigCBX</class>
    <extends>QComboBox</extends>
+   <header>Graphics/bci_config_editor.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ConfigLE</class>
+   <extends>QLineEdit</extends>
    <header>Graphics/bci_config_editor.h</header>
   </customwidget>
  </customwidgets>

@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon.svg</normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon.svg</iconset>
+    <normaloff>icon.png</normaloff>icon.png</iconset>
   </property>
   <property name="iconSize">
    <size>
@@ -75,6 +75,9 @@
     <property name="title">
      <string>View</string>
     </property>
+    <addaction name="actionFiring_rates"/>
+    <addaction name="actionSelected_Channel"/>
+    <addaction name="actionControl_Panel"/>
    </widget>
    <addaction name="menuMenu"/>
    <addaction name="menuSave"/>
@@ -83,7 +86,7 @@
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <widget class="QDockWidget" name="dockWidget_3">
+  <widget class="QDockWidget" name="control_panel_dock">
    <property name="sizePolicy">
     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
      <horstretch>0</horstretch>
@@ -92,7 +95,7 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>5</width>
+     <width>114</width>
      <height>96</height>
     </size>
    </property>
@@ -102,11 +105,15 @@
      <height>524287</height>
     </size>
    </property>
+   <property name="windowIcon">
+    <iconset>
+     <normaloff>icon.png</normaloff>icon.png</iconset>
+   </property>
    <property name="floating">
     <bool>false</bool>
    </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
     <string>Control</string>
@@ -546,7 +553,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockWidget_2">
+  <widget class="QDockWidget" name="firing_rates_dock">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
      <horstretch>0</horstretch>
@@ -570,8 +577,12 @@
      <pointsize>8</pointsize>
     </font>
    </property>
+   <property name="windowIcon">
+    <iconset>
+     <normaloff>icon.png</normaloff>icon.png</iconset>
+   </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
     <string>Firing rate</string>
@@ -621,8 +632,12 @@
      <pointsize>8</pointsize>
     </font>
    </property>
+   <property name="windowIcon">
+    <iconset>
+     <normaloff>icon.png</normaloff>icon.png</iconset>
+   </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
     <string>Selected channel</string>
@@ -688,8 +703,41 @@
     <string>About</string>
    </property>
   </action>
-  <zorder>dockWidget_3</zorder>
-  <zorder>dockWidget_2</zorder>
+  <action name="actionFiring_rates">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Firing rates</string>
+   </property>
+  </action>
+  <action name="actionSelected_Channel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Selected Channel</string>
+   </property>
+  </action>
+  <action name="actionControl_Panel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Control Panel</string>
+   </property>
+  </action>
+  <zorder>control_panel_dock</zorder>
+  <zorder>firing_rates_dock</zorder>
  </widget>
  <customwidgets>
   <customwidget>
@@ -787,12 +835,108 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>169</x>
-     <y>497</y>
+     <x>131</x>
+     <y>327</y>
     </hint>
     <hint type="destinationlabel">
-     <x>169</x>
-     <y>549</y>
+     <x>131</x>
+     <y>338</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionFiring_rates</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>firing_rates_dock</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>277</x>
+     <y>402</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>show_s_channel</sender>
+   <signal>visibilityChanged(bool)</signal>
+   <receiver>actionSelected_Channel</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>541</x>
+     <y>402</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionSelected_Channel</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>show_s_channel</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>541</x>
+     <y>402</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>firing_rates_dock</sender>
+   <signal>visibilityChanged(bool)</signal>
+   <receiver>actionFiring_rates</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>277</x>
+     <y>402</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionControl_Panel</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>control_panel_dock</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>89</x>
+     <y>402</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>control_panel_dock</sender>
+   <signal>visibilityChanged(bool)</signal>
+   <receiver>actionControl_Panel</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>89</x>
+     <y>402</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
     </hint>
    </hints>
   </connection>

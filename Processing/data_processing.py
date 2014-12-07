@@ -32,9 +32,11 @@ class Signal_Parameters():
         self.std[self.std4upd] = (calc_std(data[self.std4upd,:],0) + self.std[self.std4upd]) /2.
         self.std_fd[self.std4upd] = (calc_std(np.diff(data[self.std4upd,:]),0)
                                         + self.std_fd[self.std4upd]) /2.
-        
-
-    
+        self.std4upd +=1
+        if self.std4upd == CONFIG['#CHANNELS']:
+            self.std4upd = 0
+            
+            
     def update(self,data): 
         self.std= calc_std(data,1)
         self.std= calc_std(np.diff(data),1)

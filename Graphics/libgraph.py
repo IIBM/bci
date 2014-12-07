@@ -42,16 +42,20 @@ if LG_CONFIG['TWO_WINDOWS']:
 
 UserOptions_t=namedtuple('UserOptions_t','filter_mode thr_values thr_manual_mode')
 
-if CONFIG['PROBES_CONFIG'] == 'tetrode':
+if CONFIG['PROBES_CONFIG'] == 'Tetrode':
     ELEC_GROUP = 4
-    PROBE_CONF_L = 'TeT'    
+    PROBE_CONF_L = 'TeT'
+    GROUP_LABEL  = 'Tetrode'
     
 elif CONFIG['PROBES_CONFIG'] == 'Stereotrode':
     ELEC_GROUP = 2
     PROBE_CONF_L = 'SteT' 
+    GROUP_LABEL  = 'Stereotrode'
+    
 else:
     ELEC_GROUP = 1
-    PROBE_CONF_L = '' 
+    PROBE_CONF_L = ''
+    GROUP_LABEL  = 'Electrode'
     
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, processing_process, get_data_process):
@@ -211,7 +215,8 @@ class MainWindow(QtGui.QMainWindow):
         self.processing_process.control.send(self.active_channels)
         #implementacion pendiente
     #@QtCore.pyqtSlot()          
-
+#    def view_firing_rate_dock(self,view):
+#        self.firing_rates_dock.setVisible(view)  
                 
 class  plus_display():
     """Clase que engloba el display inferior junto a los metodos que lo implican individualmente"""
@@ -417,7 +422,7 @@ class  plus_display():
         if PROBE_CONF_L:
             self.set_label('{}:{} | C:{}'.format(PROBE_CONF_L,int(canal/ELEC_GROUP)+1,canal%ELEC_GROUP+1))
         else:
-            self.set_label('Ch : {}'.format(canal))
+            self.set_label('Electrode : {}'.format(canal))
 
 
 class  bar_graph(pg.PlotItem):
@@ -505,8 +510,9 @@ class GeneralDisplay():
                          padding = 0, update = True)
 
             if i % ELEC_GROUP is 0:
-                graph.setTitle('Tetrode ' + str(i / ELEC_GROUP + 1))
-            #if i%4 != 3:
+                graph.setTitle("<font size=\"3\">{} {}</font>".format(GROUP_LABEL,str(i / ELEC_GROUP + 1)))
+            
+            #if i%4 != 3:text
                 #graph.showAxis('bottom', show=False)
             graph.showAxis('bottom', show = False) 
             graph.showAxis('top', show = False)

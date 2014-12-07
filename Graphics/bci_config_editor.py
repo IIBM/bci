@@ -32,7 +32,7 @@ def config_editor():
     #app = QtGui.QApplication([])
     #config.set('FILE','generic_file',QtGui.QFileDialog.getSaveFileName())
 
-    dialog = Config_dialog()
+    dialog = Config_dialog(config)
 #    dialog.setWindowIcon(QtGui.QIcon('Graphics/icon_config.png'))
 
     dialog.show()
@@ -43,87 +43,88 @@ def config_editor():
         return None
 
 class ConfigCBX(QtGui.QComboBox):
-    def set_conf(self,availables,section,item):
+    def set_conf(self,availables,section,item,update_signal,config):
         self.availables = availables
         self.section = section
         self.item = item
+        self.config = config
+
         for l in range(len(availables)):
             self.addItem(availables[l])
-            if config.get(section,item) == availables[l]:
-                self.setCurrentIndex(l)
+        self.update()
+        update_signal.connect(self.update)
         self.currentIndexChanged.connect(self.update_conf)
     
     def update_conf(self,new_index):
-        config.set(self.section,self.item,self.availables[new_index])
+        self.config.set(self.section,self.item,self.availables[new_index])
         
+    def update(self):
+        for l in range(len(self.availables)):
+            if self.config.get(self.section,self.item) == self.availables[l]:
+                self.setCurrentIndex(l)
+
+class ConfigLE(QtGui.QLineEdit):
+    def set_conf(self,var_type,section,item,update_signal,config):
+        self.section = section
+        self.item = item
+        self.config = config
+
+        if var_type == int:
+            self.setValidator(QtGui.QIntValidator())
+            
+        elif var_type == float:
+            self.setValidator(QtGui.QDoubleValidator())
+        
+        self.update()
+        update_signal.connect(self.update)
+        self.textEdited.connect(self.update_conf)
+    
+    def update_conf(self,new_index):
+        self.config.set(self.section,self.item,str(self.text()))
+        
+    def update(self):
+        self.setText(self.config.get(self.section,self.item))
+
+
 class Config_dialog(QtGui.QDialog):
-    def __init__(self):
+    conf_updated_signal = QtCore.pyqtSignal()
+    def __init__(self,config):
         QtGui.QDialog.__init__(self)
         uic.loadUi(uifile, self)
-
-        self.prob_cong_cb.set_conf(pconfig_availables,'GENERAL','probes_config')
-        
+        self.config = config
         self.default_files = True
+        
+        self.prob_cong_cb.set_conf(pconfig_availables,'GENERAL','probes_config',self.conf_updated_signal,self.config)
+        self.win_confg_cb.set_conf(win_availables,'SIGNAL_PROCESSING','window_type',self.conf_updated_signal,self.config)
+        
+        self.fs_line.set_conf(int,'GENERAL','fs',self.conf_updated_signal,self.config)
+        self.channels_line.set_conf(int,'GENERAL','channels',self.conf_updated_signal,self.config)
+        self.data_pack_line.set_conf(int,'GENERAL','data_package',self.conf_updated_signal,self.config)
+        self.adc_scale.set_conf(float,'GENERAL','adc_scale',self.conf_updated_signal,self.config)
+        self.hp_line.set_conf(float,'SIGNAL_PROCESSING','fmin',self.conf_updated_signal,self.config)
+        self.filter_l_line.set_conf(int,'SIGNAL_PROCESSING','length_filter',self.conf_updated_signal,self.config)
+        self.lp_line.set_conf(float,'SIGNAL_PROCESSING','fmax',self.conf_updated_signal,self.config)
 
-        self.fs_line.setValidator(QtGui.QIntValidator())
-        #self.channels_line.setText(config.get('GENERAL','channels'))
-        self.channels_line.setValidator(QtGui.QIntValidator())
-        
-        self.data_pack_line.setText(config.get('GENERAL','data_package'))
-        self.adc_scale.setText(config.get('GENERAL','adc_scale'))
-        self.fs_line.setText(config.get('GENERAL','fs'))
-        self.channels_line.setText(config.get('GENERAL','channels'))
-        
-        
-        self.data_pack_line.setValidator(QtGui.QIntValidator())
-        
-        
-        self.adc_scale.setValidator(QtGui.QDoubleValidator())
-        
-        
-        self.save_file_label.setText(save_file)
-                
         self.rows_cb.setValue(config.getint('GRAPHICS','rows_display'))
-        self.two_win_cb.setChecked(config.getboolean('GRAPHICS','two_windows'))
-
-        for i in xrange(len(win_availables)):
-            if win_availables[i] == config.get('SIGNAL_PROCESSING','window_type'):
-                aux=i
-            self.cb_win.addItem(win_availables[i])   
-                
-        self.cb_win.setCurrentIndex(aux)
+        self.two_win_cb.setChecked(config.getboolean('GRAPHICS','two_windows'))        
         
-        self.hp_line.setText(config.get('SIGNAL_PROCESSING','fmin'))
-        self.hp_line.setValidator(QtGui.QIntValidator())
-        self.filter_l_line.setText(config.get('SIGNAL_PROCESSING', 'length_filter'))
-        self.filter_l_line.setValidator(QtGui.QIntValidator())
-        
-        self.lp_line.setText(config.get('SIGNAL_PROCESSING', 'fmax'))
-        self.lp_line.setValidator(QtGui.QIntValidator())
         self.band_pass_cb.setChecked(config.getboolean('SIGNAL_PROCESSING','band_pass'))
         self.change_filter_mode(self.band_pass_cb.isChecked())
         
-        #AUNQ PODRIAN CARGARSE POR DEFECTO DE CONFIG FS,CHANN,ADC,ONLINE_MODE
-        self.format_config = ConfigParser() 
+        self.save_file_label.setText(save_file)
         self.update_from_loadf_file(path.abspath(config.get('FILE','format_file')))
-        
 
     def My_accept(self):
         if self.check():
             self.update_config()
             config.write(open(USER_CONFIG_FILE,'w'))
-            
             self.accept()
     
     def update_config(self):
         
-        config.set('GENERAL', 'data_package', str(self.data_pack_line.text()))
-        config.set('GENERAL', 'fs', str(self.fs_line.text()))
-        config.set('GENERAL', 'channels', str(self.channels_line.text()))
-        config.set('GENERAL', 'adc_scale', str(self.adc_scale.text()))
-        config.set('GENERAL', 'format',self.format_config.get('GENERAL','format') )
+        config.set('GENERAL', 'format',self.config.get('GENERAL','format'))
         config.set('GENERAL', 'online_mode',str(not self.offline_mode))
-        config.set('GENERAL', 'filtered',self.format_config.get('GENERAL','filtered') )
+        config.set('GENERAL', 'filtered',self.config.get('GENERAL','filtered'))
         
        #? online save in some place?
         config.set('GRAPHICS', 'rows_display', str(self.rows_cb.value()))
@@ -135,13 +136,7 @@ class Config_dialog(QtGui.QDialog):
                 
         config.set('FILE', 'generic_file', str(self.save_file_label.text()))
         config.set('FILE', 'format_file', str(self.format_file_label.text()))
-        
-        config.set('SIGNAL_PROCESSING', 'band_pass', str(self.band_pass_cb.isChecked()))
-        config.set('SIGNAL_PROCESSING', 'fmin', str(self.hp_line.text()))
-        config.set('SIGNAL_PROCESSING', 'fmax', str(self.lp_line.text()))
-        config.set('SIGNAL_PROCESSING', 'length_filter', str(self.filter_l_line.text()))
-        config.set('SIGNAL_PROCESSING', 'window_type', str(win_availables[self.cb_win.currentIndex()]))
-        
+
 
     def check(self):        
         
@@ -174,24 +169,23 @@ class Config_dialog(QtGui.QDialog):
         self.channels_line.setEnabled(not offline)
         self.fs_line.setEnabled(not offline)
 
-        
     def update_from_loadf_file(self,format_config_file):
+        global CONFIG_PARSER
+        CONFIG_PARSER = Config2Dicc(format_config_file)
         
         self.format_file_label.setText(format_config_file)
+        
         f= open(format_config_file, 'r')
         self.info_text.setText(f.read())
         f.close()
-        self.format_config.read(format_config_file)
-    
-        self.fs_line.setText(self.format_config.get('GENERAL','fs'))
-        self.channels_line.setText(self.format_config.get('GENERAL','channels'))
-        self.offline_mode = not self.format_config.getboolean('GENERAL','online')
-        self.adc_scale.setText(self.format_config.get('GENERAL','adc_scale'))
+
+        self.config.read(format_config_file)
+        
+        self.offline_mode = not self.config.getboolean('GENERAL','online')
         
         self.change_mode(self.offline_mode)
-        global CONFIG_PARSER
-        CONFIG_PARSER = Config2Dicc(self.format_config, path.dirname(format_config_file))
-
+        self.conf_updated_signal.emit()
+        
     def change_load_file(self):
         load_file =str(QtGui.QFileDialog.getOpenFileName())
         if (load_file !=  ''):
@@ -205,31 +199,23 @@ class Config_dialog(QtGui.QDialog):
         
         
     
-    
-def Config2Dicc(parser_config,dirname):
+def Config2Dicc(format_config_file):
+    parser_config = ConfigParser()
+    parser_config.read(format_config_file)
     thedict = {}
     for section in parser_config.sections():
         thedict[section] = {}
         for key, val in parser_config.items(section):
             thedict[section][key] = val
-    thedict["FOLDER"] = dirname
+    thedict["FOLDER"] = path.dirname(format_config_file)
     return thedict
-    
+
+
 if __name__ == '__main__':
     from os import chdir
     chdir('..')
     app = QtGui.QApplication([])
-    #app.setWindowIcon(QtGui.QIcon('icon_config.png'))
-    #config = config_editor()
-    
-    dialog = Config_dialog()
-    
-#    c_icon = QtGui.QIcon()
-#    c_icon.addFile('icon_config.png',QtCore.QSize(64,64))
-#    dialog.setWindowIcon(c_icon)
-    
-    
-    
+
+    dialog = Config_dialog(config)    
     dialog.show()
     dialog.exec_()
-

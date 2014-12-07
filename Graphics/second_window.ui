@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon.svg</normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon.svg</iconset>
+    <normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon.png</normaloff>../../../../../../datos/Escritorio/tesis/bci/Graphics/icon.png</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
