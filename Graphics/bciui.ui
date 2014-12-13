@@ -42,7 +42,7 @@
      <x>0</x>
      <y>0</y>
      <width>708</width>
-     <height>24</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">
@@ -95,8 +95,8 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>114</width>
-     <height>96</height>
+     <width>118</width>
+     <height>106</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -562,8 +562,8 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>90</width>
-     <height>228</height>
+     <width>93</width>
+     <height>233</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -623,8 +623,8 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>90</width>
-     <height>228</height>
+     <width>93</width>
+     <height>233</height>
     </size>
    </property>
    <property name="font">
@@ -846,7 +846,7 @@
   </connection>
   <connection>
    <sender>actionFiring_rates</sender>
-   <signal>toggled(bool)</signal>
+   <signal>triggered(bool)</signal>
    <receiver>firing_rates_dock</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
@@ -878,7 +878,7 @@
   </connection>
   <connection>
    <sender>actionSelected_Channel</sender>
-   <signal>toggled(bool)</signal>
+   <signal>triggered(bool)</signal>
    <receiver>show_s_channel</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
@@ -910,7 +910,7 @@
   </connection>
   <connection>
    <sender>actionControl_Panel</sender>
-   <signal>toggled(bool)</signal>
+   <signal>triggered(bool)</signal>
    <receiver>control_panel_dock</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
