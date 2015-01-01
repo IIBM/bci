@@ -17,7 +17,7 @@ else:
         '#CHANNELS' : CONFIG.getint('GENERAL', 'channels'),
         'FS' : CONFIG.getfloat('GENERAL', 'fs'),
         'PAQ_USB' : CONFIG.getint('GENERAL', 'data_package'),
-        'ADC_SCALE' : CONFIG.getint('GENERAL', 'adc_scale'),
+        'ADC_SCALE' : CONFIG.getfloat('GENERAL', 'adc_scale'),
         'FORMAT' : CONFIG.get('GENERAL', 'format'),
         'FILTERED' : CONFIG.getboolean('GENERAL', 'filtered'),
         'PROBES_CONFIG' : CONFIG.get('GENERAL', 'probes_config')

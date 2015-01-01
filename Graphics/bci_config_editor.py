@@ -43,6 +43,8 @@ def config_editor():
         return None
 
 class ConfigCBX(QtGui.QComboBox):
+    """ framework between ConfigParser and QComboBox
+    """
     def set_conf(self,availables,section,item,update_signal,config):
         self.availables = availables
         self.section = section
@@ -63,7 +65,9 @@ class ConfigCBX(QtGui.QComboBox):
             if self.config.get(self.section,self.item) == self.availables[l]:
                 self.setCurrentIndex(l)
 
-class ConfigLE(QtGui.QLineEdit):
+class ConfigLE(QtGui.QLineEdit):    
+    """ framework between ConfigParser and QLineEdit
+    """
     def set_conf(self,var_type,section,item,update_signal,config):
         self.section = section
         self.item = item

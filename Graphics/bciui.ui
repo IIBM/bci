@@ -7,9 +7,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>708</width>
-    <height>572</height>
+    <width>852</width>
+    <height>671</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="font">
    <font>
@@ -25,9 +31,12 @@
   </property>
   <property name="iconSize">
    <size>
-    <width>128</width>
-    <height>128</height>
+    <width>256</width>
+    <height>256</height>
    </size>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowTabbedDocks</set>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -41,7 +50,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>708</width>
+     <width>852</width>
      <height>26</height>
     </rect>
    </property>
@@ -78,6 +87,7 @@
     <addaction name="actionFiring_rates"/>
     <addaction name="actionSelected_Channel"/>
     <addaction name="actionControl_Panel"/>
+    <addaction name="actionClustering"/>
    </widget>
    <addaction name="menuMenu"/>
    <addaction name="menuSave"/>
@@ -96,14 +106,25 @@
    <property name="minimumSize">
     <size>
      <width>118</width>
-     <height>106</height>
+     <height>104</height>
     </size>
    </property>
    <property name="maximumSize">
     <size>
-     <width>180</width>
+     <width>184</width>
      <height>524287</height>
     </size>
+   </property>
+   <property name="baseSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
    <property name="windowIcon">
     <iconset>
@@ -171,15 +192,15 @@
        </property>
        <property name="maximumSize">
         <size>
-         <width>400</width>
-         <height>500</height>
+         <width>250</width>
+         <height>400</height>
         </size>
        </property>
        <property name="tabPosition">
         <enum>QTabWidget::West</enum>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="tab">
         <property name="sizePolicy">
@@ -475,9 +496,6 @@
            <property name="text">
             <string>Pause</string>
            </property>
-           <property name="shortcut">
-            <string notr="true">P</string>
-           </property>
            <property name="checkable">
             <bool>true</bool>
            </property>
@@ -562,8 +580,8 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>93</width>
-     <height>233</height>
+     <width>104</width>
+     <height>235</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -623,8 +641,8 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>93</width>
-     <height>233</height>
+     <width>102</width>
+     <height>235</height>
     </size>
    </property>
    <property name="font">
@@ -663,6 +681,75 @@
        </property>
        <property name="resizeAnchor">
         <enum>QGraphicsView::NoAnchor</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="clustering_dock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>103</width>
+     <height>122</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+   <property name="windowIcon">
+    <iconset>
+     <normaloff>icon.png</normaloff>icon.png</iconset>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Clustering</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_8">
+    <layout class="QGridLayout" name="gridLayout_3">
+     <item row="5" column="0">
+      <widget class="QPushButton" name="pushButton">
+       <property name="text">
+        <string>Restart</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QPushButton" name="pushButton_4">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Results</string>
        </property>
       </widget>
      </item>
@@ -736,6 +823,18 @@
     <string>Control Panel</string>
    </property>
   </action>
+  <action name="actionClustering">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Clustering</string>
+   </property>
+  </action>
+  <zorder>clustering_dock</zorder>
   <zorder>control_panel_dock</zorder>
   <zorder>firing_rates_dock</zorder>
  </widget>
@@ -933,6 +1032,38 @@
     <hint type="sourcelabel">
      <x>89</x>
      <y>402</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionClustering</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>clustering_dock</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>572</x>
+     <y>144</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>clustering_dock</sender>
+   <signal>visibilityChanged(bool)</signal>
+   <receiver>actionClustering</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>572</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
      <x>-1</x>
