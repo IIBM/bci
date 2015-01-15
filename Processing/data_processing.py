@@ -74,11 +74,12 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
         "filter_mode" : False,
         "std" : np.zeros(CONFIG['#CHANNELS'],np.int16)
     }
-
+    activated_clustering = np.zeros(CONFIG['#CHANNELS'],bool)
+    clustered_channel = np.zeros(CONFIG['#CHANNELS'],bool)
+    activated_sps = np.zeros(CONFIG['#CHANNELS'],bool)
     params = Signal_Parameters()
     
-    
-    control = ''
+    control = {'command':''}
 #    mean_calc=np.int16(np.zeros([CONFIG['CANT_CANALES'],MEAN_L]))
 #    mean_l=0
 #    mean_aux=np.ndarray([CONFIG['CANT_CANALES'],1])
@@ -87,22 +88,17 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
     new_data = np.ndarray([CONFIG['#CHANNELS'],
                            CONFIG['PAQ_USB'] + EXTRA_SIGNAL*2],dtype=np.int16)
     
-    while(control != EXIT_SIGNAL):
+    while(control['command'] != EXIT_SIGNAL):
         while not proccesing_control.poll():
             if not ui_config_queue.empty():
-                try:
-                    #se lo tuvo q enviar antes sino pincha todo
-                    ui_config = ui_config_queue.get(TIMEOUT_GET)
-                except Queue_Empty:
-                    pass
-            
-            try:
+                ui_config = ui_config_queue.get(TIMEOUT_GET)
+
+            if not data_queue.empty():
                 new_pure_data = data_queue.get(TIMEOUT_GET)   
                 new_data[:,EXTRA_SIGNAL*2:] = new_pure_data.channels
-            except  Queue_Empty:
+            else:
                 continue
-            except AttributeError: #no se porque, entre q no envia nada y empieza envia una lista(?) y pincha channels
-                continue
+
             #filtar y enviar si filtro activo en conf o bien asi como esta
             #falta muucho x implementar     
             
@@ -138,5 +134,8 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             new_data[:, :EXTRA_SIGNAL*2] = new_data[:, -2*EXTRA_SIGNAL:]
         
         control = proccesing_control.recv()
+        
+        if control['command'] == 'clustering':
+            activated_clustering[control['channels']] = True
         #falta la opcion iniciar sorting usando la pipe q hace q 
         #se cierre el proceso para transportar la info

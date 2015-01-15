@@ -25,7 +25,8 @@ uifile = path.join(
         path.dirname(__file__)),'bciui_config.ui')
 
 CONFIG_PARSER = {}
-save_file = DEFAULT_FOLDER + time.asctime()
+ltime = time.localtime()
+save_file = DEFAULT_FOLDER + '{}{}_{}_{}{}'.format(ltime.tm_year,ltime.tm_mon,ltime.tm_mday,ltime.tm_hour,ltime.tm_min)
 
 
 def config_editor():    

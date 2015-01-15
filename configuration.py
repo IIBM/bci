@@ -23,6 +23,7 @@ else:
         'PROBES_CONFIG' : CONFIG.get('GENERAL', 'probes_config')
     }
 
+
     FILE_CONFIG = {
         'MAX_SIZE_FILE' : CONFIG.getint('FILE', 'max_size_file'),
         'GENERIC_FILE' : save_file,
@@ -53,5 +54,22 @@ else:
     SPIKE_CONFIG = {
         'SPIKE_DURATION' : CONFIG.getfloat('SPIKES', 'spike_duration') 
     }
-
-
+    
+    if GENERAL_CONFIG['PROBES_CONFIG'] == 'Tetrode':
+        ELEC_GROUP = 4
+        PROBE_CONF_L = 'TeT'
+        GROUP_LABEL  = 'Tetrode'
+        
+    elif GENERAL_CONFIG['PROBES_CONFIG'] == 'Stereotrode':
+        ELEC_GROUP = 2
+        PROBE_CONF_L = 'SteT' 
+        GROUP_LABEL  = 'Stereotrode'
+        
+    else:
+        ELEC_GROUP = 1
+        PROBE_CONF_L = ''
+        GROUP_LABEL  = 'Electrode'
+    
+    GENERAL_CONFIG['ELEC_GROUP'] = ELEC_GROUP
+    LIBGRAPH_CONFIG['PROBE_CONF_L'] = PROBE_CONF_L
+    LIBGRAPH_CONFIG['GROUP_LABEL'] = GROUP_LABEL

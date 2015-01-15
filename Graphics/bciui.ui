@@ -761,7 +761,7 @@
     <string>Stop</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+D</string>
+    <string>Ctrl+S</string>
    </property>
   </action>
   <action name="actionSalir">
@@ -769,7 +769,7 @@
     <string>Quit</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+S</string>
+    <string>Ctrl+Q</string>
    </property>
   </action>
   <action name="actionNuevo">
