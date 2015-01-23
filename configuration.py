@@ -1,7 +1,10 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+
 """Load onfiguration
-Crea estructuras que luego seran cargadas especificamente 
-por otros modulos.
+Create structures that will be loaded by other modules
+@author: Fernando J. Chaure
 """
 from Graphics.bci_config_editor import config_editor
 
@@ -51,8 +54,8 @@ else:
         'WINDOW_TYPE' : CONFIG.get('SIGNAL_PROCESSING', 'window_type')      
     }
 
-    SPIKE_CONFIG = {
-        'SPIKE_DURATION' : CONFIG.getfloat('SPIKES', 'spike_duration') 
+    BIO_CONFIG = {
+        'SPIKE_DURATION' : CONFIG.getfloat('BIO', 'spike_duration')
     }
     
     if GENERAL_CONFIG['PROBES_CONFIG'] == 'Tetrode':

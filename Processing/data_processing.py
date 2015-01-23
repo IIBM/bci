@@ -68,7 +68,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
                     proccesing_control, warnings):
     #import config
     graph_data = {
-        "type" : 'monitor', 
+        "type" : 'signal', 
         "new_data" : 0,
         "spikes_times" : np.zeros([0]),
         "filter_mode" : False,

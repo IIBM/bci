@@ -1,4 +1,11 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+"""
+
+@author: Fernando J. Chaure
+"""
+
+
 from PyQt4  import QtGui, uic
 from os import makedirs, path
 from ConfigParser import ConfigParser

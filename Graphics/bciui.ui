@@ -88,6 +88,8 @@
     <addaction name="actionSelected_Channel"/>
     <addaction name="actionControl_Panel"/>
     <addaction name="actionClustering"/>
+    <addaction name="actionLFP"/>
+    <addaction name="actionFFT"/>
    </widget>
    <addaction name="menuMenu"/>
    <addaction name="menuSave"/>
@@ -200,7 +202,7 @@
         <enum>QTabWidget::West</enum>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="tab">
         <property name="sizePolicy">
@@ -210,32 +212,9 @@
          </sizepolicy>
         </property>
         <attribute name="title">
-         <string>Signal</string>
+         <string>Source</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_2">
-         <item row="1" column="0">
-          <widget class="QComboBox" name="tet_plus_mode">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <item>
-            <property name="text">
-             <string>Time</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>FFT</string>
-            </property>
-           </item>
-          </widget>
-         </item>
          <item row="0" column="0">
           <widget class="QPushButton" name="filter_mode_button">
            <property name="sizePolicy">
@@ -756,6 +735,125 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="fft_dock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>102</width>
+     <height>235</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+   <property name="windowIcon">
+    <iconset>
+     <normaloff>icon.png</normaloff>icon.png</iconset>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Selected Channel Spectrum</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_5">
+    <layout class="QGridLayout" name="gridLayout_7">
+     <item row="0" column="0">
+      <widget class="GraphicsView" name="fft_grid">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>10000</height>
+        </size>
+       </property>
+       <property name="resizeAnchor">
+        <enum>QGraphicsView::NoAnchor</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="lfp_dock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>104</width>
+     <height>235</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>450</width>
+     <height>524287</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+   <property name="windowIcon">
+    <iconset>
+     <normaloff>icon.png</normaloff>icon.png</iconset>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>LFP</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QGridLayout" name="gridLayout_8">
+     <item row="0" column="0">
+      <widget class="GraphicsView" name="lfp_grid">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>450</width>
+         <height>9977</height>
+        </size>
+       </property>
+       <property name="resizeAnchor">
+        <enum>QGraphicsView::NoAnchor</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <action name="actionDetener">
    <property name="text">
     <string>Stop</string>
@@ -832,6 +930,28 @@
    </property>
    <property name="text">
     <string>Clustering</string>
+   </property>
+  </action>
+  <action name="actionLFP">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>LFP</string>
+   </property>
+  </action>
+  <action name="actionFFT">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>FFT</string>
    </property>
   </action>
   <zorder>clustering_dock</zorder>
@@ -1064,6 +1184,70 @@
     <hint type="sourcelabel">
      <x>572</x>
      <y>144</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionFFT</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>fft_dock</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionLFP</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>lfp_dock</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>757</x>
+     <y>491</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fft_dock</sender>
+   <signal>visibilityChanged(bool)</signal>
+   <receiver>actionFFT</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>177</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lfp_dock</sender>
+   <signal>visibilityChanged(bool)</signal>
+   <receiver>actionLFP</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>757</x>
+     <y>491</y>
     </hint>
     <hint type="destinationlabel">
      <x>-1</x>

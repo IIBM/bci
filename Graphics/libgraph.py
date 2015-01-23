@@ -1,33 +1,44 @@
+"""
+@author: Fernando J. Chaure
+"""
+
 from pyqtgraph.Qt import QtCore #interfaz en general
 import pyqtgraph as pg #graphicos
 import pyqtgraph.functions as fn
 from PyQt4  import QtGui, uic
-from scipy import fftpack
+from scipy.signal import periodogram
 import numpy as np
 from configuration import GENERAL_CONFIG as CONFIG
 from threading import Thread
 from copy import copy
 from multiprocess_config import *
 from collections import namedtuple
-from configuration import SPIKE_CONFIG
+from configuration import BIO_CONFIG
 from configuration import LIBGRAPH_CONFIG as LG_CONFIG
 from configuration import FILE_CONFIG
 from os import path, system
-
+from spectral_view import SpectralHandler
 #import logging
 #logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
 
-spike_duration_samples = int(SPIKE_CONFIG['SPIKE_DURATION'] / 1000.0*CONFIG['FS'])
-CH_COLORS = ['r', 'y', 'g', 'c', 'p', 'm']
+spike_duration_samples = int(BIO_CONFIG['SPIKE_DURATION'] / 1000.0*CONFIG['FS'])
+CH_COLORS = ['r', 'y', 'g', 'c', 'p', 'm'] * 3
 NOT_SAVING_MESSAGE = 'without saving'
 SAVING_MESSAGE = 'writing in:'
-FFT_SIZE = CONFIG['FS'] / LG_CONFIG['FFT_RESOLUTION']
-fft_frec = np.linspace(0, CONFIG['FS'] / 2, FFT_SIZE/2)
+
+
+if int(CONFIG['FS'] / LG_CONFIG['FFT_RESOLUTION']) > int(LG_CONFIG['FFT_N'] * CONFIG['PAQ_USB'] / 2):
+    FFT_SIZE = int(CONFIG['FS'] / LG_CONFIG['FFT_RESOLUTION'])
+else:
+    FFT_SIZE = int(LG_CONFIG['FFT_L_PAQ'] * CONFIG['PAQ_USB'] / 2)
+    
+
+#fft_frec = np.linspace(0, CONFIG['FS'] / 2, FFT_SIZE/2)
 one_pack_time = CONFIG['PAQ_USB'] / CONFIG['FS']
 PACK_xSPIKE_COUNT = int(float(LG_CONFIG['TIME_SPIKE_COUNT']) / one_pack_time)
 FREQFIX_xSPIKE_COUNT = (float(PACK_xSPIKE_COUNT)*one_pack_time)
 beep_command = "beep -f " + LG_CONFIG['BEEP_FREQ'] + " -l " \
-                + str(SPIKE_CONFIG['SPIKE_DURATION']) + " -d "
+                + str(BIO_CONFIG['SPIKE_DURATION']) + " -d "
 
 UIFILE = path.join(path.abspath(path.dirname(__file__)), 'bciui.ui')
 
@@ -45,7 +56,15 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
         uic.loadUi(UIFILE, self)
         #self.tabifyDockWidget(self.firing_rates_dock,self.clustering_dock);
+        
         self.clustering_dock.setVisible(False)
+        self.actionClustering.setChecked(False)
+        self.fft_dock.setVisible(False)
+        self.actionFFT.setChecked(False)
+        self.lfp_dock.setVisible(False)
+        self.actionLFP.setChecked(False)
+        
+        
         self.processing_process = processing_process
         self.get_data_process = get_data_process
         self.data_handler = bci_data_handler()
@@ -54,15 +73,16 @@ class MainWindow(QtGui.QMainWindow):
         
         self.channel_changed.connect(self.change_channel)
         
+        self.spectral_handler = SpectralHandler(self,self.data_handler)
+        
         self.group_info = plus_display(self.data_handler,self.plus_grid,
                                          self.plus_grid_fr, self.signal_config,
                                          self.thr_p,self.channel_changed)
-        self.general_display = GeneralDisplay(self.data_handler,self.espacio_pg, self.group_info)
+        self.general_display = GeneralDisplay(self.data_handler,self.espacio_pg, self.channel_changed)
         
         
-        
-        QtCore.QObject.connect(self.tet_plus_mode, QtCore.SIGNAL("currentIndexChanged(int)"), 
-                               self.group_info.change_display_mode) 
+        ###Signal Slots Connections###
+
         QtCore.QObject.connect(self.display_scale, QtCore.SIGNAL("valueChanged(int)"),
                                self.general_display.changeYrange)  
         QtCore.QObject.connect(self.filter_mode_button, QtCore.SIGNAL("clicked( bool)"), 
@@ -73,10 +93,8 @@ class MainWindow(QtGui.QMainWindow):
                                self.activate_channel)
         QtCore.QObject.connect(self.manual_thr_cb, QtCore.SIGNAL("clicked( bool)"),
                                self.group_info.change_th_mode)
-                               
         QtCore.QObject.connect(self.thr_p, QtCore.SIGNAL("textEdited(const QString&)"),
                                self.group_info.thr_changed)
-                               
         QtCore.QObject.connect(self.pausa, QtCore.SIGNAL("clicked (bool)"),
                                self.group_info.set_pause)
               
@@ -95,7 +113,8 @@ class MainWindow(QtGui.QMainWindow):
         #self.dockWidget.setTitleBarWidget(QtGui.QWidget())
         self.file_label.setText(NOT_SAVING_MESSAGE)
         self.change_filter_mode(self.filter_mode_button.isChecked())
-    
+        self.channel_changed.emit(0)
+        
     def keyPressEvent(self, e):
     
         if e.key() == QtCore.Qt.Key_A and not e.isAutoRepeat():
@@ -137,7 +156,7 @@ class MainWindow(QtGui.QMainWindow):
             new_struct = self.processing_process.new_data_queue.get(TIMEOUT_GET)
         except Queue_Empty:
             return 1
-        if new_struct['type'] == 'monitor': 
+        if new_struct['type'] == 'signal': 
             self.data_handler.update(new_struct)
             
             if self.beepbox.isChecked():
@@ -156,7 +175,8 @@ class MainWindow(QtGui.QMainWindow):
             
             if (not self.processing_process.warnings.empty()):
                 self.statusBar.showMessage(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)],SHOW_ERROR_TIME)
-    
+            
+            self.spectral_handler.update()
             self.general_display.update()
             self.group_info.update()
             self.signal_config.try_send()
@@ -229,9 +249,8 @@ class MainWindow(QtGui.QMainWindow):
 class  plus_display():
     """Clase que engloba el display inferior junto a los metodos que lo implican individualmente"""  
     def __init__(self,data_handler, espacio_pg, plus_grid_fr, signal_config, thr_p_label,channel_changed): 
-        self.channel_changed = channel_changed
+        channel_changed.connect(self.change_channel)
         self.data_handler = data_handler
-        self.mode = 0 
         self.channel = 0
         self.signal_config = signal_config
         self.tasas_bars = bar_graph()
@@ -259,15 +278,14 @@ class  plus_display():
 
         self.fft_n = 0
         self.fft_l = 0
-        self.fft_aux = np.zeros([LG_CONFIG['FFT_N'], FFT_SIZE / 2])
+        self.fft_aux = np.zeros([LG_CONFIG['FFT_N'], FFT_SIZE / 2+1])
         self.data_fft_aux = np.zeros([CONFIG['PAQ_USB']*LG_CONFIG['FFT_L_PAQ']])
         
         self.threshold_visible(True)
         self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
         self.show_line = False
         self.pause_mode = False
-        self.change_channel(self.channel)
-
+        
         self.graph_umbral.sigDragged.connect(self.moving_line)                     
         self.graph_umbral.sigPositionChangeFinished.connect(self.free_line)           
         self.graph_thr_updatable = True          
@@ -325,25 +343,10 @@ class  plus_display():
             self.graph_umbral.setValue(self.signal_config.thresholds[self.channel]*
             self.std[self.channel])
 
-        if self.mode is 0:
-            self.curve.setPen(CH_COLORS[self.channel%CONFIG['ELEC_GROUP']])
-            self.curve.setData(x = xtime[:n_view], y = data[self.channel, :n_view])
+        self.curve.setPen(CH_COLORS[self.channel%CONFIG['ELEC_GROUP']])
+        self.curve.setData(x = xtime[:n_view], y = data[self.channel, :n_view])
       
-        else:
-            if( self.fft_l < LG_CONFIG['FFT_L_PAQ']):
-                self.data_fft_aux[self.fft_l*CONFIG['PAQ_USB']:(1+self.fft_l)*CONFIG['PAQ_USB']] = self.data_handler.data_new[self.channel, :]
-                self.fft_l += 1
-            else:
-                self.fft_l = 0
-                if (self.fft_n <LG_CONFIG['FFT_N']):
-                    self.fft_aux[self.fft_n, :] = (abs(fftpack.fft(self.data_fft_aux,
-                            n = FFT_SIZE)[:FFT_SIZE / 2])
-                                ** 2. / float(FFT_SIZE))
-                    self.fft_n += 1
-                else:
-                    self.fft_n = 0
-                    self.curve.setPen(CH_COLORS[self.channel%CONFIG['ELEC_GROUP']])
-                    self.curve.setData(x = fft_frec, y = np.mean(self.fft_aux, 0))
+        
                     
     def threshold_visible(self, visible):
         """Define si el umbral es visible o no"""
@@ -352,36 +355,7 @@ class  plus_display():
         else:
             self.graph.removeItem(self.graph_umbral)
             
-            
-    def change_display_mode(self, new_mode):
-        """Define el modo del display. new_mode=0: raw data; new_mode=1: FFT"""
-        if new_mode is None:
-            new_mode = self.mode
-        
-        if new_mode is 0:
-            self.thr_p_label.setEnabled(True)
-            self.VB.setXRange(0, self.max_xtime, padding = 0, update = False)
-            #self.graph.setLogMode(x=False,y=False)
-            if self.show_line:
-                self.threshold_visible(True)
-                
-            if self.signal_config.th_manual_modes[self.channel]:
-                self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
-                self.thr_p_label.setText("{0:.1f}".format(self.graph_umbral.value()/self.std[self.channel]))
-            elif self.graph_thr_updatable:
-                self.graph_umbral.setValue(self.signal_config.thresholds[self.channel]*self.std[self.channel])    
-                self.thr_p_label.setText("{0:.1f}".format(self.signal_config.thresholds[self.channel]))
-
-        else: 
-            #self.graph.setLogMode(x=True,y=True)
-            self.thr_p_label.setEnabled(False)
-            self.VB.setXRange(0, CONFIG['FS']/2, padding=0, update=False)
-            if(self.mode is 0 and self.show_line):
-                self.threshold_visible(False)
-            self.fft_l = 0
-            self.fft_n = 0    
-            
-        self.mode = new_mode
+  
         
     def change_th_mode(self, manual):
          
@@ -409,7 +383,6 @@ class  plus_display():
             
         self.fft_l = 0
         self.fft_n = 0
-        self.channel_changed.emit(canal)
 
 class  bar_graph(pg.PlotItem):
     """Barras con tasas de disparo"""
@@ -422,18 +395,15 @@ class  bar_graph(pg.PlotItem):
         self.setMenuEnabled(enableMenu = False, enableViewBoxMenu = None)
         #self.showAxis('left', False)
         #self.enableAutoRange('y', False)
-        self.setXRange(-0.4, 3 + 0.4)
+        self.setXRange(-0.4, (CONFIG['ELEC_GROUP']-1) + 0.4)
         self.enableAutoRange('x', False)
         self.setMouseEnabled(x=False, y=True)
         #self.hideButtons()
-        self.tasa_bars.append(self.plot(pen = CH_COLORS[0],
-                                        fillLevel=0,brush = pg.mkBrush(CH_COLORS[0])))
-        self.tasa_bars.append(self.plot(pen = CH_COLORS[1],
-                                        fillLevel=0,brush = pg.mkBrush(CH_COLORS[1])))
-        self.tasa_bars.append(self.plot(pen = CH_COLORS[2],
-                                        fillLevel=0,brush = pg.mkBrush(CH_COLORS[2])))
-        self.tasa_bars.append(self.plot(pen = CH_COLORS[3],
-                                        fillLevel=0,brush = pg.mkBrush(CH_COLORS[3])))
+        
+        for j in range(CONFIG['ELEC_GROUP']):
+            self.tasa_bars.append(self.plot(pen = CH_COLORS[j],
+                                            fillLevel=0,brush = pg.mkBrush(CH_COLORS[j])))
+
 
     def update(self, spike_times):  
         for i in xrange(len(spike_times)):
@@ -453,7 +423,7 @@ class  bar_graph(pg.PlotItem):
 
 
 class GeneralDisplay():
-    def __init__(self, data_handler, espacio_pg, info_tet):
+    def __init__(self, data_handler, espacio_pg, ch_changed_signal):
         self.data_handler = data_handler
         layout_graphicos = pg.GraphicsLayout(border = (100, 0, 100)) 
         #para ordenar los graphicos(items) asi como el simil con los widgets
@@ -474,7 +444,7 @@ class GeneralDisplay():
             self.second_win.show()
             
         for i in xrange(CONFIG['#CHANNELS']):
-            vb = ViewBox_General_Display(i, info_tet)
+            vb = ViewBox_General_Display(i, ch_changed_signal)
             
             if (i < main_win_ch):
                 graph = layout_graphicos.addPlot(viewBox = vb, 
@@ -529,15 +499,15 @@ class GeneralDisplay():
             self.second_win.Close()
 
 class ViewBox_General_Display(pg.ViewBox):
-    def __init__(self, i, info_tet):
+    def __init__(self, i, ch_changed_signal):
         pg.ViewBox.__init__(self)
         self.i = i
-        self.info_tet = info_tet
+        self.ch_changed_signal = ch_changed_signal
     
     def mouseClickEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
-            self.info_tet.change_channel(self.i)
-    
+            self.ch_changed_signal.emit(self.i)
+            
     def mouseDragEvent(self, ev, axis = None):
         """If axis is specified, event will only affect that axis."""
         ev.accept()  ## we accept all buttons
@@ -593,10 +563,12 @@ class  bci_data_handler():
         self.xtime = np.zeros([LG_CONFIG['MAX_PAQ_DISPLAY']*CONFIG['PAQ_USB']])
         self.xtime[:self.n_view] = np.linspace(0, self.n_view / float(CONFIG['FS']), self.n_view)
         self.std = np.ndarray(CONFIG['#CHANNELS'])
-    
+        self.filter_mode = False
     
     def update(self, data_struct):
-              
+        
+        self.filter_mode = data_struct["filter_mode"]
+        
         if data_struct["filter_mode"] is False:
             #mean = data_struct["new_data"].mean(axis=1)
             self.data_new = data_struct["new_data"] #- mean[:, np.newaxis]
@@ -627,7 +599,7 @@ def beep(sk_time):
         return
     sp = (np.greater(sk_time[1:] - sk_time[:-1], spike_duration_samples)).sum() + 1
     string = beep_command + str(
-        int((one_pack_time * 1000.0 - SPIKE_CONFIG['SPIKE_DURATION'] * sp) / sp))
+        int((one_pack_time * 1000.0 - BIO_CONFIG['SPIKE_DURATION'] * sp) / sp))
     for _ in xrange(sp):
         system(string)
     return
