@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 @author: Fernando J. Chaure
 """
@@ -6,7 +7,6 @@ from pyqtgraph.Qt import QtCore #interfaz en general
 import pyqtgraph as pg #graphicos
 import pyqtgraph.functions as fn
 from PyQt4  import QtGui, uic
-from scipy.signal import periodogram
 import numpy as np
 from configuration import GENERAL_CONFIG as CONFIG
 from threading import Thread
@@ -21,11 +21,14 @@ from spectral_view import SpectralHandler
 #import logging
 #logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
 
-spike_duration_samples = int(BIO_CONFIG['SPIKE_DURATION'] / 1000.0*CONFIG['FS'])
+SPIKE_DURATION_SAMPLES = int(BIO_CONFIG['SPIKE_DURATION'] / 1000.0*CONFIG['FS'])
 CH_COLORS = ['r', 'y', 'g', 'c', 'p', 'm'] * 3
 NOT_SAVING_MESSAGE = 'without saving'
 SAVING_MESSAGE = 'writing in:'
 
+N_TIMES_BLOCKS = 70
+MAX_TIMES_CORR = 0.2
+L_TIMES_B = int(MAX_TIMES_CORR*CONFIG['FS']/N_TIMES_BLOCKS)#max time 200ms en muestras
 
 if int(CONFIG['FS'] / LG_CONFIG['FFT_RESOLUTION']) > int(LG_CONFIG['FFT_N'] * CONFIG['PAQ_USB'] / 2):
     FFT_SIZE = int(CONFIG['FS'] / LG_CONFIG['FFT_RESOLUTION'])
@@ -48,7 +51,7 @@ if LG_CONFIG['TWO_WINDOWS']:
     second_win_file = path.join(path.abspath(
                               path.dirname(__file__)),'second_window.ui')
 
-UserOptions_t=namedtuple('UserOptions_t','filter_mode thr_values thr_manual_mode')
+UserOptions_t = namedtuple('UserOptions_t','filter_mode thr_values thr_manual_mode')
   
 class MainWindow(QtGui.QMainWindow):
     channel_changed  = QtCore.pyqtSignal(int) 
@@ -59,10 +62,15 @@ class MainWindow(QtGui.QMainWindow):
         
         self.clustering_dock.setVisible(False)
         self.actionClustering.setChecked(False)
+        
         self.fft_dock.setVisible(False)
         self.actionFFT.setChecked(False)
+        
         self.lfp_dock.setVisible(False)
         self.actionLFP.setChecked(False)
+        
+        self.neu_firing_rates_dock.setVisible(False)
+        self.actionNeu_firing_rates.setChecked(False)
         
         
         self.processing_process = processing_process
@@ -73,12 +81,14 @@ class MainWindow(QtGui.QMainWindow):
         
         self.channel_changed.connect(self.change_channel)
         
-        self.spectral_handler = SpectralHandler(self,self.data_handler)
+        self.spectral_handler = SpectralHandler(self, self.data_handler)
         
-        self.group_info = plus_display(self.data_handler,self.plus_grid,
+        self.group_info = plus_display(self.data_handler, self.plus_grid,
                                          self.plus_grid_fr, self.signal_config,
                                          self.thr_p,self.channel_changed)
-        self.general_display = GeneralDisplay(self.data_handler,self.espacio_pg, self.channel_changed)
+        self.general_display = GeneralDisplay(self.data_handler, 
+                                              self.espacio_pg, 
+                                              self.channel_changed)
         
         
         ###Signal Slots Connections###
@@ -126,13 +136,14 @@ class MainWindow(QtGui.QMainWindow):
         elif e.key() == QtCore.Qt.Key_P and not e.isAutoRepeat():
             self.pausa.click()
         
-    def change_channel(self,channel):
+    def change_channel(self, channel):
         self.manual_thr_cb.setChecked(self.signal_config.th_manual_modes[channel])
         self.active_channel_cb.setChecked(self.signal_config.active_channels[channel])
         if LG_CONFIG['PROBE_CONF_L']:
-            aux = '{}:{} | C:{}'.format(LG_CONFIG['PROBE_CONF_L'],int(channel/CONFIG['ELEC_GROUP'])+1,channel%CONFIG['ELEC_GROUP']+1)
+            aux = '{}:{} | C:{}'.format(LG_CONFIG['PROBE_CONF_L'], 
+        int(channel/CONFIG['ELEC_GROUP']) + 1, channel%CONFIG['ELEC_GROUP'] + 1)
         else:
-            aux='Electrode : {}'.format(channel)
+            aux = 'Electrode : {}'.format(channel)
         self.info_label.setText(aux)
         self.show_s_channel.setWindowTitle(aux)
         
@@ -168,13 +179,13 @@ class MainWindow(QtGui.QMainWindow):
                 new_mess = self.get_data_process.warnings.get(TIMEOUT_GET)       
                 if new_mess[0] != SLOW_PROCESS_SIGNAL:
                     self.loss_data += new_mess[1]
-                    self.statusBar.showMessage("Loss data: " + str(self.loss_data),SHOW_ERROR_TIME)
+                    self.statusBar.showMessage("Loss data: " + str(self.loss_data), SHOW_ERROR_TIME)
     
                 else:
-                    self.statusBar.showMessage(Errors_Messages[new_mess[0]],SHOW_ERROR_TIME)
+                    self.statusBar.showMessage(Errors_Messages[new_mess[0]], SHOW_ERROR_TIME)
             
             if (not self.processing_process.warnings.empty()):
-                self.statusBar.showMessage(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)],SHOW_ERROR_TIME)
+                self.statusBar.showMessage(Errors_Messages[self.processing_process.warnings.get(TIMEOUT_GET)], SHOW_ERROR_TIME)
             
             self.spectral_handler.update()
             self.general_display.update()
@@ -248,12 +259,13 @@ class MainWindow(QtGui.QMainWindow):
                 
 class  plus_display():
     """Clase que engloba el display inferior junto a los metodos que lo implican individualmente"""  
-    def __init__(self,data_handler, espacio_pg, plus_grid_fr, signal_config, thr_p_label,channel_changed): 
+    def __init__(self, data_handler, espacio_pg, plus_grid_fr, signal_config, 
+                 thr_p_label, channel_changed): 
         channel_changed.connect(self.change_channel)
         self.data_handler = data_handler
         self.channel = 0
         self.signal_config = signal_config
-        self.tasas_bars = bar_graph()
+        self.tasas_bars = Bar_Graph()
         self.thr_p_label = thr_p_label
         #layout_graphicos.addItem(self.tasas_bars,row=None, col=0, rowspan=1, colspan=1)
         #graph=layout_graphicos.addPlot(row=None, col=1, rowspan=1, colspan=3)
@@ -296,7 +308,7 @@ class  plus_display():
     def free_line(self):
         self.graph_thr_updatable = True
         
-    def thr_changed(self,p = None):
+    def thr_changed(self, p = None):
         if self.signal_config.th_manual_modes[self.channel]:
             
             self.signal_config.change_th(self.channel, self.graph_umbral.value())
@@ -313,7 +325,7 @@ class  plus_display():
                 self.graph_umbral.setValue(float(p)*self.std[self.channel])
 
 
-    def set_pause(self,pause_mode):
+    def set_pause(self, pause_mode):
         if pause_mode == True:
             self.data_old = copy(self.data_handler.graph_data)
         self.pause_mode = pause_mode
@@ -384,7 +396,7 @@ class  plus_display():
         self.fft_l = 0
         self.fft_n = 0
 
-class  bar_graph(pg.PlotItem):
+class  Bar_Graph(pg.PlotItem):
     """Barras con tasas de disparo"""
     def __init__(self):
         self.npack = 0
@@ -408,7 +420,7 @@ class  bar_graph(pg.PlotItem):
     def update(self, spike_times):  
         for i in xrange(len(spike_times)):
             self.tasas[self.npack, i] = (np.greater(spike_times[i][1:] - spike_times[i][:-1],
-                                                    spike_duration_samples)).sum() + ((spike_times[i]).size > 0)
+                                                    SPIKE_DURATION_SAMPLES)).sum() + ((spike_times[i]).size > 0)
             tasas_aux = self.tasas[:, i].sum() / FREQFIX_xSPIKE_COUNT  
             self.tasa_bars[i].setData(x = [i%CONFIG['ELEC_GROUP']-0.3, i%CONFIG['ELEC_GROUP']+0.3], 
                                    y = [tasas_aux,tasas_aux], _callSync='off')
@@ -466,7 +478,7 @@ class GeneralDisplay():
                          padding = 0, update = True)
 
             if i % CONFIG['ELEC_GROUP'] is 0:
-                graph.setTitle("<font size=\"3\">{} {}</font>".format(LG_CONFIG['GROUP_LABEL'],str(i / CONFIG['ELEC_GROUP'] + 1)))
+                graph.setTitle("<font size=\"3\">{} {}</font>".format(LG_CONFIG['GROUP_LABEL'], str(i / CONFIG['ELEC_GROUP'] + 1)))
             
             graph.showAxis('bottom', show = False) 
             graph.showAxis('top', show = False)
@@ -597,11 +609,14 @@ class  bci_data_handler():
 def beep(sk_time):
     if not np.size(sk_time):
         return
-    sp = (np.greater(sk_time[1:] - sk_time[:-1], spike_duration_samples)).sum() + 1
+    sp = (np.greater(sk_time[1:] - sk_time[:-1], SPIKE_DURATION_SAMPLES)).sum() + 1
+#    string = beep_command + str(
+#        int((one_pack_time * 1000.0 - BIO_CONFIG['SPIKE_DURATION'] * sp) / sp))
+#    for _ in xrange(sp):
+#        system(string)
     string = beep_command + str(
-        int((one_pack_time * 1000.0 - BIO_CONFIG['SPIKE_DURATION'] * sp) / sp))
-    for _ in xrange(sp):
-        system(string)
+        int((one_pack_time * 1000.0 - SPIKE_DURATION * sp) / sp)) + str(' -r ')+str(sp)
+    system(string)
     return
     
 
@@ -641,9 +656,74 @@ class Channels_Configuration():
             except Queue_Full:
                 pass
             self.changed = False
+            
+            
+def verif_clusters(templates, std_templates, isi):
+    Nn = templates.shape[0]
+    
+    view = pg.GraphicsView()
+    l = pg.GraphicsLayout(border=(100, 100, 100))
+    view.setCentralItem(l)
+    view.show()
+    view.setWindowTitle('Visual inspection of clustering results')
 
+    l.addLabel('Templates', col=0, row=1, colspan=1, angle=-90)
+    l.addLabel('Autocorrelation', col=0, row=2, colspan=1, angle=-90)
+    
+    p_list = list()
+    for i in range(Nn):
+        l.addLabel('Neuron {}'.format(i + 1), col=i+1, row=0, colspan=1)
+        p = l.addPlot(row = 1, col = i + 1)#title="Plot 1",
+        p.plot(templates[i, :], pen=pg.mkPen(color=pg.intColor(i)))
+        p.plot(templates[i, :] + std_templates[i, :],
+               pen = pg.mkPen(color=pg.intColor(i), style=QtCore.Qt.DotLine))
+        p.plot(templates[i, :] - std_templates[i, :],
+               pen = pg.mkPen(color=pg.intColor(i), style=QtCore.Qt.DotLine))
+        axis = p.getAxis('bottom')
+        axis.setScale(scale = 1 / CONFIG['FS'] * 1000.)
+        axis.setLabel('Time[ms]')
+        axis = p.getAxis('left')
+        axis.setScale(scale = CONFIG['ADC_SCALE'])
+        axis.setLabel(u'[µV]')#Potential
+        p_list.append(p)
+        p.setXLink(p_list[0])
+        p.setYLink(p_list[0])
+        _p2 = l.addPlot(row = 2, col = i + 1)
+        
+        points = isi[i, :].size
+        bars = pg.BarGraphItem(x0 = np.arange(points), 
+                               x1 = np.arange(1, points + 1),
+                                y0 = np.zeros_like(isi[i, :]), y1 = isi[i, :])
+        bars.setOpts(brush = pg.mkBrush(color = pg.intColor(i)))
+        _p2.addItem(bars)
+        bars = pg.BarGraphItem(x0 = -np.arange(points),
+                               x1 = -np.arange(1, points + 1), 
+                                y0 = np.zeros_like(isi[i, :]), y1 = isi[i, :])
+        bars.setOpts(brush = pg.mkBrush(color = pg.intColor(i)))
+        
+        axis = _p2.getAxis('bottom')
+        axis.setScale(scale = 1 / CONFIG['FS'] * L_TIMES_B * 1000)
+        axis.setLabel('Time[ms]')
+        axis = _p2.getAxis('left')
+        axis.setScale(scale = 1)
+        axis.setLabel('[Hz]')#Potential
+        _p2.addItem(bars)
+        p_list.append(_p2)
+        _p2.setXLink(p_list[1])
+        _p2.setYLink(p_list[1])
+    return  view       
 
-def control_maker(action,channels = None,activate = True):
+def verif_corr(events_times, is_time_relative = True):
+    if is_time_relative:
+        events_times = np.cumsum(events_times, dtype = int)#si dan distancias relativas
+
+    corr = np.zeros(N_TIMES_BLOCKS)
+    for ti in range(events_times.size - 1):
+        t = (events_times[ti+1:] - events_times[ti]) / L_TIMES_B
+        corr[t[t < N_TIMES_BLOCKS]] += 1
+    return  corr/L_TIMES_B*CONFIG['FS']/events_times.size
+
+def control_maker(action, channels = None, activate = True):
     control = {'command':action}
     if type(action) == str:
         if action == 'spike_sorting':

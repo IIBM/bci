@@ -15,8 +15,10 @@ else:
 FILTER_COEF = signal.firwin(SP_CONFIG['LENGTH_FILTER'], FILTER_FREQ, width=None, 
                           window= SP_CONFIG['WINDOW_TYPE'], pass_zero=False)
 
-EXTRA_SIGNAL=SP_CONFIG['LENGTH_FILTER']-1
-
+if  CONFIG['FILTERED']:
+    EXTRA_SIGNAL = 0
+else:
+    EXTRA_SIGNAL = SP_CONFIG['LENGTH_FILTER']-1
 
 N_STORAGE = 3 #cantidad de paq q se van a usar para calcular medianas etc
 
@@ -86,7 +88,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
 #    new_data = np.ndarray([CONFIG['CANT_CANALES'],
 #                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL])
     new_data = np.ndarray([CONFIG['#CHANNELS'],
-                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL*2],dtype=np.int16)
+                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL],dtype=np.int16)
     
     while(control['command'] != EXIT_SIGNAL):
         while not proccesing_control.poll():
@@ -95,7 +97,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
 
             if not data_queue.empty():
                 new_pure_data = data_queue.get(TIMEOUT_GET)   
-                new_data[:,EXTRA_SIGNAL*2:] = new_pure_data.channels
+                new_data[:,EXTRA_SIGNAL:] = new_pure_data.channels
             else:
                 continue
 
@@ -103,7 +105,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             #falta muucho x implementar     
             
             #terriblemente mal no tiene en cuenta los bordes y la deteccion de spikes
-            filtered_data = (signal.filtfilt(FILTER_COEF, [1], new_data,padtype=None)[:,EXTRA_SIGNAL:-EXTRA_SIGNAL])
+            filtered_data = (signal.lfilter(FILTER_COEF, [1], new_data)[:,EXTRA_SIGNAL:])
             
             
             params.update(filtered_data)
@@ -120,7 +122,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             if ui_config.filter_mode is True:
                 graph_data["new_data"] = filtered_data
             else:
-                graph_data["new_data"] = new_data[:, EXTRA_SIGNAL*2:]
+                graph_data["new_data"] = new_data[:, EXTRA_SIGNAL:]
                 
             try:
                 graph_data_queue.put_nowait(graph_data)
@@ -130,8 +132,8 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
                 except Queue_Full:
                     pass
             #new_data[:,:EXTRA_SIGNAL] = new_data[:, -EXTRA_SIGNAL:]
-                    
-            new_data[:, :EXTRA_SIGNAL*2] = new_data[:, -2*EXTRA_SIGNAL:]
+            if  not CONFIG['FILTERED']:
+                new_data[:, :EXTRA_SIGNAL] = new_data[:, -EXTRA_SIGNAL:]
         
         control = proccesing_control.recv()
         

@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>852</width>
-    <height>671</height>
+    <width>884</width>
+    <height>1073</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -50,7 +50,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>852</width>
+     <width>884</width>
      <height>26</height>
     </rect>
    </property>
@@ -90,6 +90,7 @@
     <addaction name="actionClustering"/>
     <addaction name="actionLFP"/>
     <addaction name="actionFFT"/>
+    <addaction name="actionNeu_firing_rates"/>
    </widget>
    <addaction name="menuMenu"/>
    <addaction name="menuSave"/>
@@ -215,7 +216,7 @@
          <string>Source</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_2">
-         <item row="0" column="0">
+         <item row="2" column="0">
           <widget class="QPushButton" name="filter_mode_button">
            <property name="sizePolicy">
             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -258,6 +259,21 @@
            </property>
            <property name="flat">
             <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QTextBrowser" name="textBrowser"/>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_5">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Hardware</string>
            </property>
           </widget>
          </item>
@@ -675,8 +691,8 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>103</width>
-     <height>122</height>
+     <width>194</width>
+     <height>262</height>
     </size>
    </property>
    <property name="font">
@@ -699,27 +715,17 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_8">
     <layout class="QGridLayout" name="gridLayout_3">
-     <item row="5" column="0">
-      <widget class="QPushButton" name="pushButton">
+     <item row="2" column="0" colspan="2">
+      <widget class="QPushButton" name="pushButton_2">
        <property name="text">
-        <string>Restart</string>
+        <string>Accept</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
+     <item row="1" column="1">
       <widget class="QPushButton" name="pushButton_4">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -728,7 +734,24 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Results</string>
+        <string>View</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" colspan="2">
+      <widget class="QTextBrowser" name="textBrowser_2"/>
+     </item>
+     <item row="1" column="0">
+      <widget class="QSpinBox" name="spinBox">
+       <property name="value">
+        <number>3</number>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0" colspan="2">
+      <widget class="QPushButton" name="pushButton">
+       <property name="text">
+        <string>Restart</string>
        </property>
       </widget>
      </item>
@@ -767,7 +790,7 @@
     <string>Selected Channel Spectrum</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>1</number>
+    <number>8</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_5">
     <layout class="QGridLayout" name="gridLayout_7">
@@ -828,7 +851,7 @@
     <string>LFP</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>8</number>
+    <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2">
     <layout class="QGridLayout" name="gridLayout_8">
@@ -843,6 +866,67 @@
        <property name="maximumSize">
         <size>
          <width>450</width>
+         <height>9977</height>
+        </size>
+       </property>
+       <property name="resizeAnchor">
+        <enum>QGraphicsView::NoAnchor</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="neu_firing_rates_dock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>104</width>
+     <height>235</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>190</width>
+     <height>524287</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+   <property name="windowIcon">
+    <iconset>
+     <normaloff>icon.png</normaloff>icon.png</iconset>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Neurons's Firing rate</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_6">
+    <layout class="QGridLayout" name="gridLayout_9">
+     <item row="0" column="0">
+      <widget class="GraphicsView" name="neu_plus_grid">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>250</width>
          <height>9977</height>
         </size>
        </property>
@@ -896,7 +980,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Firing rates</string>
+    <string>Channels's firing rates</string>
    </property>
   </action>
   <action name="actionSelected_Channel">
@@ -952,6 +1036,17 @@
    </property>
    <property name="text">
     <string>FFT</string>
+   </property>
+  </action>
+  <action name="actionNeu_firing_rates">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Neurons's firing rates</string>
    </property>
   </action>
   <zorder>clustering_dock</zorder>
@@ -1252,6 +1347,22 @@
     <hint type="destinationlabel">
      <x>-1</x>
      <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNeu_firing_rates</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>neu_firing_rates_dock</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>784</x>
+     <y>411</y>
     </hint>
    </hints>
   </connection>
