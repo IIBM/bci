@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>884</width>
-    <height>1073</height>
+    <width>784</width>
+    <height>1036</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -50,8 +50,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>884</width>
-     <height>26</height>
+     <width>784</width>
+     <height>28</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">
@@ -109,7 +109,7 @@
    <property name="minimumSize">
     <size>
      <width>118</width>
-     <height>104</height>
+     <height>106</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -691,8 +691,8 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>194</width>
-     <height>262</height>
+     <width>220</width>
+     <height>155</height>
     </size>
    </property>
    <property name="font">
@@ -715,16 +715,6 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_8">
     <layout class="QGridLayout" name="gridLayout_3">
-     <item row="2" column="0" colspan="2">
-      <widget class="QPushButton" name="pushButton_2">
-       <property name="text">
-        <string>Accept</string>
-       </property>
-       <property name="checkable">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="1">
       <widget class="QPushButton" name="pushButton_4">
        <property name="sizePolicy">
@@ -738,20 +728,49 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0" colspan="2">
-      <widget class="QTextBrowser" name="textBrowser_2"/>
-     </item>
      <item row="1" column="0">
       <widget class="QSpinBox" name="spinBox">
+       <property name="maximum">
+        <number>0</number>
+       </property>
        <property name="value">
-        <number>3</number>
+        <number>0</number>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0" colspan="2">
+      <widget class="QPushButton" name="restart_clust">
+       <property name="text">
+        <string>Restart</string>
        </property>
       </widget>
      </item>
      <item row="3" column="0" colspan="2">
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="accept_clust">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="text">
-        <string>Restart</string>
+        <string>Accept</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Nonclustered</string>
+       </property>
+       <property name="textFormat">
+        <enum>Qt::PlainText</enum>
+       </property>
+       <property name="scaledContents">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -1363,6 +1382,22 @@
     <hint type="destinationlabel">
      <x>784</x>
      <y>411</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>accept_clust</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>accept_clust</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>673</x>
+     <y>127</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>673</x>
+     <y>127</y>
     </hint>
    </hints>
   </connection>

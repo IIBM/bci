@@ -40,6 +40,21 @@ def config_editor():
     #app = QtGui.QApplication([])
     #config.set('FILE','generic_file',QtGui.QFileDialog.getSaveFileName())
 
+##
+##
+    if config.get('GRAPHICS','open_conf_editor'):
+
+	format_conf = Config2Dicc(path.abspath(config.get('FILE','format_file')))
+        config.set('FILE', 'generic_file',save_file)
+	config.set('GENERAL', 'format',format_conf['GENERAL']['format'])
+	##si es online deberian leerse y forzarse desde la conf del registro:
+	##fs = 20000
+	##channels = 24
+	##adc_scale=1
+	##filtered=False
+        return config, save_file, format_conf
+
+
     dialog = Config_dialog(config)
 #    dialog.setWindowIcon(QtGui.QIcon('Graphics/icon_config.png'))
 
