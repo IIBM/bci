@@ -60,8 +60,8 @@ class MainWindow(QtGui.QMainWindow):
         uic.loadUi(UIFILE, self)
         #self.tabifyDockWidget(self.firing_rates_dock,self.clustering_dock);
         
-        self.clustering_dock.setVisible(False)
-        self.actionClustering.setChecked(False)
+        self.SP_dock.setVisible(False)
+        self.actionSP.setChecked(False)
         
         self.fft_dock.setVisible(False)
         self.actionFFT.setChecked(False)
@@ -248,9 +248,10 @@ class MainWindow(QtGui.QMainWindow):
         self.signal_config.active_channels[self.group_info.channel] = i
 
        
-    def on_actionInit_SP(self):
-        """Comienza el proceso de spike sorting en los canales activos"""
-        self.active_channel_cb.setCheckable(False)
+    def stop_SP(self):
+        """stop all spike sorting process"""
+        pass
+        #self.active_channel_cb.setCheckable(False)
         #self.processing_process.control.send(control_maker(self.active_channels))
         #implementacion pendiente
     #@QtCore.pyqtSlot()          

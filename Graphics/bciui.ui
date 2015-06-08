@@ -51,7 +51,7 @@
      <x>0</x>
      <y>0</y>
      <width>784</width>
-     <height>28</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">
@@ -72,7 +72,7 @@
     <property name="title">
      <string>Extras</string>
     </property>
-    <addaction name="actionInit_SP"/>
+    <addaction name="stop_SP"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -87,7 +87,7 @@
     <addaction name="actionFiring_rates"/>
     <addaction name="actionSelected_Channel"/>
     <addaction name="actionControl_Panel"/>
-    <addaction name="actionClustering"/>
+    <addaction name="actionSP"/>
     <addaction name="actionLFP"/>
     <addaction name="actionFFT"/>
     <addaction name="actionNeu_firing_rates"/>
@@ -682,7 +682,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="clustering_dock">
+  <widget class="QDockWidget" name="SP_dock">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
      <horstretch>0</horstretch>
@@ -708,7 +708,7 @@
     <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="windowTitle">
-    <string>Clustering</string>
+    <string>Spike Sorting</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
@@ -746,12 +746,12 @@
       </widget>
      </item>
      <item row="3" column="0" colspan="2">
-      <widget class="QPushButton" name="accept_clust">
+      <widget class="QPushButton" name="run_SS">
        <property name="enabled">
         <bool>true</bool>
        </property>
        <property name="text">
-        <string>Accept</string>
+        <string>Run</string>
        </property>
        <property name="checkable">
         <bool>true</bool>
@@ -981,9 +981,9 @@
     <string>Ctrl+N</string>
    </property>
   </action>
-  <action name="actionInit_SP">
+  <action name="stop_SP">
    <property name="text">
-    <string>Init SP</string>
+    <string>Stop Spike Sorting</string>
    </property>
   </action>
   <action name="actionAbout">
@@ -1024,7 +1024,7 @@
     <string>Control Panel</string>
    </property>
   </action>
-  <action name="actionClustering">
+  <action name="actionSP">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1032,7 +1032,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Clustering</string>
+    <string>Spike Sorting</string>
    </property>
   </action>
   <action name="actionLFP">
@@ -1068,7 +1068,7 @@
     <string>Neurons's firing rates</string>
    </property>
   </action>
-  <zorder>clustering_dock</zorder>
+  <zorder>SP_dock</zorder>
   <zorder>control_panel_dock</zorder>
   <zorder>firing_rates_dock</zorder>
  </widget>
@@ -1146,10 +1146,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionInit_SP</sender>
+   <sender>stop_SP</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>on_actionInit_SP()</slot>
+   <slot>stop_SP()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -1274,9 +1274,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionClustering</sender>
+   <sender>actionSP</sender>
    <signal>triggered(bool)</signal>
-   <receiver>clustering_dock</receiver>
+   <receiver>SP_dock</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1290,9 +1290,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>clustering_dock</sender>
+   <sender>SP_dock</sender>
    <signal>visibilityChanged(bool)</signal>
-   <receiver>actionClustering</receiver>
+   <receiver>actionSP</receiver>
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1386,9 +1386,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>accept_clust</sender>
+   <sender>run_SS</sender>
    <signal>clicked(bool)</signal>
-   <receiver>accept_clust</receiver>
+   <receiver>run_SS</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1406,7 +1406,7 @@
   <slot>on_actionDetener()</slot>
   <slot>on_actionSalir()</slot>
   <slot>on_actionNuevo()</slot>
-  <slot>on_actionInit_SP()</slot>
+  <slot>stop_SP()</slot>
   <slot>about()</slot>
  </slots>
 </ui>
