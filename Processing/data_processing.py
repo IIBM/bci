@@ -81,7 +81,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
     activated_sps = np.zeros(CONFIG['#CHANNELS'],bool)
     params = Signal_Parameters()
     
-    control = {'command':''}
+    control = None#{'command':''}
 #    mean_calc=np.int16(np.zeros([CONFIG['CANT_CANALES'],MEAN_L]))
 #    mean_l=0
 #    mean_aux=np.ndarray([CONFIG['CANT_CANALES'],1])
@@ -90,7 +90,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
     new_data = np.ndarray([CONFIG['#CHANNELS'],
                            CONFIG['PAQ_USB'] + EXTRA_SIGNAL],dtype=np.int16)
     
-    while(control['command'] != EXIT_SIGNAL):
+    while(control != EXIT_SIGNAL):
         while not proccesing_control.poll():
             if not ui_config_queue.empty():
                 ui_config = ui_config_queue.get(TIMEOUT_GET)
@@ -137,7 +137,5 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
         
         control = proccesing_control.recv()
         
-        if control['command'] == 'clustering':
-            activated_clustering[control['channels']] = True
         #falta la opcion iniciar sorting usando la pipe q hace q 
         #se cierre el proceso para transportar la info

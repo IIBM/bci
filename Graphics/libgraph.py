@@ -208,7 +208,7 @@ class MainWindow(QtGui.QMainWindow):
             return
         self.timer.stop()
         self.get_data_process.control.send(EXIT_SIGNAL)
-        self.processing_process.control.send(control_maker(EXIT_SIGNAL))
+        self.processing_process.control.send(EXIT_SIGNAL)
         self.get_data_process.process.join(2)
         self.processing_process.process.join(1)
         self.processing_process.process.terminate()
@@ -248,7 +248,7 @@ class MainWindow(QtGui.QMainWindow):
         self.signal_config.active_channels[self.group_info.channel] = i
 
        
-    def stop_SP(self):
+    def on_actionStop_SP(self):
         """stop all spike sorting process"""
         pass
         #self.active_channel_cb.setCheckable(False)
@@ -616,7 +616,7 @@ def beep(sk_time):
 #    for _ in xrange(sp):
 #        system(string)
     string = beep_command + str(
-        int((one_pack_time * 1000.0 - SPIKE_DURATION * sp) / sp)) + str(' -r ')+str(sp)
+        int((one_pack_time * 1000.0 - BIO_CONFIG['SPIKE_DURATION'] * sp) / sp)) + str(' -r ')+str(sp)
     system(string)
     return
     
@@ -724,14 +724,3 @@ def verif_corr(events_times, is_time_relative = True):
         corr[t[t < N_TIMES_BLOCKS]] += 1
     return  corr/L_TIMES_B*CONFIG['FS']/events_times.size
 
-def control_maker(action, channels = None, activate = True):
-    control = {'command':action}
-    if type(action) == str:
-        if action == 'spike_sorting':
-            control['channels'] = channels
-            control['activate'] = activate
-            
-        elif action == 'clustering':
-            control['channels'] = channels
-            control['activate'] = activate   
-    return control

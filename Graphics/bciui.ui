@@ -51,7 +51,7 @@
      <x>0</x>
      <y>0</y>
      <width>784</width>
-     <height>26</height>
+     <height>28</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">
@@ -72,7 +72,7 @@
     <property name="title">
      <string>Extras</string>
     </property>
-    <addaction name="stop_SP"/>
+    <addaction name="actionStop_SP"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -716,7 +716,10 @@
    <widget class="QWidget" name="dockWidgetContents_8">
     <layout class="QGridLayout" name="gridLayout_3">
      <item row="1" column="1">
-      <widget class="QPushButton" name="pushButton_4">
+      <widget class="QPushButton" name="view_clust">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -729,7 +732,10 @@
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QSpinBox" name="spinBox">
+      <widget class="QSpinBox" name="q_clust_neus">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="maximum">
         <number>0</number>
        </property>
@@ -746,9 +752,9 @@
       </widget>
      </item>
      <item row="3" column="0" colspan="2">
-      <widget class="QPushButton" name="run_SS">
+      <widget class="QPushButton" name="accept_clust">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="text">
         <string>Run</string>
@@ -757,12 +763,12 @@
         <bool>true</bool>
        </property>
        <property name="checked">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
       </widget>
      </item>
      <item row="0" column="0">
-      <widget class="QLabel" name="label_3">
+      <widget class="QLabel" name="clustering_label">
        <property name="text">
         <string>Nonclustered</string>
        </property>
@@ -981,9 +987,12 @@
     <string>Ctrl+N</string>
    </property>
   </action>
-  <action name="stop_SP">
+  <action name="actionStop_SP">
    <property name="text">
-    <string>Stop Spike Sorting</string>
+    <string>Stop SP</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop SP</string>
    </property>
   </action>
   <action name="actionAbout">
@@ -1032,7 +1041,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Spike Sorting</string>
+    <string>Clustering</string>
    </property>
   </action>
   <action name="actionLFP">
@@ -1146,10 +1155,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>stop_SP</sender>
+   <sender>actionStop_SP</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>stop_SP()</slot>
+   <slot>on_actionStop_SP()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -1386,18 +1395,50 @@
    </hints>
   </connection>
   <connection>
-   <sender>run_SS</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>run_SS</receiver>
+   <sender>restart_clust</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>restart_clust</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>673</x>
-     <y>127</y>
+     <y>160</y>
     </hint>
     <hint type="destinationlabel">
      <x>673</x>
-     <y>127</y>
+     <y>160</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>restart_clust</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>q_clust_neus</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>673</x>
+     <y>160</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>621</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>restart_clust</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>view_clust</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>673</x>
+     <y>160</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>725</x>
+     <y>94</y>
     </hint>
    </hints>
   </connection>
@@ -1406,7 +1447,7 @@
   <slot>on_actionDetener()</slot>
   <slot>on_actionSalir()</slot>
   <slot>on_actionNuevo()</slot>
-  <slot>stop_SP()</slot>
+  <slot>on_actionStop_SP()</slot>
   <slot>about()</slot>
  </slots>
 </ui>
