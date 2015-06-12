@@ -12,7 +12,7 @@ from configuration import GENERAL_CONFIG as CONFIG
 from threading import Thread
 from copy import copy
 from multiprocess_config import *
-from collections import namedtuple
+from collections import namedtuple,deque
 from configuration import BIO_CONFIG
 from configuration import LIBGRAPH_CONFIG as LG_CONFIG
 from configuration import FILE_CONFIG
@@ -51,8 +51,9 @@ if LG_CONFIG['TWO_WINDOWS']:
     second_win_file = path.join(path.abspath(
                               path.dirname(__file__)),'second_window.ui')
 
-UserOptions_t = namedtuple('UserOptions_t','filter_mode thr_values thr_manual_mode')
-  
+UserChOptions_t = namedtuple('UserChOptions_t','conf_t filter_mode thr_values thr_manual_mode')
+SpSCommands_t = namedtuple('SpSCommands_t','conf_t ch_SpS_mode')
+
 class MainWindow(QtGui.QMainWindow):
     channel_changed  = QtCore.pyqtSignal(int) 
     def __init__(self, processing_process, get_data_process):
@@ -651,12 +652,50 @@ class Channels_Configuration():
     def try_send(self):
         if self.changed == True:
             try:
-                self.queue.put(UserOptions_t(filter_mode=self.filter_mode, 
+                self.queue.put(UserChOptions_t(conf_t = 'channels',filter_mode=self.filter_mode, 
                                              thr_values =self.thresholds,
                                              thr_manual_mode = self.th_manual_modes))
+                self.changed = False                      
             except Queue_Full:
                 pass
-            self.changed = False
+            
+class Spike_Sorting():
+    def __init__(self, queue, ):
+        
+        self.clust_status = np.zeros(CONFIG['#CHANNELS'],dtype=bool)
+        self.clasf_cmd = np.zeros(CONFIG['#CHANNELS'])
+        self.clust_cmd_ls = deque()
+        self.queue = queue
+        self.new_clasf_cmd = False
+        
+    def init_classification(self, chs,n_clust):
+        self.clasf_cmd [chs] = n_clust
+        self.new_clasf_cmd = True
+        
+    def init_clustering(self, chs,mode):
+        self.clust_status[chs] = mode
+        if mode==True: 
+            self.clust_cmd_ls.append(
+                        SpSCommands_t(conf_t = 'clustering',
+                        ch_SpS_mode = chs))
+                        
+
+    def try_send(self):
+        if self.new_clasf_cmd == True:
+            try:
+                self.queue.put(SpSCommands_t(conf_t = 'classification',
+                                             ch_SpS_mode = self.clasf_cmd))
+                self.changed = False                      
+            except Queue_Full:
+                pass
+        
+        while self.clust_cmd_ls:
+            try:
+                _ = self.clust_cmd_ls.popleft()
+                self.queue.put(_)
+            except Queue_Full:
+                self.clust_cmd_ls.appendleft(_)
+                break            
             
             
 def verif_clusters(templates, std_templates, isi):

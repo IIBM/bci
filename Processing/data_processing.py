@@ -92,8 +92,11 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
     
     while(control != EXIT_SIGNAL):
         while not proccesing_control.poll():
-            if not ui_config_queue.empty():
-                ui_config = ui_config_queue.get(TIMEOUT_GET)
+            while not ui_config_queue.empty():
+            #if not ui_config_queue.empty():
+                ui_configs = ui_config_queue.get(TIMEOUT_GET)
+                if ui_configs[0] == 'channels':
+                    ui_ch_config = ui_configs
 
             if not data_queue.empty():
                 new_pure_data = data_queue.get(TIMEOUT_GET)   
@@ -110,16 +113,16 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             
             params.update(filtered_data)
             
-            new_thr = ui_config.thr_values*(~ui_config.thr_manual_mode*params.std + ui_config.thr_manual_mode)
+            new_thr = ui_ch_config.thr_values*(~ui_ch_config.thr_manual_mode*params.std + ui_ch_config.thr_manual_mode)
             
             spikes_times = spikes_detect(filtered_data, new_thr)
                    
             graph_data["spikes_times"] = spikes_times
             graph_data["std"] = params.std
             
-            graph_data["filter_mode"] = ui_config.filter_mode
+            graph_data["filter_mode"] = ui_ch_config.filter_mode
             
-            if ui_config.filter_mode is True:
+            if ui_ch_config.filter_mode is True:
                 graph_data["new_data"] = filtered_data
             else:
                 graph_data["new_data"] = new_data[:, EXTRA_SIGNAL:]
