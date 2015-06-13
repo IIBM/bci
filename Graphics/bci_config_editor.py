@@ -42,7 +42,7 @@ def config_editor():
 
 ##
 ##
-    if config.get('GRAPHICS','open_conf_editor'):
+    if config.getboolean('GRAPHICS','open_conf_editor'):
 
 	format_conf = Config2Dicc(path.abspath(config.get('FILE','format_file')))
         config.set('FILE', 'generic_file',save_file)
