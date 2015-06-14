@@ -2,7 +2,6 @@
 """
 @author: Fernando J. Chaure
 """
-
 from pyqtgraph.Qt import QtCore #interfaz en general
 import pyqtgraph as pg #graphicos
 import pyqtgraph.functions as fn
@@ -12,12 +11,13 @@ from configuration import GENERAL_CONFIG as CONFIG
 from threading import Thread
 from copy import copy
 from multiprocess_config import *
-from collections import namedtuple,deque
+from collections import namedtuple
 from configuration import BIO_CONFIG
 from configuration import LIBGRAPH_CONFIG as LG_CONFIG
 from configuration import FILE_CONFIG
 from os import path, system
 from spectral_view import SpectralHandler
+from spike_sorting import Spike_Sorting
 #import logging
 #logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
 
@@ -26,9 +26,6 @@ CH_COLORS = ['r', 'y', 'g', 'c', 'p', 'm'] * 3
 NOT_SAVING_MESSAGE = 'without saving'
 SAVING_MESSAGE = 'writing in:'
 
-N_TIMES_BLOCKS = 70
-MAX_TIMES_CORR = 0.2
-L_TIMES_B = int(MAX_TIMES_CORR*CONFIG['FS']/N_TIMES_BLOCKS)#max time 200ms en muestras
 
 if int(CONFIG['FS'] / LG_CONFIG['FFT_RESOLUTION']) > int(LG_CONFIG['FFT_N'] * CONFIG['PAQ_USB'] / 2):
     FFT_SIZE = int(CONFIG['FS'] / LG_CONFIG['FFT_RESOLUTION'])
@@ -52,7 +49,6 @@ if LG_CONFIG['TWO_WINDOWS']:
                               path.dirname(__file__)),'second_window.ui')
 
 UserChOptions_t = namedtuple('UserChOptions_t','conf_t filter_mode thr_values thr_manual_mode')
-SpSCommands_t = namedtuple('SpSCommands_t','conf_t ch_SpS_mode')
 
 class MainWindow(QtGui.QMainWindow):
     channel_changed  = QtCore.pyqtSignal(int) 
@@ -83,6 +79,7 @@ class MainWindow(QtGui.QMainWindow):
         self.channel_changed.connect(self.change_channel)
         
         self.spectral_handler = SpectralHandler(self, self.data_handler)
+        self.spike_sorting_handler = Spike_Sorting(queue = self.processing_process.ui_config_queue, main_window = self)
         
         self.group_info = plus_display(self.data_handler, self.plus_grid,
                                          self.plus_grid_fr, self.signal_config,
@@ -108,6 +105,7 @@ class MainWindow(QtGui.QMainWindow):
                                self.group_info.thr_changed)
         QtCore.QObject.connect(self.pausa, QtCore.SIGNAL("clicked (bool)"),
                                self.group_info.set_pause)
+                                
               
         self.thr_p.setValidator(QtGui.QDoubleValidator())
         self.contador_registro = -1
@@ -124,6 +122,7 @@ class MainWindow(QtGui.QMainWindow):
         #self.dockWidget.setTitleBarWidget(QtGui.QWidget())
         self.file_label.setText(NOT_SAVING_MESSAGE)
         self.change_filter_mode(self.filter_mode_button.isChecked())
+        #self.elec_group = 0
         self.channel_changed.emit(0)
         
     def keyPressEvent(self, e):
@@ -147,7 +146,7 @@ class MainWindow(QtGui.QMainWindow):
             aux = 'Electrode : {}'.format(channel)
         self.info_label.setText(aux)
         self.show_s_channel.setWindowTitle(aux)
-        
+        #self.elec_group = channel%CONFIG['ELEC_GROUP']
         
     def about(self):
         QtGui.QMessageBox.about(self, "About",
@@ -659,107 +658,3 @@ class Channels_Configuration():
             except Queue_Full:
                 pass
             
-class Spike_Sorting():
-    def __init__(self, queue, ):
-        
-        self.clust_status = np.zeros(CONFIG['#CHANNELS'],dtype=bool)
-        self.clasf_cmd = np.zeros(CONFIG['#CHANNELS'])
-        self.clust_cmd_ls = deque()
-        self.queue = queue
-        self.new_clasf_cmd = False
-        
-    def init_classification(self, chs,n_clust):
-        self.clasf_cmd [chs] = n_clust
-        self.new_clasf_cmd = True
-        
-    def init_clustering(self, chs,mode):
-        self.clust_status[chs] = mode
-        if mode==True: 
-            self.clust_cmd_ls.append(
-                        SpSCommands_t(conf_t = 'clustering',
-                        ch_SpS_mode = chs))
-                        
-
-    def try_send(self):
-        if self.new_clasf_cmd == True:
-            try:
-                self.queue.put(SpSCommands_t(conf_t = 'classification',
-                                             ch_SpS_mode = self.clasf_cmd))
-                self.changed = False                      
-            except Queue_Full:
-                pass
-        
-        while self.clust_cmd_ls:
-            try:
-                _ = self.clust_cmd_ls.popleft()
-                self.queue.put(_)
-            except Queue_Full:
-                self.clust_cmd_ls.appendleft(_)
-                break            
-            
-            
-def verif_clusters(templates, std_templates, isi):
-    Nn = templates.shape[0]
-    
-    view = pg.GraphicsView()
-    l = pg.GraphicsLayout(border=(100, 100, 100))
-    view.setCentralItem(l)
-    view.show()
-    view.setWindowTitle('Visual inspection of clustering results')
-
-    l.addLabel('Templates', col=0, row=1, colspan=1, angle=-90)
-    l.addLabel('Autocorrelation', col=0, row=2, colspan=1, angle=-90)
-    
-    p_list = list()
-    for i in range(Nn):
-        l.addLabel('Neuron {}'.format(i + 1), col=i+1, row=0, colspan=1)
-        p = l.addPlot(row = 1, col = i + 1)#title="Plot 1",
-        p.plot(templates[i, :], pen=pg.mkPen(color=pg.intColor(i)))
-        p.plot(templates[i, :] + std_templates[i, :],
-               pen = pg.mkPen(color=pg.intColor(i), style=QtCore.Qt.DotLine))
-        p.plot(templates[i, :] - std_templates[i, :],
-               pen = pg.mkPen(color=pg.intColor(i), style=QtCore.Qt.DotLine))
-        axis = p.getAxis('bottom')
-        axis.setScale(scale = 1 / CONFIG['FS'] * 1000.)
-        axis.setLabel('Time[ms]')
-        axis = p.getAxis('left')
-        axis.setScale(scale = CONFIG['ADC_SCALE'])
-        axis.setLabel(u'[µV]')#Potential
-        p_list.append(p)
-        p.setXLink(p_list[0])
-        p.setYLink(p_list[0])
-        _p2 = l.addPlot(row = 2, col = i + 1)
-        
-        points = isi[i, :].size
-        bars = pg.BarGraphItem(x0 = np.arange(points), 
-                               x1 = np.arange(1, points + 1),
-                                y0 = np.zeros_like(isi[i, :]), y1 = isi[i, :])
-        bars.setOpts(brush = pg.mkBrush(color = pg.intColor(i)))
-        _p2.addItem(bars)
-        bars = pg.BarGraphItem(x0 = -np.arange(points),
-                               x1 = -np.arange(1, points + 1), 
-                                y0 = np.zeros_like(isi[i, :]), y1 = isi[i, :])
-        bars.setOpts(brush = pg.mkBrush(color = pg.intColor(i)))
-        
-        axis = _p2.getAxis('bottom')
-        axis.setScale(scale = 1 / CONFIG['FS'] * L_TIMES_B * 1000)
-        axis.setLabel('Time[ms]')
-        axis = _p2.getAxis('left')
-        axis.setScale(scale = 1)
-        axis.setLabel('[Hz]')#Potential
-        _p2.addItem(bars)
-        p_list.append(_p2)
-        _p2.setXLink(p_list[1])
-        _p2.setYLink(p_list[1])
-    return  view       
-
-def verif_corr(events_times, is_time_relative = True):
-    if is_time_relative:
-        events_times = np.cumsum(events_times, dtype = int)#si dan distancias relativas
-
-    corr = np.zeros(N_TIMES_BLOCKS)
-    for ti in range(events_times.size - 1):
-        t = (events_times[ti+1:] - events_times[ti]) / L_TIMES_B
-        corr[t[t < N_TIMES_BLOCKS]] += 1
-    return  corr/L_TIMES_B*CONFIG['FS']/events_times.size
-

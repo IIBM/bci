@@ -42,16 +42,15 @@ def config_editor():
 
 ##
 ##
-    if config.getboolean('GRAPHICS','open_conf_editor'):
-
-	format_conf = Config2Dicc(path.abspath(config.get('FILE','format_file')))
+    if not config.getboolean('GRAPHICS','open_conf_editor'):
+    	format_conf = Config2Dicc(path.abspath(config.get('FILE','format_file')))
         config.set('FILE', 'generic_file',save_file)
-	config.set('GENERAL', 'format',format_conf['GENERAL']['format'])
-	##si es online deberian leerse y forzarse desde la conf del registro:
-	##fs = 20000
-	##channels = 24
-	##adc_scale=1
-	##filtered=False
+        config.set('GENERAL', 'format',format_conf['GENERAL']['format'])
+    	##si es online deberian leerse y forzarse desde la conf del registro:
+    	##fs = 20000
+    	##channels = 24
+    	##adc_scale=1
+    	##filtered=False
         return config, save_file, format_conf
 
 

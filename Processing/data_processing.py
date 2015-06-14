@@ -78,7 +78,7 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
     }
     activated_clustering = np.zeros(CONFIG['#CHANNELS'],bool)
     clustered_channel = np.zeros(CONFIG['#CHANNELS'],bool)
-    activated_sps = np.zeros(CONFIG['#CHANNELS'],bool)
+    activated_sps = np.zeros(CONFIG['#CHANNELS'])
     params = Signal_Parameters()
     
     control = None#{'command':''}

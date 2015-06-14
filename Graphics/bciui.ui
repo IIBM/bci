@@ -51,7 +51,7 @@
      <x>0</x>
      <y>0</y>
      <width>784</width>
-     <height>28</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">
@@ -732,7 +732,7 @@
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QSpinBox" name="q_clust_neus">
+      <widget class="QSpinBox" name="n_clusters_sb">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -749,10 +749,13 @@
        <property name="text">
         <string>Restart</string>
        </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item row="3" column="0" colspan="2">
-      <widget class="QPushButton" name="accept_clust">
+      <widget class="QPushButton" name="run_classification">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -1413,7 +1416,7 @@
   <connection>
    <sender>restart_clust</sender>
    <signal>toggled(bool)</signal>
-   <receiver>q_clust_neus</receiver>
+   <receiver>n_clusters_sb</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1439,6 +1442,38 @@
     <hint type="destinationlabel">
      <x>725</x>
      <y>94</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>restart_clust</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>run_classification</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>673</x>
+     <y>158</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>673</x>
+     <y>125</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>run_classification</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>n_clusters_sb</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>673</x>
+     <y>125</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>621</x>
+     <y>91</y>
     </hint>
    </hints>
   </connection>
