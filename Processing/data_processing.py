@@ -81,12 +81,8 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
     activated_sps = np.zeros(CONFIG['#CHANNELS'])
     params = Signal_Parameters()
     
-    control = None#{'command':''}
-#    mean_calc=np.int16(np.zeros([CONFIG['CANT_CANALES'],MEAN_L]))
-#    mean_l=0
-#    mean_aux=np.ndarray([CONFIG['CANT_CANALES'],1])
-#    new_data = np.ndarray([CONFIG['CANT_CANALES'],
-#                           CONFIG['PAQ_USB'] + EXTRA_SIGNAL])
+    control = None
+
     new_data = np.ndarray([CONFIG['#CHANNELS'],
                            CONFIG['PAQ_USB'] + EXTRA_SIGNAL],dtype=np.int16)
     
@@ -104,13 +100,8 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             else:
                 continue
 
-            #filtar y enviar si filtro activo en conf o bien asi como esta
-            #falta muucho x implementar     
-            
-            #terriblemente mal no tiene en cuenta los bordes y la deteccion de spikes
             filtered_data = (signal.lfilter(FILTER_COEF, [1], new_data)[:,EXTRA_SIGNAL:])
-            
-            
+
             params.update(filtered_data)
             
             new_thr = ui_ch_config.thr_values*(~ui_ch_config.thr_manual_mode*params.std + ui_ch_config.thr_manual_mode)
