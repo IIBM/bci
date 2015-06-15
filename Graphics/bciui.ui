@@ -87,7 +87,7 @@
     <addaction name="actionFiring_rates"/>
     <addaction name="actionSelected_Channel"/>
     <addaction name="actionControl_Panel"/>
-    <addaction name="actionSP"/>
+    <addaction name="actionSpS"/>
     <addaction name="actionLFP"/>
     <addaction name="actionFFT"/>
     <addaction name="actionNeu_firing_rates"/>
@@ -682,7 +682,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="SP_dock">
+  <widget class="QDockWidget" name="SpS_dock">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
      <horstretch>0</horstretch>
@@ -1036,7 +1036,7 @@
     <string>Control Panel</string>
    </property>
   </action>
-  <action name="actionSP">
+  <action name="actionSpS">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1080,7 +1080,7 @@
     <string>Neurons's firing rates</string>
    </property>
   </action>
-  <zorder>SP_dock</zorder>
+  <zorder>SpS_dock</zorder>
   <zorder>control_panel_dock</zorder>
   <zorder>firing_rates_dock</zorder>
  </widget>
@@ -1286,9 +1286,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionSP</sender>
+   <sender>actionSpS</sender>
    <signal>triggered(bool)</signal>
-   <receiver>SP_dock</receiver>
+   <receiver>SpS_dock</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1302,9 +1302,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>SP_dock</sender>
+   <sender>SpS_dock</sender>
    <signal>visibilityChanged(bool)</signal>
-   <receiver>actionSP</receiver>
+   <receiver>actionSpS</receiver>
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">

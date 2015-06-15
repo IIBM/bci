@@ -57,8 +57,8 @@ class MainWindow(QtGui.QMainWindow):
         uic.loadUi(UIFILE, self)
         #self.tabifyDockWidget(self.firing_rates_dock,self.clustering_dock);
         
-        self.SP_dock.setVisible(False)
-        self.actionSP.setChecked(False)
+        self.SpS_dock.setVisible(False)
+        self.actionSpS.setChecked(False)
         
         self.fft_dock.setVisible(False)
         self.actionFFT.setChecked(False)
