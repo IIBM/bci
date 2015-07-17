@@ -3,7 +3,7 @@ from multiprocess_config import *
 from configuration import GENERAL_CONFIG as CONFIG
 from os import path
 import numpy as np
-#en teoria tendria q tener  todas las macros con las q es llamada
+
 
  
 
