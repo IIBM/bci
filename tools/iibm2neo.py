@@ -40,14 +40,15 @@ def main(argv):
         print 'inputfile should be a valid INI file'
         sys.exit(2)
     
-    FS=30000.
+    FS=30030.
     CHANNELS=25#?
     r = io.RawBinarySignalIO( filename = 'data_test')
     seg=r.read_segment(sampling_rate=FS * pq.Hz, t_start=0.0 * pq.s, 
                    unit=pq.V, nbchannel=CHANNELS, bytesoffset=0, dtype=np.int16,
                    rangemin=-10, rangemax=10)
-    out_io = io.NeoHdf5IO('salida')
-    out_io.write_segment(seg)
+    out_io = io.NeoHdf5IO('salida.hdf5')
+    out_io.write_analogsignalarray(seg)
+    
     #crea 
 #     for i in range(15,28): #50
 #        new_file = "210612_"+str(i)
