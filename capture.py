@@ -160,9 +160,9 @@ class FileHandle():
             
             newsection = 'DATA_INFO'
             config_parser.add_section(newsection)
-            config_parser.set(newsection, 'time4file',CONFIG['PAQ_USB']*self.paqxfile/CONFIG['FS'])
+            config_parser.set(newsection, 'samples4file',CONFIG['PAQ_USB']*self.paqxfile)
+            config_parser.set(newsection,'samples4lastfile',CONFIG['PAQ_USB']*self.paq_in_part)
             config_parser.set(newsection,'files',self.part)
-            config_parser.set(newsection,'time4lastfile',CONFIG['PAQ_USB']*self.paq_in_part/CONFIG['FS'])
             config_parser.set(newsection,'date',time.asctime( time.localtime(time.time())))
             file_head = open(FILE_CONFIG['GENERIC_FILE'] +'-'+str(self.num_registro) + '-0','w')
             config_parser.write(file_head)

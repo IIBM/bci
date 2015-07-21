@@ -17,7 +17,7 @@ from configuration import LIBGRAPH_CONFIG as LG_CONFIG
 from configuration import FILE_CONFIG
 from os import path, system
 from spectral_view import SpectralHandler
-from spike_sorting import Spike_Sorting
+from spike_sorting_view import SpikeSortingHandler
 #import logging
 #logging.basicConfig(format='%(levelname)s:%(message)s',filename='bci.log',level=logging.WARNING)
 
@@ -79,7 +79,7 @@ class MainWindow(QtGui.QMainWindow):
         self.channel_changed.connect(self.change_channel)
         
         self.spectral_handler = SpectralHandler(self, self.data_handler)
-        self.spike_sorting_handler = Spike_Sorting(queue = self.processing_process.ui_config_queue, main_window = self)
+        self.spike_sorting_handler = SpikeSortingHandler(queue = self.processing_process.ui_config_queue, main_window = self)
         
         self.group_info = plus_display(self.data_handler, self.plus_grid,
                                          self.plus_grid_fr, self.signal_config,
