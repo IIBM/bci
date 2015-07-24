@@ -1,6 +1,7 @@
 import numpy as np #vectores, operaciones matematicas
 import time #hora local 
 from configuration import GENERAL_CONFIG as CONFIG
+from configuration import CONFIG_PARSER
 #import os 
 from multiprocess_config import *
 #from configuration import DATA_FRAME_CONFIG as COMM
@@ -150,6 +151,9 @@ class FileHandle():
             config_parser.set(newsection, 'channels', CONFIG['#CHANNELS'])
             config_parser.set(newsection, 'adc_scale', CONFIG['ADC_SCALE'])
             
+            for key in CONFIG_PARSER["FORMAT_CONFIG"].keys():
+                config_parser.set("FORMAT_CONFIG", key, CONFIG_PARSER["FORMAT_CONFIG"][key])
+
 #            newsection = 'DATA_FRAME'
 #            config_parser.add_section(newsection)
 #            config_parser.set(newsection, 'l_frame', COMM['L_FRAME'])

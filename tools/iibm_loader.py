@@ -10,7 +10,7 @@ from ConfigParser import ConfigParser
 
 
 
-class iibm_record():
+class iibm_loader():
     def __init__(self,reg_filename):
         self.reg_filename = reg_filename
         config = ConfigParser()
@@ -76,11 +76,12 @@ class iibm_record():
  
         for i in range(beg_file+1,final_file+1): #50
             new_file = self.reg_filename + "-" + str(i+1)#plus 1, because data begun in 1
-            new_data = np.fromfile(new_file,np.int16)
-            data[:, writed_samples:writed_samples+self.samples4file]  = new_data.reshape([self.channels,new_data.size/self.channels],order='F')[channels, :]
+            new_data = np.fromfile(new_file, np.int16)
+            data[:, writed_samples:writed_samples + self.samples4file]  = self.adc_scale * new_data.reshape([self.channels, new_data.size/self.channels], order='F')[channels, :]
             
         return data
 if __name__ == '__main__':
 
-    record = iibm_record('test')
-    record.channels+=1
+    record = iibm_loader('test')
+    if record.dict_config["GENERAL"]['format']=='example_raw':
+        record.channels+=1
