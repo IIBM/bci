@@ -151,8 +151,10 @@ class FileHandle():
             config_parser.set(newsection, 'channels', CONFIG['#CHANNELS'])
             config_parser.set(newsection, 'adc_scale', CONFIG['ADC_SCALE'])
             
-            for key in CONFIG_PARSER["FORMAT_CONFIG"].keys():
-                config_parser.set("FORMAT_CONFIG", key, CONFIG_PARSER["FORMAT_CONFIG"][key])
+            newsection = "FORMAT_CONFIG"
+            config_parser.add_section(newsection)
+            for key in CONFIG_PARSER[newsection].keys():
+                config_parser.set(newsection, key, CONFIG_PARSER["FORMAT_CONFIG"][key])
 
 #            newsection = 'DATA_FRAME'
 #            config_parser.add_section(newsection)
