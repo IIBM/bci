@@ -567,7 +567,7 @@ class  bci_data_handler():
 
         self.data_new = np.int16(np.zeros([CONFIG['#CHANNELS'], CONFIG['PAQ_USB']]))
         self.spikes_times = 0 
-        self.graph_data = np.int16(np.zeros([CONFIG['#CHANNELS'],
+        self.graph_data = np.int32(np.zeros([CONFIG['#CHANNELS'],
                                              LG_CONFIG['MAX_PAQ_DISPLAY'] * CONFIG['PAQ_USB']]))
         self.paqdisplay = 0
         self.paq_view = 1

@@ -8,8 +8,6 @@ import numpy as np
 from ConfigParser import ConfigParser
 
 
-
-
 class iibm_loader():
     def __init__(self,reg_filename):
         self.reg_filename = reg_filename

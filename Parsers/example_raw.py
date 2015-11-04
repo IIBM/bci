@@ -7,8 +7,8 @@ import numpy as np
 
  
 
-LARGO_TRAMA = (int(CONFIG_PARSER["FORMAT_CONFIG"]["no_tet_ch"]) + CONFIG['#CHANNELS'] ) * int(CONFIG_PARSER["FORMAT_CONFIG"]["byte4sample"])
-DATA_FRAME_L = (int(CONFIG_PARSER["FORMAT_CONFIG"]["no_tet_ch"]) + CONFIG['#CHANNELS'] )
+LARGO_TRAMA = (int(CONFIG_PARSER["FORMAT_CONFIG"]["no_ch"]) + CONFIG['#CHANNELS'] ) * int(CONFIG_PARSER["FORMAT_CONFIG"]["byte4sample"])
+DATA_FRAME_L = (int(CONFIG_PARSER["FORMAT_CONFIG"]["no_ch"]) + CONFIG['#CHANNELS'] )
 
 file_input_name = path.join(CONFIG_PARSER["FOLDER"],CONFIG_PARSER["FORMAT_CONFIG"]["file_name"])
 
@@ -19,7 +19,7 @@ class Parser():
         self.logging =logging
         self.send_warnings = send_warnings
         self.file_input = open(file_input_name,'rb')
-        self.data=data_in()
+        self.data = data_in()
    
     def Error_mess(self, error_string):
         self.logging.error(Errors_Messages[COUNTER_ERROR])

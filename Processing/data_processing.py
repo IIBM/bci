@@ -96,6 +96,8 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
 
             if not data_queue.empty():
                 new_pure_data = data_queue.get(TIMEOUT_GET)   
+                if isinstance(new_pure_data, list):
+                    continue                
                 new_data[:,EXTRA_SIGNAL:] = new_pure_data.channels
             else:
                 continue
