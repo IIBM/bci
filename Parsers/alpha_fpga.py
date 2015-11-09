@@ -10,6 +10,18 @@ for x in CONFIG_PARSER['FORMAT_CONFIG']:
         COMM[x] = int(CONFIG_PARSER['FORMAT_CONFIG'][x])
     else:
         COMM[x] = CONFIG_PARSER['FORMAT_CONFIG'][x]
+
+    
+if not CONFIG['ONLINE_MODE']:
+    if CONFIG_PARSER.has_key("DATA_INFO"):
+        INFO = {}
+        for x in CONFIG_PARSER['DATA_INFO']:
+            if CONFIG_PARSER['DATA_INFO'][x].isdigit():
+                INFO[x] = int(CONFIG_PARSER['DATA_INFO'][x])
+            else:
+                INFO[x] = CONFIG_PARSER['DATA_INFO'][x]
+    from configuration import FILE_CONFIG
+    
     
 class Parser():
     """Une secciones de datos raw y crea la matriz que se pasara al siguiente proceso"""
@@ -22,16 +34,20 @@ class Parser():
         self.contador =- 1 #el contador de la trama
         self.tramas_parseadas = 0 #ubicacion en el bloque q se esta creando
         self.data = data_in()
-        self.c_t = 0#ubicacion en el bloque q se esta leyendo
+        self.c_t = 0 #ubicacion en el bloque q se esta leyendo
         self.sinc = 0
         self.first_read = True
         self.send_warnings = send_warnings
         self.data_raw = np.ndarray(COMM['l_frame'] * CONFIG['PAQ_USB'] * 2, np.int16) #es el doble de grande que el que sera utilizado normalmente
-
+        if not CONFIG['ONLINE_MODE']:
+            self.open_file = None
+            self.file_reading = FILE_CONFIG['FORMAT_FILE']
+            self.unread_frames = 0
+            self.n_file = 0
+            
     def get_raw(self,extra_data):
         new_pack_data = (CONFIG['PAQ_USB'] + extra_data) * COMM['l_frame']
         return self.data_raw[:new_pack_data]  
-    
     
     def online_update(self, data):
         """Recibe datos, los parsea. Si llena una trama fija retorna 0, 
@@ -128,3 +144,29 @@ class Parser():
             #retorno cuanto le falta para terminar el bloque de canales
             self.c_t = 0
             return CONFIG['PAQ_USB'] - self.tramas_parseadas
+            
+            
+    def offline_update(self):
+        if (self.unread_frames == 0) and (self.n_file < INFO['files']):
+            self.n_file = self.n_file+1
+            self.open_file = open(FILE_CONFIG['FORMAT_FILE'][:-1]+str(self.n_file))
+            if self.n_file == INFO['files']:
+                self.unread_frames = INFO['samples4lastfile']
+            else:
+                self.unread_frames = INFO['samples4file']
+        elif (self.unread_frames == 0) and (self.n_file == INFO['files']):
+            return 1
+            
+        if self.unread_frames >= CONFIG['PAQ_USB']:
+            self.new_data = np.fromfile(self.open_file,np.int16,CONFIG['PAQ_USB']*COMM['l_frame'])
+            self.unread_frames = self.unread_frames -  CONFIG['PAQ_USB']
+        else:
+            self.new_data = np.fromfile(self.open_file,np.int16,self.unread_frames*COMM['l_frame'])
+            self.unread_frames = 0
+        
+        if self.unread_frames == 0:
+            self.open_file.close()
+
+        return self.online_update(self.new_data)
+       
+        

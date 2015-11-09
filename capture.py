@@ -36,7 +36,7 @@ def get_data_from_file(com, send_warnings, cola):
     reg_files = FileHandle()
     parser = Parser(cola,logging,data_in)
     comando = 'normal'
-    extra_data = 0
+    extra_data = 0 #datos extra que necesitan para llenar el paquete
 
     while(comando != EXIT_SIGNAL):
         while not com.poll(): #mientras no se recivan comandos leo
@@ -53,7 +53,6 @@ def get_data_from_file(com, send_warnings, cola):
                         logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
                 if save_data:
                     reg_files.save(parser.new_data)
-
         comando = com.recv()
         save_data = (comando == START_SIGNAL)
         reg_files.actions(comando)
@@ -150,6 +149,9 @@ class FileHandle():
             config_parser.set(newsection, 'fs', CONFIG['FS'])
             config_parser.set(newsection, 'channels', CONFIG['#CHANNELS'])
             config_parser.set(newsection, 'adc_scale', CONFIG['ADC_SCALE'])
+            config_parser.set(newsection, 'format', CONFIG['FORMAT'])
+            config_parser.set(newsection, 'online', 'False')
+            config_parser.set(newsection, 'filtered', CONFIG['FILTERED'])
             
             newsection = "FORMAT_CONFIG"
             config_parser.add_section(newsection)

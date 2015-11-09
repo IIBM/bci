@@ -24,6 +24,7 @@ load_file_folder = path.expanduser('~') + "/bci_registros/"
 
 if path.isfile(USER_CONFIG_FILE) and  (path.getmtime(DEFAULT_CONFIG_FILE) < path.getmtime(USER_CONFIG_FILE)): 
     config.read(USER_CONFIG_FILE)
+    
 else:
     config.read(DEFAULT_CONFIG_FILE)
 
@@ -40,10 +41,8 @@ def config_editor():
     #app = QtGui.QApplication([])
     #config.set('FILE','generic_file',QtGui.QFileDialog.getSaveFileName())
 
-##
-##
     if not config.getboolean('GRAPHICS','open_conf_editor'):
-    	format_conf = Config2Dicc(path.abspath(config.get('FILE','format_file')))
+        format_conf = Config2Dicc(path.abspath(config.get('FILE','format_file')))
         config.set('FILE', 'generic_file',save_file)
         config.set('GENERAL', 'format',format_conf['GENERAL']['format'])
     	##si es online deberian leerse y forzarse desde la conf del registro:
@@ -138,8 +137,12 @@ class Config_dialog(QtGui.QDialog):
         self.change_filter_mode(self.band_pass_cb.isChecked())
         
         self.save_file_label.setText(save_file)
-        self.update_from_loadf_file(path.abspath(config.get('FILE','format_file')))
-
+        try:
+            self.update_from_loadf_file(path.abspath(config.get('FILE','format_file')))
+        except:
+            default_conf = Config2Dicc(DEFAULT_CONFIG_FILE)
+            config.set('FILE','format_file',default_conf['FILE']['format_file'])
+            self.update_from_loadf_file(path.abspath(config.get('FILE','format_file')))
     def My_accept(self):
         if self.check():
             self.update_config()
@@ -147,7 +150,7 @@ class Config_dialog(QtGui.QDialog):
             self.accept()
     
     def update_config(self):
-        
+        global config
         config.set('GENERAL', 'format',self.config.get('GENERAL','format'))
         config.set('GENERAL', 'online_mode',str(not self.offline_mode))
         config.set('GENERAL', 'filtered',self.config.get('GENERAL','filtered'))

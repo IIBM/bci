@@ -30,6 +30,7 @@ else:
     FILE_CONFIG = {
         'MAX_SIZE_FILE' : CONFIG.getint('FILE', 'max_size_file'),
         'GENERIC_FILE' : save_file,
+        'FORMAT_FILE' : CONFIG.get('FILE', 'format_file'),
     }
 
        
