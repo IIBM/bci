@@ -35,7 +35,7 @@ else:
 
 #fft_frec = np.linspace(0, CONFIG['FS'] / 2, FFT_SIZE/2)
 one_pack_time = CONFIG['PAQ_USB'] / CONFIG['FS']
-PACK_xSPIKE_COUNT = int(float(LG_CONFIG['TIME_SPIKE_COUNT']) / one_pack_time)
+PACK_xSPIKE_COUNT = int(np.ceil(float(LG_CONFIG['TIME_SPIKE_COUNT']) / one_pack_time))
 FREQFIX_xSPIKE_COUNT = (float(PACK_xSPIKE_COUNT)*one_pack_time)
 beep_command = "beep -f " + LG_CONFIG['BEEP_FREQ'] + " -l " \
                 + str(BIO_CONFIG['SPIKE_DURATION']) + " -d "
