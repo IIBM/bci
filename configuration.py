@@ -39,7 +39,7 @@ else:
         'FFT_RESOLUTION' : CONFIG.getint('GRAPHICS', 'fft_resolution'),
         'FFT_N' : CONFIG.getint('GRAPHICS', 'fft_n'),
         'FFT_L_PAQ' : CONFIG.getint('GRAPHICS', 'fft_l_paq'),
-        'ROWS_DISPLAY' : CONFIG.getint('GRAPHICS', 'rows_display'),
+        'COL_DISPLAY' : CONFIG.getint('GRAPHICS', 'col_display'),
         'TIME_SPIKE_COUNT' : CONFIG.getint('GRAPHICS', 'time_spike_count'),
         'DISPLAY_LIMY' : CONFIG.getint('GRAPHICS', 'display_limy'),
         'MAX_PAQ_DISPLAY' : CONFIG.getint('GRAPHICS', 'max_paq_display'),

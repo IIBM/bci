@@ -130,7 +130,7 @@ class Config_dialog(QtGui.QDialog):
         self.filter_l_line.set_conf(int,'SIGNAL_PROCESSING','length_filter',self.conf_updated_signal,self.config)
         self.lp_line.set_conf(float,'SIGNAL_PROCESSING','fmax',self.conf_updated_signal,self.config)
 
-        self.rows_cb.setValue(config.getint('GRAPHICS','rows_display'))
+        self.rows_cb.setValue(config.getint('GRAPHICS','col_display'))
         self.two_win_cb.setChecked(config.getboolean('GRAPHICS','two_windows'))        
         
         self.band_pass_cb.setChecked(config.getboolean('SIGNAL_PROCESSING','band_pass'))
@@ -156,7 +156,7 @@ class Config_dialog(QtGui.QDialog):
         config.set('GENERAL', 'filtered',self.config.get('GENERAL','filtered'))
         
        #? online save in some place?
-        config.set('GRAPHICS', 'rows_display', str(self.rows_cb.value()))
+        config.set('GRAPHICS', 'col_display', str(self.rows_cb.value()))
         config.set('GRAPHICS', 'two_windows', str(self.two_win_cb.isChecked()))
         
         if self.default_files == True:
@@ -210,7 +210,7 @@ class Config_dialog(QtGui.QDialog):
 
         self.config.read(format_config_file)
         
-        self.offline_mode = not self.config.getboolean('GENERAL','online')
+        self.offline_mode = not self.config.getboolean('GENERAL','online_mode')
         
         self.change_mode(self.offline_mode)
         self.conf_updated_signal.emit()

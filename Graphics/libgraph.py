@@ -457,40 +457,46 @@ class GeneralDisplay():
             self.second_win.show()
             
         for i in xrange(CONFIG['#CHANNELS']):
-            vb = ViewBox_General_Display(i, ch_changed_signal)
+            if not(i % CONFIG['ELEC_GROUP'] is 0):
+                continue
             
-            if (i < main_win_ch):
-                graph = layout_graphicos.addPlot(viewBox = vb, 
-                                                 row = int(i/CONFIG['ELEC_GROUP']/LG_CONFIG['ROWS_DISPLAY'])*CONFIG['ELEC_GROUP'] + i%CONFIG['ELEC_GROUP'], 
-                                                    col = int(i/CONFIG['ELEC_GROUP'])%LG_CONFIG['ROWS_DISPLAY'], 
-                                                rowspan = 1, colspan = 1)
-            else:
-                graph = layout_graphicos_2.addPlot(viewBox=vb, 
-                                                   row = int((i-main_win_ch) / CONFIG['ELEC_GROUP'] / LG_CONFIG['ROWS_DISPLAY'])*CONFIG['ELEC_GROUP']+(i-main_win_ch)%CONFIG['ELEC_GROUP'], 
-                                                   col = int((i - main_win_ch) / CONFIG['ELEC_GROUP'])%LG_CONFIG['ROWS_DISPLAY'],
-                                                    rowspan = 1, colspan = 1)
-            
-            graph.hideButtons()
-            graph.setDownsampling(auto = True)
-            VB = graph.getViewBox()
-            
-            VB.setXRange(0, CONFIG['PAQ_USB'], padding = 0, update = True) #HARDCODE
-            VB.setYRange(LG_CONFIG['DISPLAY_LIMY'], -LG_CONFIG['DISPLAY_LIMY'],
-                         padding = 0, update = True)
 
-            if i % CONFIG['ELEC_GROUP'] is 0:
-                graph.setTitle("<font size=\"3\">{} {}</font>".format(LG_CONFIG['GROUP_LABEL'], str(i / CONFIG['ELEC_GROUP'] + 1)))
+            if (i < main_win_ch):
+                laxu = layout_graphicos.addLayout(row = int(i/CONFIG['ELEC_GROUP']/LG_CONFIG['COL_DISPLAY']), 
+                                                    col = int(i/CONFIG['ELEC_GROUP'])%LG_CONFIG['COL_DISPLAY'], 
+                                                rowspan = 1, colspan=1)#, border=(50,0,0)
+            else:
+                laxu = layout_graphicos_2.addLayout(row = int((i-main_win_ch) / LG_CONFIG['COL_DISPLAY']), 
+                                                   col = int((i - main_win_ch))%LG_CONFIG['COL_DISPLAY'],
+                                                    rowspan = 1, colspan=1)
+                                                    
             
-            graph.showAxis('bottom', show = False) 
-            graph.showAxis('top', show = False)
-            graph.showAxis('right', show = False)
-            graph.showAxis('left', show = False)
-            graph.showGrid(y = True)
-            graph.setMenuEnabled(enableMenu = False, enableViewBoxMenu = False)
-            graph.setMouseEnabled(x = False, y = True)
-            self.curv_canal.append(graph.plot())
-            self.curv_canal[-1].setPen(width = 1, color = CH_COLORS[i%CONFIG['ELEC_GROUP']])
-            self.graphicos.append(graph)
+            label_aux=laxu.addLabel("<font size=\"3\">{} {}</font>".format(LG_CONFIG['GROUP_LABEL'], str(i / CONFIG['ELEC_GROUP'] + 1)), angle=-90, rowspan=CONFIG['ELEC_GROUP'])
+            label_aux.setMaximumWidth(4)
+            for j in xrange(i,min(i+CONFIG['ELEC_GROUP'],CONFIG['#CHANNELS'])):
+                vb = ViewBox_General_Display(j, ch_changed_signal)
+                graph = laxu.addPlot(viewBox = vb, col=1,
+                                                     row = j%CONFIG['ELEC_GROUP'], 
+                                                    rowspan = 1, colspan = 1)
+
+                graph.hideButtons()
+                graph.setDownsampling(auto = True)
+                VB = graph.getViewBox()
+                
+                VB.setXRange(0, CONFIG['PAQ_USB'], padding = 0, update = True) #HARDCODE
+                VB.setYRange(LG_CONFIG['DISPLAY_LIMY'], -LG_CONFIG['DISPLAY_LIMY'],
+                             padding = 0, update = True)
+    
+                graph.showAxis('bottom', show = False) 
+                graph.showAxis('top', show = False)
+                graph.showAxis('right', show = False)
+                graph.showAxis('left', show = False)
+                graph.showGrid(y = True)
+                graph.setMenuEnabled(enableMenu = False, enableViewBoxMenu = False)
+                graph.setMouseEnabled(x = False, y = True)
+                self.curv_canal.append(graph.plot())
+                self.curv_canal[-1].setPen(width = 1, color = CH_COLORS[j%CONFIG['ELEC_GROUP']])
+                self.graphicos.append(graph)
 
         
     def changeYrange(self, p):
