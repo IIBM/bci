@@ -216,9 +216,20 @@ class MainWindow(QtGui.QMainWindow):
         self.general_display.close()
         #self.close()
         QtCore.QCoreApplication.instance().quit()
-        #exit()        
-        import sys
-        sys.exit()
+        #QtCore.QCoreApplication.instance().exit(N) devuelve N en APP.exec_()   
+#        import sys
+#        sys.exit()
+    def on_action_Restart(self):
+        self.timer.stop()
+        self.get_data_process.control.send(EXIT_SIGNAL)
+        self.processing_process.control.send(EXIT_SIGNAL)
+        self.get_data_process.process.join(2)
+        self.processing_process.process.join(1)
+        self.processing_process.process.terminate()
+        self.get_data_process.process.terminate()
+        self.general_display.close()
+        #self.close()
+        QtCore.QCoreApplication.instance().exit(1)
 
     def on_actionNuevo(self):
         """Nuevo archivo de registro"""
@@ -456,18 +467,15 @@ class GeneralDisplay():
             layout_graphicos_2 = self.second_win.layout_graphicos
             self.second_win.show()
             
-        for i in xrange(CONFIG['#CHANNELS']):
-            if not(i % CONFIG['ELEC_GROUP'] is 0):
-                continue
-            
+        for i in xrange(0,CONFIG['#CHANNELS'],CONFIG['ELEC_GROUP']):
 
             if (i < main_win_ch):
                 laxu = layout_graphicos.addLayout(row = int(i/CONFIG['ELEC_GROUP']/LG_CONFIG['COL_DISPLAY']), 
                                                     col = int(i/CONFIG['ELEC_GROUP'])%LG_CONFIG['COL_DISPLAY'], 
                                                 rowspan = 1, colspan=1)#, border=(50,0,0)
             else:
-                laxu = layout_graphicos_2.addLayout(row = int((i-main_win_ch) / LG_CONFIG['COL_DISPLAY']), 
-                                                   col = int((i - main_win_ch))%LG_CONFIG['COL_DISPLAY'],
+                laxu = layout_graphicos_2.addLayout(row = int((i-main_win_ch)/CONFIG['ELEC_GROUP'] / LG_CONFIG['COL_DISPLAY']), 
+                                                   col = int((i - main_win_ch)/CONFIG['ELEC_GROUP'])%LG_CONFIG['COL_DISPLAY'],
                                                     rowspan = 1, colspan=1)
                                                     
             

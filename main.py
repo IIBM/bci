@@ -5,18 +5,16 @@ Archivo main
 """
 from pyqtgraph.Qt import QtGui #interfaz en general
 
-APP = QtGui.QApplication([])
-from configuration import GENERAL_CONFIG as CONFIG
-if CONFIG == None:
-    import sys
-    sys.exit()
 
+def main(APP):
+    
 
-from Graphics.libgraph import MainWindow
-from multi_process import init_process
-
-def main():
-
+    from configuration import GENERAL_CONFIG as CONFIG
+    if CONFIG == None:
+        import sys
+        sys.exit()
+    from multi_process import init_process
+    from Graphics.libgraph import MainWindow
     if CONFIG['ONLINE_MODE'] is False:
         dev_usb = False
     else:
@@ -45,9 +43,12 @@ def main():
     window = MainWindow(processing_process, get_data_process)
     window.show()
     #APP.setWindowIcon(QtGui.QIcon('Graphics/icon.png'))
-    APP.exec_()
-    
+    return APP.exec_()
     
 if __name__ == '__main__':
-    main()
+       
+    APP = QtGui.QApplication([])
+    main(APP)
+#    while main(APP):
+#        pass
     

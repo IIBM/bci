@@ -51,7 +51,7 @@
      <x>0</x>
      <y>0</y>
      <width>784</width>
-     <height>28</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">
@@ -73,6 +73,7 @@
      <string>Extras</string>
     </property>
     <addaction name="actionStop_SP"/>
+    <addaction name="actionRestart_GUI"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -1080,6 +1081,11 @@
     <string>Neurons's firing rates</string>
    </property>
   </action>
+  <action name="actionRestart_GUI">
+   <property name="text">
+    <string>Restart GUI</string>
+   </property>
+  </action>
   <zorder>SpS_dock</zorder>
   <zorder>control_panel_dock</zorder>
   <zorder>firing_rates_dock</zorder>
@@ -1493,6 +1499,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionRestart_GUI</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>on_action_Restart()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>391</x>
+     <y>517</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>on_actionDetener()</slot>
@@ -1500,5 +1522,6 @@
   <slot>on_actionNuevo()</slot>
   <slot>on_actionStop_SP()</slot>
   <slot>about()</slot>
+  <slot>on_action_Restart()</slot>
  </slots>
 </ui>

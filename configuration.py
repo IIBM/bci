@@ -8,7 +8,6 @@ Create structures that will be loaded by other modules
 """
 from Graphics.bci_config_editor import config_editor
 
-
 confi_tuple = config_editor()
 
 if confi_tuple == None:
