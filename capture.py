@@ -37,15 +37,16 @@ def get_data_from_file(com, send_warnings, cola):
     parser = Parser(cola,logging,data_in)
     comando = 'normal'
     extra_data = 0 #datos extra que necesitan para llenar el paquete
-
+    pre_time = time.time()
     while(comando != EXIT_SIGNAL):
         while not com.poll(): #mientras no se recivan comandos leo
 
             extra_data = parser.offline_update()
             if extra_data == 0: #estoy justo o me sobran datos    
+                time.sleep(max(CONFIG['PAQ_USB'] / CONFIG['FS']-(time.time()-pre_time),0))
                 try:
-                    time.sleep(CONFIG['PAQ_USB'] / CONFIG['FS'])
                     cola.put(parser.data, timeout = TIMEOUT_PUT)
+                    pre_time = time.time()
                 except Queue_Full:
                     try:
                         send_warnings.put_nowait([SLOW_PROCESS_SIGNAL])
