@@ -46,9 +46,10 @@ def main(APP):
     return APP.exec_()
     
 if __name__ == '__main__':
-       
-    APP = QtGui.QApplication([])
-    main(APP)
-#    while main(APP):
-#        pass
     
+    APP = QtGui.QApplication([])
+
+    while main(APP):
+        import sys,os
+        python = sys.executable
+        os.execl(python, python, * sys.argv)
