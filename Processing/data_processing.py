@@ -4,7 +4,6 @@ from configuration import GENERAL_CONFIG as CONFIG
 from multiprocess_config import *
 from configuration import SIGNAL_PROCESSING_CONFIG as SP_CONFIG
 
-
 if SP_CONFIG['BAND_PASS']:
     FILTER_FREQ = [float(SP_CONFIG['FMIN']*2)/CONFIG['FS'],
                    float(SP_CONFIG['FMAX']*2)/CONFIG['FS']]
@@ -49,6 +48,14 @@ class Signal_Parameters():
     #x=abs(signal.lfilter(b_spike,a_spike,data[canales,:]))
     #umbrales=4*np.median(x/0.6745)
     #return x,umbrales
+    
+def firfilter(b,data):
+    blen=len(b)
+    new_data = b[0]*data[:,blen:]
+    for i in xrange(1,blen):
+        new_data += b[i]*data[:,blen-i:-i]
+    return new_data
+    
     
 def calc_std(x,axis):
     return np.median(np.abs(x)/0.6745,axis)
@@ -102,8 +109,9 @@ def data_processing(data_queue, ui_config_queue, graph_data_queue,
             else:
                 continue
 
-            filtered_data = (signal.lfilter(FILTER_COEF, [1], new_data)[:,EXTRA_SIGNAL:])
-
+            #filtered_data = (signal.lfilter(FILTER_COEF, [1], new_data)[:,EXTRA_SIGNAL:]) #this support iir
+            filtered_data = firfilter(FILTER_COEF,new_data) #this is a little more fast
+            
             params.update(filtered_data)
             
             new_thr = ui_ch_config.thr_values*(~ui_ch_config.thr_manual_mode*params.std + ui_ch_config.thr_manual_mode)

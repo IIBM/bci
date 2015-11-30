@@ -1,8 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Nov 30 17:28:58 2015
+
+@author: fernando chaure
+"""
+
 from configuration import GENERAL_CONFIG as CONFIG
 from multiprocess_config import *
 import numpy as np
 from configuration import CONFIG_PARSER
-
+from os import path
 
 COMM = {}
 for x in CONFIG_PARSER['FORMAT_CONFIG']:
@@ -22,6 +29,12 @@ if not CONFIG['ONLINE_MODE']:
                 INFO[x] = CONFIG_PARSER['DATA_INFO'][x]
     from configuration import FILE_CONFIG
     
+    
+if path.exists(path.join(CONFIG_PARSER['FOLDER'],CONFIG_PARSER['FORMAT_CONFIG']['ch_order'])): #check if the string is a valid file name
+    CH_ORD = np.loadtxt(path.join(CONFIG_PARSER['FOLDER'],CONFIG_PARSER['FORMAT_CONFIG']['ch_order']),np.int)-1
+else: #else should be a list of ints
+    CH_ORD = np.fromstring(CONFIG_PARSER['FORMAT_CONFIG']['ch_order'],np.int,sep=' ')-1
+  
     
 class Parser():
     """Une secciones de datos raw y crea la matriz que se pasara al siguiente proceso"""
@@ -57,9 +70,9 @@ class Parser():
         if self.c_t == 0 :
             self.sinc = 0
             while self.sinc < COMM['l_frame']:               
-                if (data[self.sinc] == self.FFplus) and not( reduce(lambda x,y: x^y, data[self.sinc:self.sinc+ COMM['l_frame']])):
+                if (data[self.sinc] == self.FFplus) and not(  np.logical_xor.reduce(data[self.sinc:self.sinc+ COMM['l_frame']])):
                     #parsea:
-                    self.data.channels[:, self.frames_parsed] = data[COMM['channels_pos'] + self.sinc:self.sinc+COMM['channels_pos'] + CONFIG['#CHANNELS']]-2**15
+                    self.data.channels[:, self.frames_parsed] = (data[COMM['channels_pos'] + self.sinc:self.sinc+COMM['channels_pos'] + CONFIG['#CHANNELS']]-2**15)[CH_ORD]
                     self.frames_parsed += 1
                     counter_old = self.counter
                     self.counter = (data[COMM['counter_pos'] + self.sinc])
@@ -99,34 +112,25 @@ class Parser():
 
                 self.c_t = max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
                 break
-            if (not reduce(lambda x,y: x^y, data[init_trama:init_trama+ COMM['l_frame']])): #esto es cualca, solo para reemplarzar el xor
-                #parsea:
-                self.data.channels[:, self.frames_parsed] = data[init_trama + COMM['channels_pos']:init_trama + COMM['channels_pos'] + CONFIG['#CHANNELS']]-2**15
-                #ojo aca se tendria q parsear y guardar el resto de la informacion q viene en la trama                
-                self.frames_parsed += 1
-                counter_old = self.counter
-                self.counter = data[init_trama+COMM['counter_pos']]
-                #comparo counteres aviso
-                if np.int16(counter_old + 1) != self.counter:
-                    #guardo discontinuidad!!!
-                    #print "perdida de datos segun counter"
-                    self.logging.error(Errors_Messages[COUNTER_ERROR])
-                    try:
-                        self.send_warnings.put_nowait([COUNTER_ERROR,1])
-                    except Queue_Full:
-                        self.logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
-                    
-                    
-                #fin del parseo
-  
-            else:
-                #print "dato erroneo detectado"
-                self.logging.error(Errors_Messages[DATA_CORRUPTION])
+            #parsea:
+            self.data.channels[:, self.frames_parsed] = (data[init_trama + COMM['channels_pos']:init_trama + COMM['channels_pos'] + CONFIG['#CHANNELS']]-2**15)[CH_ORD]
+            #ojo aca se tendria q parsear y guardar el resto de la informacion q viene en la trama                
+            self.frames_parsed += 1
+            counter_old = self.counter
+            self.counter = data[init_trama+COMM['counter_pos']]
+            #comparo counteres aviso
+            if np.int16(counter_old + 1) != self.counter:
+                #guardo discontinuidad!!!
+                #print "perdida de datos segun counter"
+                self.logging.error(Errors_Messages[COUNTER_ERROR])
                 try:
-                    self.send_warnings.put_nowait([DATA_CORRUPTION, 1])
-                except Queue_Full: 
+                    self.send_warnings.put_nowait([COUNTER_ERROR,1])
+                except Queue_Full:
                     self.logging.error(Errors_Messages[SLOW_GRAPHICS_SIGNAL])
-                #chekea, elimina dato, avisar corte y error de transmision
+                
+                
+            #fin del parseo
+  
             self.c_t += 1
             
         
