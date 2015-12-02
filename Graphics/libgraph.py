@@ -54,6 +54,7 @@ class MainWindow(QtGui.QMainWindow):
     channel_changed  = QtCore.pyqtSignal(int) 
     def __init__(self, processing_process, get_data_process):
         QtGui.QMainWindow.__init__(self)
+        self.showMaximized()
         uic.loadUi(UIFILE, self)
         #self.tabifyDockWidget(self.firing_rates_dock,self.clustering_dock);
         
@@ -145,8 +146,11 @@ class MainWindow(QtGui.QMainWindow):
         if LG_CONFIG['PROBE_CONF_L']:
             aux = '{}:{} | C:{}'.format(LG_CONFIG['PROBE_CONF_L'], 
         int(channel/CONFIG['ELEC_GROUP']) + 1, channel%CONFIG['ELEC_GROUP'] + 1)
+            self.show_group.setWindowTitle('{} {}'.format(LG_CONFIG['GROUP_LABEL'],int(channel/CONFIG['ELEC_GROUP'])+ 1))
         else:
             aux = 'Electrode : {}'.format(channel)
+            self.show_group.setWindowTitle(aux)
+            
         self.info_label.setText(aux)
         self.show_s_channel.setWindowTitle(aux)
         #self.elec_group = channel%CONFIG['ELEC_GROUP']
@@ -275,7 +279,8 @@ class  plus_display():
         #layout_graphicos.addItem(self.tasas_bars,row=None, col=0, rowspan=1, colspan=1)
         #graph=layout_graphicos.addPlot(row=None, col=1, rowspan=1, colspan=3)
         #create and configure selected channel plot:
-        layout_tet= pg.GraphicsLayout(border = (100, 0, 100)) 
+        layout_tet= pg.GraphicsLayout()#border = (100, 0, 100)) 
+        layout_tet.setSpacing(0)
         grid_group.setCentralItem(layout_tet)
         self.tet_curves = list()
         for i in range(CONFIG['ELEC_GROUP']):
@@ -386,9 +391,11 @@ class  plus_display():
 
         self.curve.setPen(CH_COLORS[self.channel%CONFIG['ELEC_GROUP']])
         self.curve.setData(x = xtime[:n_view], y = data[self.channel, :n_view])
-      
-        
-                    
+        fist_ch_group = int(self.channel/CONFIG['ELEC_GROUP'])*CONFIG['ELEC_GROUP']
+        for i in range(CONFIG['ELEC_GROUP']):
+            self.tet_curves[i+fist_ch_group].setPen(CH_COLORS[i])
+            self.tet_curves[i+fist_ch_group].setData(x = xtime[:n_view], y = data[fist_ch_group+i, :n_view])      
+             
     def threshold_visible(self, visible):
         """Define si el umbral es visible o no"""
         if visible:
@@ -478,7 +485,7 @@ class GeneralDisplay():
         layout_graphicos = pg.GraphicsLayout(border = (100, 0, 100)) 
         #para ordenar los graphicos(items) asi como el simil con los widgets
         espacio_pg.setCentralItem(layout_graphicos)
-
+        layout_graphicos.setSpacing(0)
         self.set_canales = list() #canales seleccionados para ser mostrados
         self.curv_canal = list() #curvas para dsp actualizar los datos
         self.graphicos = list() #graphicos, para dsp poder modificar su autorange
@@ -491,6 +498,7 @@ class GeneralDisplay():
             main_win_ch = int(CONFIG['#CHANNELS']*3/CONFIG['ELEC_GROUP']/7)*CONFIG['ELEC_GROUP']
             self.second_win = Second_Display_Window()            
             layout_graphicos_2 = self.second_win.layout_graphicos
+            layout_graphicos_2.setSpacing(0)
             self.second_win.show()
             
         for i in xrange(0,CONFIG['#CHANNELS'],CONFIG['ELEC_GROUP']):
@@ -499,14 +507,16 @@ class GeneralDisplay():
                 laxu = layout_graphicos.addLayout(row = int(i/CONFIG['ELEC_GROUP']/LG_CONFIG['COL_DISPLAY']), 
                                                     col = int(i/CONFIG['ELEC_GROUP'])%LG_CONFIG['COL_DISPLAY'], 
                                                 rowspan = 1, colspan=1)#, border=(50,0,0)
+                laxu.setSpacing(0)                        
             else:
                 laxu = layout_graphicos_2.addLayout(row = int((i-main_win_ch)/CONFIG['ELEC_GROUP'] / LG_CONFIG['COL_DISPLAY']), 
                                                    col = int((i - main_win_ch)/CONFIG['ELEC_GROUP'])%LG_CONFIG['COL_DISPLAY'],
                                                     rowspan = 1, colspan=1)
+                laxu.setSpacing(0)
                                                     
             
             label_aux=laxu.addLabel("<font size=\"3\">{} {}</font>".format(LG_CONFIG['GROUP_LABEL'], str(i / CONFIG['ELEC_GROUP'] + 1)), angle=-90, rowspan=CONFIG['ELEC_GROUP'])
-            label_aux.setMaximumWidth(4)
+            label_aux.setMaximumWidth(7)
             for j in xrange(i,min(i+CONFIG['ELEC_GROUP'],CONFIG['#CHANNELS'])):
                 vb = ViewBox_General_Display(j, ch_changed_signal)
                 graph = laxu.addPlot(viewBox = vb, col=1,
