@@ -54,9 +54,10 @@ class MainWindow(QtGui.QMainWindow):
     channel_changed  = QtCore.pyqtSignal(int) 
     def __init__(self, processing_process, get_data_process):
         QtGui.QMainWindow.__init__(self)
-        self.showMaximized()
+        
         uic.loadUi(UIFILE, self)
         #self.tabifyDockWidget(self.firing_rates_dock,self.clustering_dock);
+        self.showMaximized()
         
         self.SpS_dock.setVisible(False)
         self.actionSpS.setChecked(False)
@@ -148,7 +149,7 @@ class MainWindow(QtGui.QMainWindow):
         int(channel/CONFIG['ELEC_GROUP']) + 1, channel%CONFIG['ELEC_GROUP'] + 1)
             self.show_group.setWindowTitle('{} {}'.format(LG_CONFIG['GROUP_LABEL'],int(channel/CONFIG['ELEC_GROUP'])+ 1))
         else:
-            aux = 'Electrode : {}'.format(channel)
+            aux = 'Electrode : {}'.format(channel+1)
             self.show_group.setWindowTitle(aux)
             
         self.info_label.setText(aux)
@@ -224,8 +225,8 @@ class MainWindow(QtGui.QMainWindow):
         #self.close()
         QtCore.QCoreApplication.instance().quit()
         #QtCore.QCoreApplication.instance().exit(N) devuelve N en APP.exec_()   
-#        import sys
-#        sys.exit()
+        import sys
+        sys.exit()
 
 
     def on_actionNuevo(self):
@@ -292,6 +293,7 @@ class  plus_display():
             VB.setYRange(LG_CONFIG['DISPLAY_LIMY'], -LG_CONFIG['DISPLAY_LIMY'], padding=0, update=True)
             graph.setMenuEnabled(enableMenu = False, enableViewBoxMenu = None)
             graph.setDownsampling(auto = True)
+            graph.showAxis('left', show = False)
             if i != CONFIG['ELEC_GROUP']-1:
                 graph.showAxis('bottom', show = False) 
             self.tet_curves.append(graph.plot())
@@ -391,10 +393,11 @@ class  plus_display():
 
         self.curve.setPen(CH_COLORS[self.channel%CONFIG['ELEC_GROUP']])
         self.curve.setData(x = xtime[:n_view], y = data[self.channel, :n_view])
+        
         fist_ch_group = int(self.channel/CONFIG['ELEC_GROUP'])*CONFIG['ELEC_GROUP']
         for i in range(CONFIG['ELEC_GROUP']):
-            self.tet_curves[i+fist_ch_group].setPen(CH_COLORS[i])
-            self.tet_curves[i+fist_ch_group].setData(x = xtime[:n_view], y = data[fist_ch_group+i, :n_view])      
+            self.tet_curves[i].setPen(CH_COLORS[i])
+            self.tet_curves[i].setData(x = xtime[:n_view], y = data[fist_ch_group+i, :n_view])      
              
     def threshold_visible(self, visible):
         """Define si el umbral es visible o no"""
@@ -426,6 +429,12 @@ class  plus_display():
         self.curve.setPen(CH_COLORS[ch%CONFIG['ELEC_GROUP']])
         self.curve.setData(x = self.data_handler.xtime[:n_view], y = data[ch, :n_view])
         
+        fist_ch_group = int(ch/CONFIG['ELEC_GROUP'])*CONFIG['ELEC_GROUP']
+        for i in range(CONFIG['ELEC_GROUP']):
+            self.tet_curves[i].setPen(CH_COLORS[i])
+            self.tet_curves[i].setData(x = self.data_handler.xtime[:n_view], y = data[fist_ch_group+i, :n_view])      
+            
+      
         if int(self.channel/CONFIG['ELEC_GROUP']) != int(ch/CONFIG['ELEC_GROUP']):
             self.tasas_bars.tet_changed()
         self.channel = ch
@@ -507,12 +516,12 @@ class GeneralDisplay():
                 laxu = layout_graphicos.addLayout(row = int(i/CONFIG['ELEC_GROUP']/LG_CONFIG['COL_DISPLAY']), 
                                                     col = int(i/CONFIG['ELEC_GROUP'])%LG_CONFIG['COL_DISPLAY'], 
                                                 rowspan = 1, colspan=1)#, border=(50,0,0)
-                laxu.setSpacing(0)                        
+                laxu.setSpacing(1)                        
             else:
                 laxu = layout_graphicos_2.addLayout(row = int((i-main_win_ch)/CONFIG['ELEC_GROUP'] / LG_CONFIG['COL_DISPLAY']), 
                                                    col = int((i - main_win_ch)/CONFIG['ELEC_GROUP'])%LG_CONFIG['COL_DISPLAY'],
                                                     rowspan = 1, colspan=1)
-                laxu.setSpacing(0)
+                laxu.setSpacing(1)
                                                     
             
             label_aux=laxu.addLabel("<font size=\"3\">{} {}</font>".format(LG_CONFIG['GROUP_LABEL'], str(i / CONFIG['ELEC_GROUP'] + 1)), angle=-90, rowspan=CONFIG['ELEC_GROUP'])

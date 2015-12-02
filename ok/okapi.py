@@ -7,8 +7,7 @@ if __name__ != '__main__':
     from configuration import CONFIG_PARSER
     AMPCOUNT = int(CONFIG_PARSER['FORMAT_CONFIG']['ampcount'])
 else:
-    from ..Graphics.bci_config_editor import load_configuration
-    AMPCOUNT = 2
+    AMPCOUNT = 2 #manual parameter
 
 logger = logging.getLogger('okapi')
 
