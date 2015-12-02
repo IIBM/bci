@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>784</width>
-    <height>1036</height>
+    <width>1037</width>
+    <height>1029</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -50,7 +50,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>784</width>
+     <width>1037</width>
      <height>26</height>
     </rect>
    </property>
@@ -73,7 +73,6 @@
      <string>Extras</string>
     </property>
     <addaction name="actionStop_SP"/>
-    <addaction name="actionRestart_GUI"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -85,9 +84,10 @@
     <property name="title">
      <string>View</string>
     </property>
+    <addaction name="actionControl_Panel"/>
     <addaction name="actionFiring_rates"/>
     <addaction name="actionSelected_Channel"/>
-    <addaction name="actionControl_Panel"/>
+    <addaction name="actionGroup_Viewer"/>
     <addaction name="actionSpS"/>
     <addaction name="actionLFP"/>
     <addaction name="actionFFT"/>
@@ -637,8 +637,8 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>102</width>
-     <height>235</height>
+     <width>210</width>
+     <height>278</height>
     </size>
    </property>
    <property name="font">
@@ -967,6 +967,67 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="show_group">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>102</width>
+     <height>235</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+   <property name="windowIcon">
+    <iconset>
+     <normaloff>icon.png</normaloff>icon.png</iconset>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::AllDockWidgetAreas</set>
+   </property>
+   <property name="windowTitle">
+    <string>Selected Group</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_7">
+    <layout class="QGridLayout" name="gridLayout_10">
+     <item row="0" column="0">
+      <widget class="GraphicsView" name="grid_group">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>10000</height>
+        </size>
+       </property>
+       <property name="resizeAnchor">
+        <enum>QGraphicsView::NoAnchor</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <action name="actionDetener">
    <property name="text">
     <string>Stop</string>
@@ -1023,7 +1084,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Selected Channel</string>
+    <string>Channel Viewer</string>
    </property>
   </action>
   <action name="actionControl_Panel">
@@ -1084,6 +1145,17 @@
   <action name="actionRestart_GUI">
    <property name="text">
     <string>Restart GUI</string>
+   </property>
+  </action>
+  <action name="actionGroup_Viewer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Group Viewer</string>
    </property>
   </action>
   <zorder>SpS_dock</zorder>
@@ -1500,18 +1572,34 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionRestart_GUI</sender>
-   <signal>triggered()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>on_action_Restart()</slot>
+   <sender>show_group</sender>
+   <signal>visibilityChanged(bool)</signal>
+   <receiver>actionGroup_Viewer</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>929</x>
+     <y>837</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionGroup_Viewer</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>show_group</receiver>
+   <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>391</x>
-     <y>517</y>
+     <x>929</x>
+     <y>837</y>
     </hint>
    </hints>
   </connection>
@@ -1522,6 +1610,5 @@
   <slot>on_actionNuevo()</slot>
   <slot>on_actionStop_SP()</slot>
   <slot>about()</slot>
-  <slot>on_action_Restart()</slot>
  </slots>
 </ui>

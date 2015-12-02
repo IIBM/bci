@@ -69,6 +69,8 @@ class MainWindow(QtGui.QMainWindow):
         self.neu_firing_rates_dock.setVisible(False)
         self.actionNeu_firing_rates.setChecked(False)
         
+        self.show_group.setVisible(False)
+        self.actionGroup_Viewer.setChecked(False)
         
         self.processing_process = processing_process
         self.get_data_process = get_data_process
@@ -81,9 +83,10 @@ class MainWindow(QtGui.QMainWindow):
         self.spectral_handler = SpectralHandler(self, self.data_handler)
         self.spike_sorting_handler = SpikeSortingHandler(queue = self.processing_process.ui_config_queue, main_window = self)
         
-        self.group_info = plus_display(self.data_handler, self.plus_grid,
+        self.group_info = plus_display(self.data_handler, self.plus_grid, self.grid_group,
                                          self.plus_grid_fr, self.signal_config,
                                          self.thr_p,self.channel_changed)
+        
         self.general_display = GeneralDisplay(self.data_handler, 
                                               self.espacio_pg, 
                                               self.channel_changed)
@@ -219,17 +222,7 @@ class MainWindow(QtGui.QMainWindow):
         #QtCore.QCoreApplication.instance().exit(N) devuelve N en APP.exec_()   
 #        import sys
 #        sys.exit()
-    def on_action_Restart(self):
-        self.timer.stop()
-        self.get_data_process.control.send(EXIT_SIGNAL)
-        self.processing_process.control.send(EXIT_SIGNAL)
-        self.get_data_process.process.join(2)
-        self.processing_process.process.join(1)
-        self.processing_process.process.terminate()
-        self.get_data_process.process.terminate()
-        self.general_display.close()
-        #self.close()
-        QtCore.QCoreApplication.instance().exit(1)
+
 
     def on_actionNuevo(self):
         """Nuevo archivo de registro"""
@@ -271,7 +264,7 @@ class MainWindow(QtGui.QMainWindow):
                 
 class  plus_display():
     """Clase que engloba el display inferior junto a los metodos que lo implican individualmente"""  
-    def __init__(self, data_handler, espacio_pg, plus_grid_fr, signal_config, 
+    def __init__(self, data_handler, espacio_pg,grid_group, plus_grid_fr, signal_config, 
                  thr_p_label, channel_changed): 
         channel_changed.connect(self.change_channel)
         self.data_handler = data_handler
@@ -281,9 +274,32 @@ class  plus_display():
         self.thr_p_label = thr_p_label
         #layout_graphicos.addItem(self.tasas_bars,row=None, col=0, rowspan=1, colspan=1)
         #graph=layout_graphicos.addPlot(row=None, col=1, rowspan=1, colspan=3)
+        #create and configure selected channel plot:
+        layout_tet= pg.GraphicsLayout(border = (100, 0, 100)) 
+        grid_group.setCentralItem(layout_tet)
+        self.tet_curves = list()
+        for i in range(CONFIG['ELEC_GROUP']):
+            graph = layout_tet.addPlot(col=1,row = i+1,rowspan = 1, colspan = 1)
+            axis = graph.getAxis('left')
+            axis.setScale(scale = CONFIG['ADC_SCALE'])
+            VB = graph.getViewBox()
+            VB.setXRange(0, CONFIG['PAQ_USB']/float(CONFIG['FS']), padding=0, update=True)
+            VB.setYRange(LG_CONFIG['DISPLAY_LIMY'], -LG_CONFIG['DISPLAY_LIMY'], padding=0, update=True)
+            graph.setMenuEnabled(enableMenu = False, enableViewBoxMenu = None)
+            graph.setDownsampling(auto = True)
+            if i != CONFIG['ELEC_GROUP']-1:
+                graph.showAxis('bottom', show = False) 
+            self.tet_curves.append(graph.plot())
+            if i==0:
+                graph_0=graph
+            else:
+                graph.setYLink(graph_0)
+                graph.setXLink(graph_0)
+        #create and configure selected channel plot:
         self.graph = pg.PlotItem()
         axis = self.graph.getAxis('left')
         axis.setScale(scale = CONFIG['ADC_SCALE'])
+
         self.std = np.ndarray(CONFIG['#CHANNELS'])
         self.VB = self.graph.getViewBox()
         self.VB.setXRange(0, CONFIG['PAQ_USB']/float(CONFIG['FS']), padding=0, update=True)
@@ -291,14 +307,14 @@ class  plus_display():
         self.graph.setMenuEnabled(enableMenu = False, enableViewBoxMenu = None)
         self.graph.setDownsampling(auto = True)
         self.curve = self.graph.plot()
-        #QtCore.QObject.connect(self.graph_umbral, QtCore.SIGNAL("sigPositionChange()"), 
+        #QtCore.QObject.connect(self.graph_thr, QtCore.SIGNAL("sigPositionChange()"), 
         self.graph.enableAutoRange('y', False)                       #self.pepe)
-        
         espacio_pg.setCentralItem(self.graph)
         plus_grid_fr.setCentralItem(self.tasas_bars)
         
-        self.graph_umbral = pg.InfiniteLine(pen = pg.mkPen('w', width=2), angle = 0, movable = True)
-        self.graph_umbral.sigPositionChangeFinished.connect(self.thr_changed)
+        #Create and onfigure ther line
+        self.graph_thr = pg.InfiniteLine(pen = pg.mkPen('w', width=2), angle = 0, movable = True)
+        self.graph_thr.sigPositionChangeFinished.connect(self.thr_changed)
 
         self.fft_n = 0
         self.fft_l = 0
@@ -306,12 +322,12 @@ class  plus_display():
         self.data_fft_aux = np.zeros([CONFIG['PAQ_USB']*LG_CONFIG['FFT_L_PAQ']])
         
         self.threshold_visible(True)
-        self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
+        self.graph_thr.setValue(self.signal_config.thresholds[self.channel])
         self.show_line = False
         self.pause_mode = False
         
-        self.graph_umbral.sigDragged.connect(self.moving_line)                     
-        self.graph_umbral.sigPositionChangeFinished.connect(self.free_line)           
+        self.graph_thr.sigDragged.connect(self.moving_line)                     
+        self.graph_thr.sigPositionChangeFinished.connect(self.free_line)           
         self.graph_thr_updatable = True          
     
     def moving_line(self):
@@ -323,18 +339,18 @@ class  plus_display():
     def thr_changed(self, p = None):
         if self.signal_config.th_manual_modes[self.channel]:
             
-            self.signal_config.change_th(self.channel, self.graph_umbral.value())
+            self.signal_config.change_th(self.channel, self.graph_thr.value())
             
-            self.thr_p_label.setText("{0:.1f}".format(self.graph_umbral.value()/self.std[self.channel]))
+            self.thr_p_label.setText("{0:.1f}".format(self.graph_thr.value()/self.std[self.channel]))
         else:
             
             if type(p)== pg.InfiniteLine:
-                p = self.graph_umbral.value() / self.std[self.channel]
+                p = self.graph_thr.value() / self.std[self.channel]
                 self.signal_config.change_th(self.channel, p)
                 self.thr_p_label.setText("{0:.1f}".format(p))
             else:
                 self.signal_config.change_th(self.channel, float(p))
-                self.graph_umbral.setValue(float(p)*self.std[self.channel])
+                self.graph_thr.setValue(float(p)*self.std[self.channel])
 
 
     def set_pause(self, pause_mode):
@@ -350,22 +366,23 @@ class  plus_display():
             data = self.data_old
         else:
             data = self.data_handler.graph_data
-        
+
         n_view = self.data_handler.n_view
         xtime = self.data_handler.xtime
-        
+
         self.max_xtime = xtime[n_view-1]
         tet = int(self.channel / CONFIG['ELEC_GROUP'])
-        
+
         self.tasas_bars.update(self.data_handler.spikes_times[tet*CONFIG['ELEC_GROUP']:tet*CONFIG['ELEC_GROUP']+CONFIG['ELEC_GROUP']])
         self.std = self.data_handler.std
-        
+
         if self.signal_config.th_manual_modes[self.channel]:
-            self.thr_p_label.setText("{0:.1f}".format(self.graph_umbral.value()/self.std[self.channel]))
+            self.thr_p_label.setText("{0:.1f}".format(self.graph_thr.value()/self.std[self.channel]))
 
         if (not self.signal_config.th_manual_modes[self.channel]) and self.graph_thr_updatable:
-            self.graph_umbral.setValue(self.signal_config.thresholds[self.channel]*
+            self.graph_thr.setValue(self.signal_config.thresholds[self.channel]*
             self.std[self.channel])
+
 
         self.curve.setPen(CH_COLORS[self.channel%CONFIG['ELEC_GROUP']])
         self.curve.setData(x = xtime[:n_view], y = data[self.channel, :n_view])
@@ -375,9 +392,9 @@ class  plus_display():
     def threshold_visible(self, visible):
         """Define si el umbral es visible o no"""
         if visible:
-            self.graph.addItem(self.graph_umbral)
+            self.graph.addItem(self.graph_thr)
         else:
-            self.graph.removeItem(self.graph_umbral)
+            self.graph.removeItem(self.graph_thr)
             
   
         
@@ -390,18 +407,27 @@ class  plus_display():
             self.signal_config.change_th(self.channel, self.signal_config.thresholds[self.channel] / self.std[self.channel])
 
 
-    def change_channel(self, canal):
+    def change_channel(self, ch):
         """Modifica el canal que se grafica actualmente, 
         refrescando las barras de firing rate si pertenece a otro tetrodo"""
-        if int(self.channel/CONFIG['ELEC_GROUP']) != int(canal/CONFIG['ELEC_GROUP']):
+        #update plot
+        if self.pause_mode == True:
+            data = self.data_old
+        else:
+            data = self.data_handler.graph_data
+        n_view = self.data_handler.n_view
+        self.curve.setPen(CH_COLORS[ch%CONFIG['ELEC_GROUP']])
+        self.curve.setData(x = self.data_handler.xtime[:n_view], y = data[ch, :n_view])
+        
+        if int(self.channel/CONFIG['ELEC_GROUP']) != int(ch/CONFIG['ELEC_GROUP']):
             self.tasas_bars.tet_changed()
-        self.channel = canal
+        self.channel = ch
    
         if self.signal_config.th_manual_modes[self.channel]:
-            self.graph_umbral.setValue(self.signal_config.thresholds[self.channel])
-            self.thr_p_label.setText("{0:.1f}".format(self.graph_umbral.value()/self.std[self.channel]))
+            self.graph_thr.setValue(self.signal_config.thresholds[self.channel])
+            self.thr_p_label.setText("{0:.1f}".format(self.graph_thr.value()/self.std[self.channel]))
         else:
-            self.graph_umbral.setValue(self.signal_config.thresholds[self.channel]*
+            self.graph_thr.setValue(self.signal_config.thresholds[self.channel]*
             self.std[self.channel])
             self.thr_p_label.setText("{0:.1f}".format(self.signal_config.thresholds[self.channel]))
             
@@ -646,17 +672,13 @@ class Channels_Configuration():
         self.changed = True
         
     def change_th(self, ch, value):
-        
         if(self.thresholds[ch] != value):
             self.thresholds[ch] = value
-            
             self.changed = True
 
     def change_th_mode(self, ch, value):
-        
         self.th_manual_modes[ch] = value
         self.changed = True
-
             
     def change_filter_mode(self, state):
         self.filter_mode = state

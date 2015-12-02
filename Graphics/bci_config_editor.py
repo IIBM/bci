@@ -211,7 +211,6 @@ class Config_dialog(QtGui.QDialog):
         self.config.read(format_config_file)
         
         self.offline_mode = not self.config.getboolean('GENERAL','online_mode')
-        
         self.change_mode(self.offline_mode)
         self.conf_updated_signal.emit()
         

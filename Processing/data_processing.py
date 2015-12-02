@@ -19,28 +19,21 @@ if  CONFIG['FILTERED']:
 else:
     EXTRA_SIGNAL = SP_CONFIG['LENGTH_FILTER']-1
 
-N_STORAGE = 3 #cantidad de paq q se van a usar para calcular medianas etc
-
 
 class Signal_Parameters():
     def __init__(self):
 
         self.std = np.ndarray(CONFIG['#CHANNELS'])
-        self.std_fd = np.ndarray(CONFIG['#CHANNELS'])
         self.std4upd = 0
     
     def parcial_update(self,data): 
         self.std[self.std4upd] = (calc_std(data[self.std4upd,:],0) + self.std[self.std4upd]) /2.
-        self.std_fd[self.std4upd] = (calc_std(np.diff(data[self.std4upd,:]),0)
-                                        + self.std_fd[self.std4upd]) /2.
         self.std4upd +=1
         if self.std4upd == CONFIG['#CHANNELS']:
             self.std4upd = 0
             
-            
     def update(self,data): 
         self.std= calc_std(data,1)
-        self.std= calc_std(np.diff(data),1)
         #next time wil execute the parcial_update method                    
         self.update = self.parcial_update   
         
@@ -51,9 +44,9 @@ class Signal_Parameters():
     
 def firfilter(b,data):
     blen=len(b)
-    new_data = b[0]*data[:,blen:]
+    new_data = b[0]*data[:,blen-1:]
     for i in xrange(1,blen):
-        new_data += b[i]*data[:,blen-i:-i]
+        new_data += b[i]*data[:,blen-i-1:-i]
     return new_data
     
     
