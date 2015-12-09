@@ -70,7 +70,7 @@ class Parser():
         if self.c_t == 0 :
             self.sinc = 0
             while self.sinc < COMM['l_frame']:               
-                if (data[self.sinc] == self.FFplus) and not(  np.logical_xor.reduce(data[self.sinc:self.sinc+ COMM['l_frame']])):
+                if (data[self.sinc] == self.FFplus) and not( reduce(lambda x,y: x^y, data[self.sinc:self.sinc+ COMM['l_frame']])):
                     #parsea:
                     self.data.channels[:, self.frames_parsed] = (data[COMM['channels_pos'] + self.sinc:self.sinc+COMM['channels_pos'] + CONFIG['#CHANNELS']]-2**15)[CH_ORD]
                     self.frames_parsed += 1

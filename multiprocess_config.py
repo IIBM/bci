@@ -34,5 +34,5 @@ SLOW_GRAPHICS_SIGNAL: 'Slow graphics',
 COUNTER_ERROR: 'Counter, data loss',
 CANT_SYNCHRONIZE: 'Cant synchronize',
 DATA_NONSYNCHRONIZED: 'data non-synchronized',
-DATA_CORRUPTION: 'the data corrupted'}
+DATA_CORRUPTION: 'corrupted data'}
 

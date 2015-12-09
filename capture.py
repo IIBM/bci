@@ -15,9 +15,9 @@ from os import makedirs
 if not path.exists('Logs'):
     makedirs('Logs')
 
-
-logging.basicConfig(filename = 'Logs/data_bci.log', level = logging.WARNING)
-
+dateformat = '%Y/%m/%d %I:%M:%S %p'
+logging.basicConfig(filename = 'Logs/data_bci.log', level = logging.INFO, datefmt = dateformat)
+logging.info("Init data acquisition")
 
 
 def connect():
