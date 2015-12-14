@@ -148,10 +148,12 @@ class MainWindow(QtGui.QMainWindow):
             aux = '{}:{} | C:{}'.format(LG_CONFIG['PROBE_CONF_L'], 
         int(channel/CONFIG['ELEC_GROUP']) + 1, channel%CONFIG['ELEC_GROUP'] + 1)
             self.show_group.setWindowTitle('{} {}'.format(LG_CONFIG['GROUP_LABEL'],int(channel/CONFIG['ELEC_GROUP'])+ 1))
+            self.fft_dock.setWindowTitle('Spectrum '+aux)
+
         else:
             aux = 'Electrode : {}'.format(channel+1)
             self.show_group.setWindowTitle(aux)
-            
+            self.fft_dock.setWindowTitle('Spectrum '+aux)
         self.info_label.setText(aux)
         self.show_s_channel.setWindowTitle(aux)
         #self.elec_group = channel%CONFIG['ELEC_GROUP']
@@ -505,6 +507,7 @@ class GeneralDisplay():
     
         else:
             main_win_ch = int(CONFIG['#CHANNELS']*3/CONFIG['ELEC_GROUP']/7)*CONFIG['ELEC_GROUP']
+            main_win_ch = main_win_ch - ((main_win_ch / CONFIG['ELEC_GROUP'])%LG_CONFIG['COL_DISPLAY'])*CONFIG['ELEC_GROUP']
             self.second_win = Second_Display_Window()            
             layout_graphicos_2 = self.second_win.layout_graphicos
             layout_graphicos_2.setSpacing(0)
