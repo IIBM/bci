@@ -28,14 +28,14 @@ if not CONFIG['ONLINE_MODE']:
             else:
                 INFO[x] = CONFIG_PARSER['DATA_INFO'][x]
     from configuration import FILE_CONFIG
-    
-    
-if path.exists(path.join(CONFIG_PARSER['FOLDER'],CONFIG_PARSER['FORMAT_CONFIG']['ch_order'])): #check if the string is a valid file name
-    CH_ORD = np.loadtxt(path.join(CONFIG_PARSER['FOLDER'],CONFIG_PARSER['FORMAT_CONFIG']['ch_order']),np.int)-1
+
+
+if path.exists(path.join(CONFIG_PARSER['FOLDER'],CONFIG_PARSER['FORMAT_CONFIG']['ch_order_file'])): #check if the string is a valid file name
+    CH_ORD = np.loadtxt(path.join(CONFIG_PARSER['FOLDER'],CONFIG_PARSER['FORMAT_CONFIG']['ch_order_file']),np.int)-1
 else: #else should be a list of ints
     CH_ORD = np.fromstring(CONFIG_PARSER['FORMAT_CONFIG']['ch_order'],np.int,sep=' ')-1
-  
-    
+
+
 class Parser():
     """Une secciones de datos raw y crea la matriz que se pasara al siguiente proceso"""
     def __init__(self,send_warnings,logging,data_in):     
@@ -57,11 +57,11 @@ class Parser():
             self.file_reading = FILE_CONFIG['FORMAT_FILE']
             self.unread_frames = 0
             self.n_file = 0
-            
+
     def get_raw(self,extra_data):
         new_pack_data = (CONFIG['PAQ_USB'] + extra_data) * COMM['l_frame']
         return self.data_raw[:new_pack_data]  
-    
+
     def online_update(self, data):
         """Recibe datos, los parsea. Si llena una trama fija retorna 0, 
         si faltan mas datos retorna cuantos, si sobran retorna -1"""
@@ -70,7 +70,7 @@ class Parser():
         if self.c_t == 0 :
             self.sinc = 0
             while self.sinc < COMM['l_frame']:               
-                if (data[self.sinc] == self.FFplus) and not( reduce(lambda x,y: x^y, data[self.sinc:self.sinc+ COMM['l_frame']])):
+                if (data[self.sinc] == self.FFplus) and not(  np.logical_xor.reduce(data[self.sinc:self.sinc+ COMM['l_frame']])):
                     #parsea:
                     self.data.channels[:, self.frames_parsed] = (data[COMM['channels_pos'] + self.sinc:self.sinc+COMM['channels_pos'] + CONFIG['#CHANNELS']]-2**15)[CH_ORD]
                     self.frames_parsed += 1
@@ -172,5 +172,4 @@ class Parser():
             self.open_file.close()
 
         return self.online_update(self.new_data)
-       
-        
+
