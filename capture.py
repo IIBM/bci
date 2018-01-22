@@ -16,7 +16,9 @@ if not path.exists('Logs'):
     makedirs('Logs')
 
 dateformat = '%Y/%m/%d %I:%M:%S %p'
-logging.basicConfig(filename = 'Logs/data_bci.log', level = logging.INFO, datefmt = dateformat)
+formatter = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.basicConfig(filename = 'Logs/data_bci.log', filemode='w',
+        level = logging.INFO, format=formatter, datefmt = dateformat)
 logging.info("Init data acquisition")
 
 
@@ -151,7 +153,7 @@ class FileHandle():
             config_parser.set(newsection, 'channels', CONFIG['#CHANNELS'])
             config_parser.set(newsection, 'adc_scale', CONFIG['ADC_SCALE'])
             config_parser.set(newsection, 'format', CONFIG['FORMAT'])
-            config_parser.set(newsection, 'online', 'False')
+            config_parser.set(newsection, 'online_mode', 'False')
             config_parser.set(newsection, 'filtered', CONFIG['FILTERED'])
             
             newsection = "FORMAT_CONFIG"

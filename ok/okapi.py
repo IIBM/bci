@@ -7,7 +7,7 @@ if __name__ != '__main__':
     from configuration import CONFIG_PARSER
     AMPCOUNT = int(CONFIG_PARSER['FORMAT_CONFIG']['ampcount'])
 else:
-    AMPCOUNT = 2 #manual parameter
+    AMPCOUNT = 1 #manual parameter
 
 logger = logging.getLogger('okapi')
 
@@ -168,14 +168,20 @@ class OpalKelly():
       
 if __name__ == '__main__':
   import sys
+  import os
+
+  if not os.path.exists('../Logs'):
+    os.makedirs('../Logs')
+
   formatter = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
   dateformat = '%Y/%m/%d %I:%M:%S %p'
 
-  logging.basicConfig(filename='logs/okapi.log', filemode='w',
+  logging.basicConfig(filename='../Logs/okapi.log', filemode='w',
       level=logging.DEBUG, format=formatter, datefmt = dateformat)
   logger.info('okapi test started')
 
   try:
+    BITFILENAME = '../fpga.bit' #override global parameter
     l = numpy.ndarray(100000,numpy.int16)
     f = open('salida.txt','w')
     a = OpalKelly()
@@ -183,7 +189,7 @@ if __name__ == '__main__':
     time.sleep(.1)
     a.start(10000)
     n = 0
-    while n<10:
+    while n<100:
 
       while (a.data_available() < 100000):
         time.sleep(.01)

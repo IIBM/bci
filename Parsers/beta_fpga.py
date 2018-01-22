@@ -72,7 +72,7 @@ class Parser():
             while self.sinc < COMM['l_frame']:               
                 if (data[self.sinc] == self.FFplus) and not( reduce(lambda x,y: x^y, data[self.sinc:self.sinc+ COMM['l_frame']])):
                     #parsea:
-                    self.data.channels[:, self.frames_parsed] = (data[COMM['channels_pos'] + self.sinc:self.sinc+COMM['channels_pos'] + CONFIG['#CHANNELS']]-2**15)[CH_ORD]
+                    self.data.channels[:, self.frames_parsed] = (data[COMM['channels_pos'] + self.sinc:self.sinc+COMM['channels_pos'] + CONFIG['#CHANNELS']])[CH_ORD]
                     self.frames_parsed += 1
                     counter_old = self.counter
                     self.counter = (data[COMM['counter_pos'] + self.sinc])
@@ -113,7 +113,7 @@ class Parser():
                 self.c_t = max_c_t #se concidera analizado y corrupto todo el paquete la proxima se empieza desde cero
                 break
             #parsea:
-            self.data.channels[:, self.frames_parsed] = (data[init_trama + COMM['channels_pos']:init_trama + COMM['channels_pos'] + CONFIG['#CHANNELS']]-2**15)[CH_ORD]
+            self.data.channels[:, self.frames_parsed] = (data[init_trama + COMM['channels_pos']:init_trama + COMM['channels_pos'] + CONFIG['#CHANNELS']])[CH_ORD]
             #ojo aca se tendria q parsear y guardar el resto de la informacion q viene en la trama                
             self.frames_parsed += 1
             counter_old = self.counter
